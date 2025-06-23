@@ -49,7 +49,7 @@
 extern "C" {
 #endif
 
-typedef void *GC_PTR; /* preserved only for backward compatibility    */
+typedef void *GC_PTR; /*< preserved only for backward compatibility */
 
 /* Define `word` and `signed_word` to be unsigned and signed types of   */
 /* the size as `char *` or `void *`.                                    */
@@ -147,16 +147,16 @@ GC_API void GC_CALL GC_set_on_heap_resize(GC_on_heap_resize_proc);
 GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void);
 
 typedef enum {
-  GC_EVENT_START, /* start collection */
+  GC_EVENT_START, /*< start collection */
   GC_EVENT_MARK_START,
   GC_EVENT_MARK_END,
   GC_EVENT_RECLAIM_START,
   GC_EVENT_RECLAIM_END,
-  GC_EVENT_END,              /* end collection */
-  GC_EVENT_PRE_STOP_WORLD,   /* begin stopping world */
-  GC_EVENT_POST_STOP_WORLD,  /* end stopping world */
-  GC_EVENT_PRE_START_WORLD,  /* begin restarting world */
-  GC_EVENT_POST_START_WORLD, /* end restarting world */
+  GC_EVENT_END,              /*< end collection */
+  GC_EVENT_PRE_STOP_WORLD,   /*< begin stopping world */
+  GC_EVENT_POST_STOP_WORLD,  /*< end stopping world */
+  GC_EVENT_PRE_START_WORLD,  /*< begin restarting world */
+  GC_EVENT_POST_START_WORLD, /*< end restarting world */
   GC_EVENT_THREAD_SUSPENDED,
   GC_EVENT_THREAD_UNSUSPENDED
 } GC_EventType;
@@ -390,8 +390,8 @@ GC_API unsigned long GC_CALL GC_get_time_limit(void);
 
 /* A portable type definition of time with a nanosecond precision.      */
 struct GC_timeval_s {
-  unsigned long tv_ms;   /* time in milliseconds */
-  unsigned long tv_nsec; /* nanoseconds fraction (less than 1000000) */
+  unsigned long tv_ms;   /*< time in milliseconds */
+  unsigned long tv_nsec; /*< nanoseconds fraction (less than 1000000) */
 };
 
 /* Public procedures */
@@ -2109,7 +2109,7 @@ extern "C" {
 #    ifndef DECLSPEC_NORETURN
 /* Typically defined in platform `winnt.h` file. */
 #      ifdef GC_WINDOWS_H_INCLUDED
-#        define DECLSPEC_NORETURN /* empty */
+#        define DECLSPEC_NORETURN /*< empty */
 #      else
 #        define DECLSPEC_NORETURN __declspec(noreturn)
 #      endif
@@ -2244,7 +2244,7 @@ extern int _data_start__[], _data_end__[], _bss_start__[], _bss_end__[];
 /* hurt.                                                                */
 #  define GC_INIT_CONF_ROOTS                \
     GC_add_roots(GC_DATASTART, GC_DATAEND); \
-    GC_gcollect() /* For blacklisting. */
+    GC_gcollect() /*< for blacklisting */
 #elif defined(_AIX)
 extern int _data[], _end[];
 #  define GC_DATASTART ((void *)_data)
@@ -2264,14 +2264,14 @@ GC_API void *GC_CALL GC_find_limit(void * /* `start` */, int /* `up` */);
                   0)                                                       \
                : 0)
 #else
-#  define GC_INIT_CONF_ROOTS /* empty */
+#  define GC_INIT_CONF_ROOTS (void)0
 #endif
 
 #ifdef GC_DONT_EXPAND
 /* Set `GC_dont_expand` to true at start-up. */
 #  define GC_INIT_CONF_DONT_EXPAND GC_set_dont_expand(1)
 #else
-#  define GC_INIT_CONF_DONT_EXPAND /* empty */
+#  define GC_INIT_CONF_DONT_EXPAND (void)0
 #endif
 
 #ifdef GC_FORCE_UNMAP_ON_GCOLLECT
@@ -2279,7 +2279,7 @@ GC_API void *GC_CALL GC_find_limit(void * /* `start` */, int /* `up` */);
 #  define GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT \
     GC_set_force_unmap_on_gcollect(1)
 #else
-#  define GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT /* empty */
+#  define GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT (void)0
 #endif
 
 #ifdef GC_DONT_GC
@@ -2291,7 +2291,7 @@ GC_API void *GC_CALL GC_find_limit(void * /* `start` */, int /* `up` */);
 /* Set `GC_max_retries` to the desired value at start-up. */
 #  define GC_INIT_CONF_MAX_RETRIES GC_set_max_retries(GC_MAX_RETRIES)
 #else
-#  define GC_INIT_CONF_MAX_RETRIES /* empty */
+#  define GC_INIT_CONF_MAX_RETRIES (void)0
 #endif
 
 #if defined(GC_ALLOCD_BYTES_PER_FINALIZER) && !defined(CPPCHECK)
@@ -2299,7 +2299,7 @@ GC_API void *GC_CALL GC_find_limit(void * /* `start` */, int /* `up` */);
 #  define GC_INIT_CONF_ALLOCD_BYTES_PER_FINALIZER \
     GC_set_allocd_bytes_per_finalizer(GC_ALLOCD_BYTES_PER_FINALIZER)
 #else
-#  define GC_INIT_CONF_ALLOCD_BYTES_PER_FINALIZER /* empty */
+#  define GC_INIT_CONF_ALLOCD_BYTES_PER_FINALIZER (void)0
 #endif
 
 #if defined(GC_FREE_SPACE_DIVISOR) && !defined(CPPCHECK)
@@ -2307,21 +2307,21 @@ GC_API void *GC_CALL GC_find_limit(void * /* `start` */, int /* `up` */);
 #  define GC_INIT_CONF_FREE_SPACE_DIVISOR \
     GC_set_free_space_divisor(GC_FREE_SPACE_DIVISOR)
 #else
-#  define GC_INIT_CONF_FREE_SPACE_DIVISOR /* empty */
+#  define GC_INIT_CONF_FREE_SPACE_DIVISOR (void)0
 #endif
 
 #if defined(GC_FULL_FREQ) && !defined(CPPCHECK)
 /* Set `GC_full_freq` to the desired value at start-up. */
 #  define GC_INIT_CONF_FULL_FREQ GC_set_full_freq(GC_FULL_FREQ)
 #else
-#  define GC_INIT_CONF_FULL_FREQ /* empty */
+#  define GC_INIT_CONF_FULL_FREQ (void)0
 #endif
 
 #if defined(GC_TIME_LIMIT) && !defined(CPPCHECK)
 /* Set `GC_time_limit` (in ms) to the desired value at start-up. */
 #  define GC_INIT_CONF_TIME_LIMIT GC_set_time_limit(GC_TIME_LIMIT)
 #else
-#  define GC_INIT_CONF_TIME_LIMIT /* empty */
+#  define GC_INIT_CONF_TIME_LIMIT (void)0
 #endif
 
 #if defined(GC_MARKERS) && defined(GC_THREADS) && !defined(CPPCHECK)
@@ -2329,20 +2329,20 @@ GC_API void *GC_CALL GC_find_limit(void * /* `start` */, int /* `up` */);
 /* the desired value at start-up.                                       */
 #  define GC_INIT_CONF_MARKERS GC_set_markers_count(GC_MARKERS)
 #else
-#  define GC_INIT_CONF_MARKERS /* empty */
+#  define GC_INIT_CONF_MARKERS (void)0
 #endif
 
 #if defined(GC_SIG_SUSPEND) && defined(GC_THREADS) && !defined(CPPCHECK)
 #  define GC_INIT_CONF_SUSPEND_SIGNAL GC_set_suspend_signal(GC_SIG_SUSPEND)
 #else
-#  define GC_INIT_CONF_SUSPEND_SIGNAL /* empty */
+#  define GC_INIT_CONF_SUSPEND_SIGNAL (void)0
 #endif
 
 #if defined(GC_SIG_THR_RESTART) && defined(GC_THREADS) && !defined(CPPCHECK)
 #  define GC_INIT_CONF_THR_RESTART_SIGNAL \
     GC_set_thr_restart_signal(GC_SIG_THR_RESTART)
 #else
-#  define GC_INIT_CONF_THR_RESTART_SIGNAL /* empty */
+#  define GC_INIT_CONF_THR_RESTART_SIGNAL (void)0
 #endif
 
 #if defined(GC_MAXIMUM_HEAP_SIZE) && !defined(CPPCHECK)
@@ -2353,14 +2353,14 @@ GC_API void *GC_CALL GC_find_limit(void * /* `start` */, int /* `up` */);
 #  define GC_INIT_CONF_MAXIMUM_HEAP_SIZE \
     GC_set_max_heap_size(GC_MAXIMUM_HEAP_SIZE)
 #else
-#  define GC_INIT_CONF_MAXIMUM_HEAP_SIZE /* empty */
+#  define GC_INIT_CONF_MAXIMUM_HEAP_SIZE (void)0
 #endif
 
 #ifdef GC_IGNORE_WARN
 /* Turn off all warnings at start-up (after the collector initialization). */
 #  define GC_INIT_CONF_IGNORE_WARN GC_set_warn_proc(GC_ignore_warn_proc)
 #else
-#  define GC_INIT_CONF_IGNORE_WARN /* empty */
+#  define GC_INIT_CONF_IGNORE_WARN (void)0
 #endif
 
 #if defined(GC_INITIAL_HEAP_SIZE) && !defined(CPPCHECK)
@@ -2372,29 +2372,29 @@ GC_API void *GC_CALL GC_find_limit(void * /* `start` */, int /* `up` */);
         (void)GC_expand_hp(((size_t)(GC_INITIAL_HEAP_SIZE)) - heap_size); \
     }
 #else
-#  define GC_INIT_CONF_INITIAL_HEAP_SIZE /* empty */
+#  define GC_INIT_CONF_INITIAL_HEAP_SIZE (void)0
 #endif
 
 /* Portable clients should call this at the program start-up.  More     */
 /* over, some platforms require this call to be done strictly from the  */
 /* primordial thread.  Multiple invocations are harmless.               */
-#define GC_INIT()                                    \
-  {                                                  \
-    GC_INIT_CONF_DONT_EXPAND; /* pre-init */         \
-    GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT;            \
-    GC_INIT_CONF_MAX_RETRIES;                        \
-    GC_INIT_CONF_ALLOCD_BYTES_PER_FINALIZER;         \
-    GC_INIT_CONF_FREE_SPACE_DIVISOR;                 \
-    GC_INIT_CONF_FULL_FREQ;                          \
-    GC_INIT_CONF_TIME_LIMIT;                         \
-    GC_INIT_CONF_MARKERS;                            \
-    GC_INIT_CONF_SUSPEND_SIGNAL;                     \
-    GC_INIT_CONF_THR_RESTART_SIGNAL;                 \
-    GC_INIT_CONF_MAXIMUM_HEAP_SIZE;                  \
-    GC_init();          /* real GC initialization */ \
-    GC_INIT_CONF_ROOTS; /* post-init */              \
-    GC_INIT_CONF_IGNORE_WARN;                        \
-    GC_INIT_CONF_INITIAL_HEAP_SIZE;                  \
+#define GC_INIT()                                     \
+  {                                                   \
+    GC_INIT_CONF_DONT_EXPAND; /*< pre-init */         \
+    GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT;             \
+    GC_INIT_CONF_MAX_RETRIES;                         \
+    GC_INIT_CONF_ALLOCD_BYTES_PER_FINALIZER;          \
+    GC_INIT_CONF_FREE_SPACE_DIVISOR;                  \
+    GC_INIT_CONF_FULL_FREQ;                           \
+    GC_INIT_CONF_TIME_LIMIT;                          \
+    GC_INIT_CONF_MARKERS;                             \
+    GC_INIT_CONF_SUSPEND_SIGNAL;                      \
+    GC_INIT_CONF_THR_RESTART_SIGNAL;                  \
+    GC_INIT_CONF_MAXIMUM_HEAP_SIZE;                   \
+    GC_init();          /*< real GC initialization */ \
+    GC_INIT_CONF_ROOTS; /*< post-init */              \
+    GC_INIT_CONF_IGNORE_WARN;                         \
+    GC_INIT_CONF_INITIAL_HEAP_SIZE;                   \
   }
 
 /* win32s may not free all resources on process exit.                   */

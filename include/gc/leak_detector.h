@@ -60,7 +60,7 @@
 /* a warning that the pointer has no debugging info.                    */
 
 #undef aligned_alloc
-#define aligned_alloc(a, n) GC_memalign(a, n) /* identical to `memalign` */
+#define aligned_alloc(a, n) GC_memalign(a, n) /*< identical to `memalign` */
 #undef memalign
 #define memalign(a, n) GC_memalign(a, n)
 #undef posix_memalign
@@ -74,30 +74,30 @@
   (GC_free(p) /* non-debug */, (void)(a), (void)(n))
 
 #undef _aligned_malloc
-#define _aligned_malloc(n, a) GC_memalign(a, n) /* reverse args order */
+#define _aligned_malloc(n, a) GC_memalign(a, n) /*< reverse args order */
 #undef _aligned_free
-#define _aligned_free(p) GC_free(p) /* non-debug */
+#define _aligned_free(p) GC_free(p) /*< non-debug */
 
 #ifndef GC_NO_VALLOC
 #  undef valloc
 #  define valloc(n) GC_valloc(n)
 #  undef pvalloc
-#  define pvalloc(n) GC_pvalloc(n) /* obsolete */
+#  define pvalloc(n) GC_pvalloc(n) /*< obsolete */
 #endif
 
-#undef malloc_usable_size /* available in `glibc` */
+#undef malloc_usable_size /*< available in `glibc` */
 #define malloc_usable_size(p) GC_size(p)
-#undef malloc_size /* available on Darwin */
+#undef malloc_size /*< available in Darwin */
 #define malloc_size(p) GC_size(p)
-#undef _msize /* available in Windows CRT */
+#undef _msize /*< available in Windows CRT */
 #define _msize(p) GC_size(p)
 
 #ifndef CHECK_LEAKS
-#  define CHECK_LEAKS() GC_gcollect()
 /* Note 1: `CHECK_LEAKS` does not have `GC_` prefix (preserved for  */
 /* backward compatibility).                                         */
 /* Note 2: `GC_gcollect()` is also called automatically in the      */
 /* find-leak mode at program exit.                                  */
+#  define CHECK_LEAKS() GC_gcollect()
 #endif
 
 #endif /* GC_LEAK_DETECTOR_H */

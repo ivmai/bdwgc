@@ -22,7 +22,7 @@
 /* Omit `alloc_size` attribute to avoid compiler warnings about         */
 /* exceeding maximum object size when values close to `GC_SWORD_MAX`    */
 /* are passed to `GC_MALLOC()`.                                         */
-#  define GC_ATTR_ALLOC_SIZE(argnum) /* empty */
+#  define GC_ATTR_ALLOC_SIZE(argnum) /*< empty */
 #endif
 
 #include "gc.h"
@@ -43,7 +43,7 @@
 #undef SIZE_MAX
 #define SIZE_MAX (~(size_t)0)
 
-#define U_SSIZE_MAX (SIZE_MAX >> 1) /* unsigned */
+#define U_SSIZE_MAX (SIZE_MAX >> 1) /*< unsigned */
 
 int
 main(void)

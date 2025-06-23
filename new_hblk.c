@@ -101,7 +101,7 @@ GC_INNER ptr_t
 GC_build_fl(struct hblk *h, ptr_t list, size_t lg, GC_bool clear)
 {
   ptr_t *p, *prev;
-  ptr_t plim; /* points to last object in new `hblk` entity */
+  ptr_t plim; /*< points to last object in new `hblk` entity */
   size_t lpw = GRANULES_TO_PTRS(lg);
 
   /* Do a few prefetches here, just because it is cheap.        */
@@ -161,7 +161,7 @@ GC_build_fl(struct hblk *h, ptr_t list, size_t lg, GC_bool clear)
 GC_INNER void
 GC_new_hblk(size_t lg, int kind)
 {
-  struct hblk *h; /* the new heap block */
+  struct hblk *h; /*< the new heap block */
   size_t lb_adjusted = GRANULES_TO_BYTES(lg);
 
   GC_STATIC_ASSERT(sizeof(struct hblk) == HBLKSIZE);

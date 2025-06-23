@@ -41,8 +41,8 @@
 /* `GC_THREADS` macro, `libatomic_ops` package presence and             */
 /* `private/gc_atomic_ops.h` file.                                      */
 #if !defined(AO_DISABLE_GCC_ATOMICS)                                  \
-    && ((defined(__clang__) && __clang_major__ >= 8) /* clang 8.0+ */ \
-        || (defined(__GNUC__)                        /* gcc 5.4+ */   \
+    && ((defined(__clang__) && __clang_major__ >= 8 /* clang 8.0+ */) \
+        || (defined(__GNUC__) /* gcc 5.4+ */                          \
             && (__GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 4))))
 #  define CORD_USE_GCC_ATOMIC
 #endif

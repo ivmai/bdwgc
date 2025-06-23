@@ -457,7 +457,7 @@ resend_lost_signals(int n_live_threads, int (*suspend_restart_all)(void))
 #    define RETRY_INTERVAL 100000 /* us */
 
   if (n_live_threads > 0) {
-    unsigned long wait_usecs = 0; /* total wait since retry */
+    unsigned long wait_usecs = 0; /*< total wait since retry */
     int retry = 0;
     int prev_sent = 0;
 
@@ -520,7 +520,7 @@ resend_lost_signals_retry(int n_live_threads, int (*suspend_restart_all)(void))
     /* signal.                                                      */
     for (i = 0; i < n_live_threads; i++) {
       if (sem_timedwait(&GC_suspend_ack_sem, &ts) == -1)
-        break; /* Wait timed out or any other error.  */
+        break; /*< wait timed out or any other error */
     }
     /* Update the count of threads to wait the ack from.      */
     n_live_threads -= i;
@@ -555,7 +555,7 @@ GC_restart_handler(int sig)
 
 #    ifdef USE_TKILL_ON_ANDROID
 EXTERN_C_BEGIN
-extern int tkill(pid_t tid, int sig); /* from platform `sys/linux-unistd.h` */
+extern int tkill(pid_t tid, int sig); /*< from platform `sys/linux-unistd.h` */
 EXTERN_C_END
 #      define THREAD_SYSTEM_ID(t) (t)->kernel_id
 #    else
@@ -664,13 +664,13 @@ GC_suspend_thread(GC_SUSPEND_THREAD_ID thread)
     return;
   }
   suspend_cnt = t->ext_suspend_cnt;
-  if ((suspend_cnt & 1) != 0) /* already suspended? */ {
+  if ((suspend_cnt & 1) != 0) /*< already suspended? */ {
     GC_ASSERT(!THREAD_EQUAL((pthread_t)thread, pthread_self()));
     UNLOCK();
     return;
   }
   if ((t->flags & (FINISHED | DO_BLOCKING)) != 0) {
-    t->ext_suspend_cnt = suspend_cnt | 1; /* suspend */
+    t->ext_suspend_cnt = suspend_cnt | 1; /*< suspend */
     /* Terminated but not joined yet, or in do-blocking state.  */
     UNLOCK();
     return;
@@ -745,7 +745,7 @@ GC_resume_thread(GC_SUSPEND_THREAD_ID thread)
   if (t != NULL) {
     AO_t suspend_cnt = t->ext_suspend_cnt;
 
-    if ((suspend_cnt & 1) != 0) /* is suspended? */ {
+    if ((suspend_cnt & 1) != 0) { /*< is suspended? */
       GC_ASSERT((GC_stop_count & THREAD_RESTARTED) != 0);
       /* Mark the thread as not suspended - it will be resumed shortly. */
       AO_store(&t->ext_suspend_cnt, suspend_cnt + 1);
@@ -803,8 +803,8 @@ GC_push_all_stacks(void)
   size_t nthreads = 0;
   int i;
   GC_thread p;
-  ptr_t lo; /* stack top (`sp`) */
-  ptr_t hi; /* bottom */
+  ptr_t lo; /*< stack top (`sp`) */
+  ptr_t hi; /*< bottom */
 #  if defined(E2K) || defined(IA64)
   /* We also need to scan the register backing store.   */
   ptr_t bs_lo, bs_hi;
@@ -900,7 +900,7 @@ GC_push_all_stacks(void)
 #  ifdef STACK_GROWS_UP
       total_size += lo - hi;
 #  else
-      total_size += hi - lo; /* `lo` is not greater than `hi` */
+      total_size += hi - lo; /*< `lo` is not greater than `hi` */
 #  endif
 #  ifdef NACL
       /* Push `reg_storage` as roots, this will cover the reg context. */
@@ -935,7 +935,7 @@ GC_push_all_stacks(void)
         GC_push_all_stack(bs_lo, bs_hi);
       }
 #    endif
-      total_size += bs_hi - bs_lo; /* `bs_lo` is not greater than `bs_hi` */
+      total_size += bs_hi - bs_lo; /*< `bs_lo` is not greater than `bs_hi` */
 #  endif
     }
   }
@@ -1419,7 +1419,7 @@ GC_stop_init(void)
 
   if (sem_init(&GC_suspend_ack_sem, GC_SEM_INIT_PSHARED, 0) == -1)
     ABORT("sem_init failed");
-  GC_stop_count = THREAD_RESTARTED; /* i.e. the world is not stopped */
+  GC_stop_count = THREAD_RESTARTED; /*< i.e. the world is not stopped */
 
   if (sigfillset(&act.sa_mask) != 0) {
     ABORT("sigfillset failed");

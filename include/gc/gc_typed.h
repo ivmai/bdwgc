@@ -118,7 +118,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_CALLOC_SIZE(1, 2) void *GC_CALL
                                GC_descr /* d */);
 
 #define GC_CALLOC_TYPED_DESCR_PTRS 1
-#define GC_CALLOC_TYPED_DESCR_WORDS 8 /* includes space for pointers */
+#define GC_CALLOC_TYPED_DESCR_WORDS 8 /*< includes space for pointers */
 
 #ifdef GC_BUILD
 struct GC_calloc_typed_descr_s;

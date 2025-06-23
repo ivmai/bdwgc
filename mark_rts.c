@@ -146,7 +146,7 @@ GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
   /* takes to scan the roots.                               */
   {
     size_t i;
-    struct roots *old = NULL; /* initialized to prevent warning */
+    struct roots *old = NULL; /*< initialized to prevent warning */
 
     for (i = 0; i < n_root_sets; i++) {
       old = GC_static_roots + i;
@@ -454,7 +454,7 @@ GC_API int GC_CALL
 GC_is_tmp_root(void *p)
 {
 #  ifndef HAS_REAL_READER_LOCK
-  static size_t last_root_set; /* initialized to 0; no shared access */
+  static size_t last_root_set; /*< initialized to 0; no shared access */
 #  elif defined(AO_HAVE_load) || defined(AO_HAVE_store)
   static volatile AO_t last_root_set;
 #  else
@@ -607,7 +607,7 @@ GC_exclude_static_roots(void *b, void *e)
 #if ALIGNMENT > 1
   b = PTR_ALIGN_DOWN((ptr_t)b, ALIGNMENT);
   e = EXPECT(ADDR(e) > ~(word)(ALIGNMENT - 1), FALSE)
-          ? PTR_ALIGN_DOWN((ptr_t)e, ALIGNMENT) /* overflow */
+          ? PTR_ALIGN_DOWN((ptr_t)e, ALIGNMENT) /*< overflow */
           : PTR_ALIGN_UP((ptr_t)e, ALIGNMENT);
 #endif
 

@@ -146,7 +146,7 @@ typedef struct thread_local_freelists *GC_tlfs;
 /* destructor from being called repeatedly.                             */
 #    define GC_remove_specific(key) (void)pthread_setspecific(key, NULL)
 #    define GC_remove_specific_after_fork(key, t) \
-      (void)0 /* no action needed */
+      (void)0 /*< no action needed */
 typedef pthread_key_t GC_key_t;
 #  elif defined(USE_COMPILER_TLS) || defined(USE_WIN32_COMPILER_TLS)
 #    define GC_getspecific(x) (x)
@@ -202,7 +202,7 @@ void GC_check_tsd_marks(tsd *key);
 #  endif /* GC_ASSERTIONS */
 
 #  ifndef GC_ATTR_TLS_FAST
-#    define GC_ATTR_TLS_FAST /* empty */
+#    define GC_ATTR_TLS_FAST /*< empty */
 #  endif
 
 /* This is set up by `GC_init_thread_local()`.  No need for cleanup on  */

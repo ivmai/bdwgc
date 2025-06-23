@@ -18,7 +18,7 @@
 #include "private/gc_pmark.h"
 
 #ifndef GC_NO_FINALIZATION
-#  include "gc/javaxfc.h" /* to get `GC_finalize_all()` as `extern "C"` */
+#  include "gc/javaxfc.h" /*< to get `GC_finalize_all()` as `extern "C"` */
 
 /* Type of mark procedure used for marking from finalizable object.     */
 /* This procedure normally does not mark the object, only its           */
@@ -37,11 +37,11 @@ struct hash_chain_entry {
 
 struct disappearing_link {
   struct hash_chain_entry prolog;
-#  define dl_hidden_link prolog.hidden_key /* field to be cleared */
+#  define dl_hidden_link prolog.hidden_key /*< field to be cleared */
 #  define dl_next(x) (struct disappearing_link *)((x)->prolog.next)
 #  define dl_set_next(x, y) \
     (void)((x)->prolog.next = (struct hash_chain_entry *)(y))
-  GC_hidden_pointer dl_hidden_obj; /* pointer to object base */
+  GC_hidden_pointer dl_hidden_obj; /*< pointer to object base */
 };
 
 struct finalizable_object {
@@ -51,10 +51,10 @@ struct finalizable_object {
 #  define fo_hidden_base prolog.hidden_key
 #  define fo_next(x) (struct finalizable_object *)((x)->prolog.next)
 #  define fo_set_next(x, y) ((x)->prolog.next = (struct hash_chain_entry *)(y))
-  GC_finalization_proc fo_fn;          /* the finalizer */
-  finalization_mark_proc fo_mark_proc; /* mark-through procedure */
+  GC_finalization_proc fo_fn;          /*< the finalizer */
+  finalization_mark_proc fo_mark_proc; /*< mark-through procedure */
   ptr_t fo_client_data;
-  size_t fo_object_sz; /* in bytes */
+  size_t fo_object_sz; /*< in bytes */
 };
 
 #  ifdef AO_HAVE_store
@@ -142,7 +142,7 @@ GC_grow_table(struct hash_chain_entry ***table_ptr, unsigned *log_size_ptr,
   }
   *log_size_ptr = log_new_size;
   *table_ptr = new_table;
-  GC_dirty(new_table); /* entire object */
+  GC_dirty(new_table); /*< entire object */
 }
 
 GC_API int GC_CALL
@@ -370,7 +370,7 @@ GC_process_togglerefs(void)
     GC_toggleref_array_size = new_size;
   }
   if (needs_barrier)
-    GC_dirty(GC_toggleref_arr); /* entire object */
+    GC_dirty(GC_toggleref_arr); /*< entire object */
 }
 
 STATIC void GC_normal_finalize_mark_proc(ptr_t);
@@ -609,7 +609,7 @@ GC_move_disappearing_link_inner(struct dl_hashtbl_s *dl_hashtbl, void **link,
   dl_set_next(curr_dl, dl_hashtbl->head[new_index]);
   dl_hashtbl->head[new_index] = curr_dl;
   GC_dirty(curr_dl);
-  GC_dirty(dl_hashtbl->head); /* entire object */
+  GC_dirty(dl_hashtbl->head); /*< entire object */
   return GC_SUCCESS;
 }
 
@@ -735,7 +735,7 @@ GC_register_finalizer_inner(void *obj, GC_finalization_proc fn, void *cd,
   struct finalizable_object *curr_fo;
   size_t index;
   struct finalizable_object *new_fo = 0;
-  const hdr *hhdr = NULL; /* initialized to prevent warning */
+  const hdr *hhdr = NULL; /*< initialized to prevent warning */
 
   GC_ASSERT(GC_is_initialized);
   if (EXPECT(GC_find_leak_inner, FALSE)) {
@@ -957,7 +957,7 @@ GC_dump_finalization(void)
 #  endif /* !NO_DEBUGGING */
 
 #  ifndef SMALL_CONFIG
-STATIC size_t GC_old_dl_entries = 0; /* for stats printing */
+STATIC size_t GC_old_dl_entries = 0; /*< for stats printing */
 #    ifndef GC_LONG_REFS_NOT_NEEDED
 STATIC size_t GC_old_ll_entries = 0;
 #    endif
@@ -1040,7 +1040,7 @@ GC_make_disappearing_links_disappear(struct dl_hashtbl_s *dl_hashtbl,
     }
   }
   if (needs_barrier)
-    GC_dirty(dl_hashtbl->head); /* entire object */
+    GC_dirty(dl_hashtbl->head); /*< entire object */
 }
 
 /* Cause disappearing links to disappear and unreachable objects to be  */
@@ -1141,7 +1141,7 @@ GC_finalize(void)
     /* using the no-order `fo_mark_proc`.                               */
     for (curr_fo = GC_fnlz_roots.finalize_now; curr_fo != NULL;
          curr_fo = fo_next(curr_fo)) {
-      real_ptr = (ptr_t)curr_fo->fo_hidden_base; /* revealed */
+      real_ptr = (ptr_t)curr_fo->fo_hidden_base; /*< revealed */
       if (!GC_is_marked(real_ptr)) {
         if (curr_fo->fo_mark_proc == GC_null_finalize_mark_proc) {
           GC_mark_fo(real_ptr, GC_normal_finalize_mark_proc);
@@ -1163,7 +1163,7 @@ GC_finalize(void)
         if (curr_fo->fo_mark_proc != GC_unreachable_finalize_mark_proc)
           continue;
 
-        real_ptr = (ptr_t)curr_fo->fo_hidden_base; /* revealed */
+        real_ptr = (ptr_t)curr_fo->fo_hidden_base; /*< revealed */
         if (!GC_is_marked(real_ptr)) {
           GC_set_mark_bit(real_ptr);
           continue;
@@ -1189,7 +1189,7 @@ GC_finalize(void)
     }
   }
   if (needs_barrier)
-    GC_dirty(GC_fnlz_roots.fo_head); /* entire object */
+    GC_dirty(GC_fnlz_roots.fo_head); /*< entire object */
 
   /* Remove dangling disappearing links. */
   GC_make_disappearing_links_disappear(&GC_dl_hashtbl, TRUE);
@@ -1333,7 +1333,7 @@ GC_API int GC_CALL
 GC_invoke_finalizers(void)
 {
   int count = 0;
-  word bytes_freed_before = 0; /* initialized to prevent warning */
+  word bytes_freed_before = 0; /*< initialized to prevent warning */
 
   GC_ASSERT(I_DONT_HOLD_LOCK());
   while (GC_should_invoke_finalizers()) {
@@ -1359,7 +1359,7 @@ GC_invoke_finalizers(void)
     SET_FINALIZE_NOW(fo_next(curr_fo));
     UNLOCK();
     fo_set_next(curr_fo, 0);
-    real_ptr = (ptr_t)curr_fo->fo_hidden_base; /* revealed */
+    real_ptr = (ptr_t)curr_fo->fo_hidden_base; /*< revealed */
     curr_fo->fo_fn(real_ptr, curr_fo->fo_client_data);
     curr_fo->fo_client_data = NULL;
     ++count;
@@ -1391,7 +1391,7 @@ GC_notify_or_invoke_finalizers(void)
 {
   GC_finalizer_notifier_proc notifier_fn = 0;
 #  if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
-  static word last_back_trace_gc_no = 1; /* skip first one */
+  static word last_back_trace_gc_no = 1; /*< skip first one */
 #  endif
 
 #  if defined(THREADS) && !defined(KEEP_BACK_PTRS) && !defined(MAKE_BACK_GRAPH)

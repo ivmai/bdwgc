@@ -86,8 +86,8 @@ GC_realloc(void *p, size_t lb)
 #else
 #  define cleared_p p
 #endif
-  size_t sz;      /* current size in bytes */
-  size_t orig_sz; /* original `sz` (in bytes) */
+  size_t sz;      /*< current size in bytes */
+  size_t orig_sz; /*< original `sz` (in bytes) */
   int obj_kind;
 
   if (NULL == p) {
@@ -117,7 +117,7 @@ GC_realloc(void *p, size_t lb)
     GC_ASSERT(sz >= HBLKSIZE);
     if (EXTRA_BYTES != 0 && (hhdr->hb_flags & IGNORE_OFF_PAGE) != 0
         && obj_kind == NORMAL)
-      descr += ALIGNMENT; /* or set to 0 */
+      descr += ALIGNMENT; /*< or set to 0 */
 #endif
     if (ok->ok_relocate_descr) {
       descr += sz;
@@ -408,7 +408,7 @@ GC_generic_malloc_many(size_t lb_adjusted, int kind, void **result)
     struct hblk *h
         = GC_allochblk(lb_adjusted, kind, 0 /* `flags` */, 0 /* `align_m1` */);
 
-    if (h /* `!= NULL` */) { /* CPPCHECK */
+    if (h /* `!= NULL` */) { /*< CPPCHECK */
       if (IS_UNCOLLECTABLE(kind))
         GC_set_hdr_marks(HDR(h));
       GC_bytes_allocd += HBLKSIZE - (HBLKSIZE % lb_adjusted);
@@ -487,7 +487,7 @@ GC_API int GC_CALL
 GC_posix_memalign(void **memptr, size_t align, size_t lb)
 {
   void *p;
-  size_t align_minus_one = align - 1; /* to workaround a cppcheck warning */
+  size_t align_minus_one = align - 1; /*< to workaround a cppcheck warning */
 
   /* Check alignment properly.  */
   if (EXPECT(align < sizeof(void *) || (align_minus_one & align) != 0,
@@ -508,7 +508,7 @@ GC_posix_memalign(void **memptr, size_t align, size_t lb)
 #endif
   }
   *memptr = p;
-  return 0; /* success */
+  return 0; /*< success */
 }
 
 #ifndef GC_NO_VALLOC
@@ -575,7 +575,7 @@ GC_strndup(const char *str, size_t size)
 }
 
 #ifdef GC_REQUIRE_WCSDUP
-#  include <wchar.h> /* for `wcslen()` */
+#  include <wchar.h> /*< for `wcslen()` */
 
 GC_API GC_ATTR_MALLOC wchar_t *GC_CALL
 GC_wcsdup(const wchar_t *str)
@@ -620,7 +620,7 @@ GC_change_stubborn(const void *p)
 GC_API void GC_CALL
 GC_end_stubborn_change(const void *p)
 {
-  GC_dirty(p); /* entire object */
+  GC_dirty(p); /*< entire object */
 }
 
 GC_API void GC_CALL

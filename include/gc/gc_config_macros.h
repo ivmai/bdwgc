@@ -26,7 +26,7 @@
 #    define GC_GNUC_PREREQ(major, minor) \
       ((__GNUC__ << 8) + __GNUC_MINOR__ >= ((major) << 8) + (minor))
 #  else
-#    define GC_GNUC_PREREQ(major, minor) 0 /* false */
+#    define GC_GNUC_PREREQ(major, minor) 0 /*< false */
 #  endif
 
 /* A macro to define integer types of a pointer size.  There seems to   */
@@ -131,7 +131,7 @@
 #      define GC_FREEBSD_THREADS
 #    elif defined(__NetBSD__)
 #      define GC_NETBSD_THREADS
-#    elif defined(__alpha) || defined(__alpha__) /* and not Linux or xBSD */
+#    elif defined(__alpha) || defined(__alpha__) /*< not Linux, not xBSD */
 #      define GC_OSF1_THREADS
 #    elif (defined(mips) || defined(__mips) || defined(_mips))        \
         && !(defined(nec_ews) || defined(_nec_ews) || defined(ultrix) \
@@ -192,7 +192,7 @@
       && defined(__LP64__)
 /* Workaround "__stdcall__ ignored for this target" clang warning.  */
 /* Note: `__stdcall` is defined implicitly based on `__stdcall__`.  */
-#    define __stdcall__ /* empty */
+#    define __stdcall__ /*< empty */
 #  endif
 
 #  define __GC
@@ -206,7 +206,7 @@
 #    endif
 #  else
 /* Yet more kludges for WinCE.        */
-#    include <stdlib.h> /* for `size_t` */
+#    include <stdlib.h> /*< for `size_t` */
 #    ifndef _PTRDIFF_T_DEFINED
 /* `ptrdiff_t` is not defined. */
 #      define _PTRDIFF_T_DEFINED
@@ -289,7 +289,7 @@ typedef long ptrdiff_t;
 /* by using custom `GC_oom_func`, then the client should define         */
 /* `GC_OOM_FUNC_RETURNS_ALIAS` macro.                                   */
 #    ifdef GC_OOM_FUNC_RETURNS_ALIAS
-#      define GC_ATTR_MALLOC /* empty */
+#      define GC_ATTR_MALLOC /*< empty */
 #    elif GC_GNUC_PREREQ(3, 1)
 #      define GC_ATTR_MALLOC __attribute__((__malloc__))
 #    elif defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(__EDG__)
@@ -311,26 +311,26 @@ typedef long ptrdiff_t;
           __attribute__((__alloc_size__(argnum)))
 #        define GC_ATTR_CALLOC_SIZE(n, s) __attribute__((__alloc_size__(n, s)))
 #      else
-#        define GC_ATTR_ALLOC_SIZE(argnum) /* empty */
+#        define GC_ATTR_ALLOC_SIZE(argnum) /*< empty */
 #      endif
 #    elif GC_GNUC_PREREQ(4, 3) && !defined(__ICC)
 #      define GC_ATTR_ALLOC_SIZE(argnum) \
         __attribute__((__alloc_size__(argnum)))
 #      define GC_ATTR_CALLOC_SIZE(n, s) __attribute__((__alloc_size__(n, s)))
 #    else
-#      define GC_ATTR_ALLOC_SIZE(argnum) /* empty */
+#      define GC_ATTR_ALLOC_SIZE(argnum) /*< empty */
 #    endif
 #  endif
 
 #  ifndef GC_ATTR_CALLOC_SIZE
-#    define GC_ATTR_CALLOC_SIZE(n, s) /* empty */
+#    define GC_ATTR_CALLOC_SIZE(n, s) /*< empty */
 #  endif
 
 #  ifndef GC_ATTR_NONNULL
 #    if GC_GNUC_PREREQ(4, 0)
 #      define GC_ATTR_NONNULL(argnum) __attribute__((__nonnull__(argnum)))
 #    else
-#      define GC_ATTR_NONNULL(argnum) /* empty */
+#      define GC_ATTR_NONNULL(argnum) /*< empty */
 #    endif
 #  endif
 
@@ -338,20 +338,20 @@ typedef long ptrdiff_t;
 #    if GC_GNUC_PREREQ(4, 0)
 #      define GC_ATTR_CONST __attribute__((__const__))
 #    else
-#      define GC_ATTR_CONST /* empty */
+#      define GC_ATTR_CONST /*< empty */
 #    endif
 #  endif
 
 #  ifndef GC_ATTR_DEPRECATED
 #    ifdef GC_BUILD
 #      undef GC_ATTR_DEPRECATED
-#      define GC_ATTR_DEPRECATED /* empty */
+#      define GC_ATTR_DEPRECATED /*< empty */
 #    elif GC_GNUC_PREREQ(4, 0)
 #      define GC_ATTR_DEPRECATED __attribute__((__deprecated__))
 #    elif defined(_MSC_VER) && _MSC_VER >= 1200
 #      define GC_ATTR_DEPRECATED __declspec(deprecated)
 #    else
-#      define GC_ATTR_DEPRECATED /* empty */
+#      define GC_ATTR_DEPRECATED /*< empty */
 #    endif
 #  endif
 
@@ -374,10 +374,10 @@ typedef long ptrdiff_t;
 #    endif
 #  endif /* GLIBC */
 
-#  if defined(_MSC_VER) && _MSC_VER >= 1200 /* version 12.0+ (MSVC 6.0+) */ \
-      && !defined(_M_ARM) && !defined(_M_ARM64) && !defined(_AMD64_)        \
-      && !defined(_M_X64) && !defined(_WIN32_WCE)                           \
-      && !defined(GC_HAVE_NO_BUILTIN_BACKTRACE)                             \
+#  if defined(_MSC_VER) && (_MSC_VER >= 1200 /* v12.0+ (MSVC 6.0+) */) \
+      && !defined(_M_ARM) && !defined(_M_ARM64) && !defined(_AMD64_)   \
+      && !defined(_M_X64) && !defined(_WIN32_WCE)                      \
+      && !defined(GC_HAVE_NO_BUILTIN_BACKTRACE)                        \
       && !defined(GC_HAVE_BUILTIN_BACKTRACE)
 #    define GC_HAVE_BUILTIN_BACKTRACE
 #  endif
@@ -442,11 +442,11 @@ typedef long ptrdiff_t;
 /* `const` for its `attr` argument; also, NaCl `pthread_exit()` one */
 /* does not have `noreturn` attribute.                              */
 #      ifndef GC_PTHREAD_CREATE_CONST
-#        define GC_PTHREAD_CREATE_CONST /* empty */
+#        define GC_PTHREAD_CREATE_CONST /*< empty */
 #      endif
 #      ifndef GC_HAVE_PTHREAD_EXIT
 #        define GC_HAVE_PTHREAD_EXIT
-#        define GC_PTHREAD_EXIT_ATTRIBUTE /* empty */
+#        define GC_PTHREAD_EXIT_ATTRIBUTE /*< empty */
 #      endif
 #    endif
 
@@ -458,10 +458,10 @@ typedef long ptrdiff_t;
 #      define GC_HAVE_PTHREAD_EXIT
 #      if GC_GNUC_PREREQ(2, 7)
 #        define GC_PTHREAD_EXIT_ATTRIBUTE __attribute__((__noreturn__))
-#      elif defined(__NORETURN) /* used in Solaris */
+#      elif defined(__NORETURN) /*< used in Solaris */
 #        define GC_PTHREAD_EXIT_ATTRIBUTE __NORETURN
 #      else
-#        define GC_PTHREAD_EXIT_ATTRIBUTE /* empty */
+#        define GC_PTHREAD_EXIT_ATTRIBUTE /*< empty */
 #      endif
 #    endif
 
@@ -480,7 +480,7 @@ typedef long ptrdiff_t;
           || _MSVC_LANG >= 201103L || defined(CPPCHECK)
 #        define GC_ATTR_EXPLICIT explicit
 #      else
-#        define GC_ATTR_EXPLICIT /* empty */
+#        define GC_ATTR_EXPLICIT /*< empty */
 #      endif
 #    endif
 
@@ -492,7 +492,7 @@ typedef long ptrdiff_t;
           || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) \
               && !_HAS_EXCEPTIONS)                          \
           || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
-#        define GC_NOEXCEPT /* empty */
+#        define GC_NOEXCEPT /*< empty */
 #        ifndef GC_NEW_ABORTS_ON_OOM
 #          define GC_NEW_ABORTS_ON_OOM
 #        endif
@@ -507,7 +507,7 @@ typedef long ptrdiff_t;
 #      if __cplusplus >= 202002L
 #        define GC_CONSTEXPR constexpr
 #      else
-#        define GC_CONSTEXPR /* empty */
+#        define GC_CONSTEXPR /*< empty */
 #      endif
 #    endif
 

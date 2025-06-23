@@ -29,7 +29,7 @@
 #include <string.h>
 
 #ifdef GC_PTHREADS
-#  include <errno.h> /* for `EAGAIN`, `EBUSY` */
+#  include <errno.h> /*< for `EAGAIN`, `EBUSY` */
 #  include <pthread.h>
 #endif
 
@@ -46,7 +46,7 @@ static GC_RAND_STATE_T seed;
 /* This excludes the main thread, which also runs a test.   */
 #    define NTHREADS 5
 #  endif
-#  include "private/gc_atomic_ops.h" /* for `AO_t`, `AO_fetch_and_add1` */
+#  include "private/gc_atomic_ops.h" /*< for `AO_t`, `AO_fetch_and_add1` */
 #else
 #  undef NTHREADS
 #  define NTHREADS 0

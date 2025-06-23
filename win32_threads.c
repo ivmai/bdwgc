@@ -36,7 +36,7 @@ GC_INNER CRITICAL_SECTION GC_allocate_ml;
 
 #  if !defined(GC_PTHREADS) && !defined(MSWINCE)
 #    include <errno.h>
-#    include <process.h> /* for `_beginthreadex`, `_endthreadex` */
+#    include <process.h> /*< for `_beginthreadex`, `_endthreadex` */
 #  endif
 
 static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext);
@@ -273,7 +273,7 @@ GC_register_my_thread_inner(const struct GC_stack_base *sb,
   if (GC_win32_dll_threads) {
     if (GC_please_stop) {
       AO_store(&GC_attached_thread, TRUE);
-      AO_nop_full(); /* later updates must become visible after this */
+      AO_nop_full(); /*< later updates must become visible after this */
     }
     /* We would like to wait here, but cannot, since waiting in         */
     /* `DllMain()` provokes deadlocks.  Thus we force marking to be     */
@@ -426,7 +426,7 @@ GC_suspend(GC_thread t)
   /* `SuspendThread()` will fail if thread is running kernel code. */
   while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1) {
     GC_release_dirty_lock();
-    Sleep(10); /* in millis */
+    Sleep(10); /*< in millis */
     GC_acquire_dirty_lock();
   }
 #  elif defined(RETRY_GET_THREAD_CONTEXT)
@@ -502,7 +502,7 @@ GC_suspend(GC_thread t)
     }
     if (retry_cnt > 1) {
       GC_release_dirty_lock();
-      Sleep(0); /* yield */
+      Sleep(0); /*< yield */
 #    ifndef GC_NO_THREADS_DISCOVERY
       if (NULL == GC_cptr_load_acquire(&t->handle))
         return;
@@ -821,7 +821,7 @@ copy_ptr_regs(word *regs, const CONTEXT *pcontext)
   sp = (ptr_t)context.IntSp;
 #  elif defined(CPPCHECK)
   GC_noop1_ptr(regs);
-  sp = (ptr_t)(word)cnt; /* to workaround "cnt not used" false positive */
+  sp = (ptr_t)(word)cnt; /*< to workaround "cnt not used" false positive */
 #  else
 #    error Architecture is not supported
 #  endif
@@ -1489,7 +1489,7 @@ GC_win32_start_inner(struct GC_stack_base *sb, void *arg)
   /* This is probably pointless, since an uncaught exception is       */
   /* supposed to result in the process being killed.                  */
 #  ifndef NO_SEH_AVAILABLE
-  ret = NULL; /* to avoid "might be uninitialized" compiler warning */
+  ret = NULL; /*< to avoid "might be uninitialized" compiler warning */
   __try
 #  endif
   {

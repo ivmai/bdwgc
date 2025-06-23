@@ -43,7 +43,7 @@
 
 #ifndef GC_ASSERT
 #  ifdef NDEBUG
-#    define GC_ASSERT(expr) /* empty */
+#    define GC_ASSERT(expr) (void)0
 #  else
 #    include <assert.h>
 #    define GC_ASSERT(expr) assert(expr)
@@ -56,7 +56,7 @@
 #    define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1 /* write */)
 #  elif defined(_MSC_VER) && !defined(GC_NO_PREFETCH_FOR_WRITE)         \
       && (defined(_M_IX86) || defined(_M_X64)) && !defined(_CHPE_ONLY_) \
-      && (_MSC_VER >= 1900) /* VS 2015+ */
+      && (_MSC_VER >= 1900 /* VS 2015+ */)
 #    include <intrin.h>
 #    define GC_PREFETCH_FOR_WRITE(x) _m_prefetchw(x)
 /* TODO: Support also `_M_ARM` (`__prefetchw`). */
@@ -176,7 +176,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
         /* Entry contains counter or `NULL`. */                          \
         if ((GC_signed_word)(GC_uintptr_t)my_entry                       \
                     - (GC_signed_word)(num_direct)                       \
-                <= 0 /* `(GC_uintptr_t)my_entry <= num_direct` */        \
+                <= 0 /*< `(GC_uintptr_t)my_entry <= num_direct` */       \
             && my_entry != 0 /* NULL */) {                               \
           /* Small counter value, not `NULL`. */                         \
           GC_FAST_M_AO_STORE(my_fl, (char *)my_entry + (lg) + 1);        \

@@ -101,14 +101,14 @@ typedef struct {
   GC_hidden_pointer oh_back_ptr;
   GC_hidden_pointer oh_bg_ptr;
 #endif
-  const char *oh_string; /* object descriptor string (file name)    */
-  GC_signed_word oh_int; /* object descriptor integer (line number) */
+  const char *oh_string; /*< object descriptor string (file name) */
+  GC_signed_word oh_int; /*< object descriptor integer (line number) */
 #ifdef NEED_CALLINFO
   struct callinfo oh_ci[NFRAMES];
 #endif
 #ifndef SHORT_DBG_HDRS
-  GC_uintptr_t oh_sz; /* the original `malloc` argument */
-  GC_uintptr_t oh_sf; /* the "start" flag (marker) */
+  GC_uintptr_t oh_sz; /*< the original `malloc` argument */
+  GC_uintptr_t oh_sf; /*< the "start" flag (marker) */
 #endif
 } oh;
 

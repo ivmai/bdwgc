@@ -550,7 +550,7 @@ GC_register_dynlib_callback(struct dl_phdr_info *info, size_t size, void *ptr)
   /* Make sure `dl_phdr_info` structure is at least as big as we need. */
   if (size
       < offsetof(struct dl_phdr_info, dlpi_phnum) + sizeof(info->dlpi_phnum))
-    return 1; /* stop */
+    return 1; /*< stop */
 
   load_ptr = (ptr_t)info->dlpi_addr;
   p = info->dlpi_phdr;
@@ -1164,7 +1164,7 @@ GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *phdr)
       return _dyld_get_image_name(i);
   }
   /* TODO: probably `ABORT` in this case? */
-  return NULL; /* not found */
+  return NULL; /*< not found */
 }
 
 /* `getsectbynamefromheader` is deprecated (first time in macOS 13.0),  */
@@ -1212,7 +1212,7 @@ dyld_section_add_del(const struct GC_MACH_HEADER *phdr, intptr_t slide,
     if (EXPECT(callback != 0, FALSE)
         && !callback(dlpi_name, start, (size_t)sec_size)) {
       UNLOCK();
-      return; /* skip section */
+      return; /*< skip section */
     }
     GC_add_roots_inner(start, finish, FALSE);
     UNLOCK();

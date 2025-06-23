@@ -34,7 +34,7 @@ main(void)
 
 #else
 
-#  include <errno.h> /* for `EAGAIN` */
+#  include <errno.h> /*< for `EAGAIN` */
 #  include <pthread.h>
 #  include <string.h>
 

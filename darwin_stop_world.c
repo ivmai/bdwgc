@@ -90,7 +90,7 @@ GC_FindTopOfStack(unsigned long stack_start)
 #    ifdef DEBUG_THREADS_EXTRA
   GC_log_printf("FindTopOfStack start at sp= %p\n", (void *)frame);
 #    endif
-  while (frame->savedSP != 0) { /* stop if no more stack frames */
+  while (frame->savedSP != 0) { /*< stop if no more stack frames */
     unsigned long maskedLR;
 
 #    ifdef CPPCHECK
@@ -308,7 +308,7 @@ GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #  elif defined(ARM32)
     lo = (ptr_t)state.THREAD_FLD(sp);
 #    ifndef DARWIN_DONT_PARSE_STACK
-    *phi = GC_FindTopOfStack(state.THREAD_FLD(r[7])); /* `fp` */
+    *phi = GC_FindTopOfStack(state.THREAD_FLD(r[7])); /*< `fp` */
 #    endif
     {
       int j;
@@ -505,7 +505,7 @@ GC_suspend_thread_list(thread_act_array_t act_list, int count,
         || (GC_mach_handler_thread == thread && GC_use_mach_handler_thread)
 #    endif
 #    ifdef PARALLEL_MARK
-        || GC_is_mach_marker(thread) /* ignore the parallel markers */
+        || GC_is_mach_marker(thread) /*< ignore the parallel markers */
 #    endif
     ) {
       /* Do not add our one, parallel marker and the handler threads;   */

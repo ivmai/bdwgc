@@ -62,7 +62,7 @@ GC_API void *GC_dlopen(const char * /* `path` */, int /* `mode` */);
           || defined(GC_HAVE_PTHREAD_SIGMASK) || defined(_BSD_SOURCE)     \
           || defined(_GNU_SOURCE) || defined(_NETBSD_SOURCE)              \
           || (_POSIX_C_SOURCE >= 199506L) || (_XOPEN_SOURCE >= 500)       \
-          || (__POSIX_VISIBLE >= 199506) /* xBSD internal macro */
+          || (__POSIX_VISIBLE >= 199506) /*< xBSD internal macro */
 
 GC_API int GC_pthread_sigmask(int /* `how` */, const sigset_t *,
                               sigset_t * /* `oset` */);

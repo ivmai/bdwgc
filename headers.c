@@ -17,7 +17,7 @@
 #include "private/gc_priv.h"
 
 #if defined(KEEP_BACK_PTRS) && defined(GC_ASSERTIONS)
-#  include "private/dbg_mlc.h" /* for `NOT_MARKED` */
+#  include "private/dbg_mlc.h" /*< for `NOT_MARKED` */
 #endif
 
 /*
@@ -221,7 +221,7 @@ get_index(word addr)
   bottom_index *r;
   bottom_index *p;
   bottom_index **prev;
-  bottom_index *pi; /* `old_p` */
+  bottom_index *pi; /*< `old_p` */
   word i;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -247,9 +247,9 @@ get_index(word addr)
 #endif
 
   /* Add it to the list of bottom indices.    */
-  prev = &GC_all_bottom_indices; /* pointer to `p` */
+  prev = &GC_all_bottom_indices; /*< pointer to `p` */
 
-  pi = NULL; /* `bottom_index` preceding `p` */
+  pi = NULL; /*< `bottom_index` preceding `p` */
   while ((p = *prev) != 0 && p->key < hi) {
     pi = p;
     prev = &p->asc_link;

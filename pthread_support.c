@@ -474,7 +474,7 @@ unsigned __stdcall GC_mark_thread(void *id)
   IF_CANCEL(int cancel_state;)
 
   if (id_n == GC_WORD_MAX)
-    return 0; /* to prevent a compiler warning */
+    return 0; /*< to prevent a compiler warning */
 
   /* Mark threads are not cancellable; they should be invisible to    */
   /* client.                                                          */
@@ -581,7 +581,7 @@ GC_start_mark_threads_inner(void)
 #    endif
 
   GC_ASSERT(0 == GC_fl_builder_count);
-  INIT_REAL_SYMS(); /* for `pthread_create` */
+  INIT_REAL_SYMS(); /*< for `pthread_create` */
 
   if (pthread_attr_init(&attr) != 0)
     ABORT("pthread_attr_init failed");
@@ -735,7 +735,7 @@ GC_count_threads(void)
 
 #    if !defined(GC_NO_THREADS_DISCOVERY) && defined(GC_WIN32_THREADS)
   if (GC_win32_dll_threads)
-    return -1; /* not implemented */
+    return -1; /*< not implemented */
 #    endif
   GC_ASSERT(I_HOLD_READER_LOCK());
   for (i = 0; i < THREAD_TABLE_SZ; ++i) {
@@ -780,7 +780,7 @@ GC_new_thread(thread_id_t self_id)
 
     GC_ASSERT(!GC_win32_dll_threads);
     GC_ASSERT(!GC_in_thread_creation);
-    GC_in_thread_creation = TRUE; /* OK to collect from unknown thread */
+    GC_in_thread_creation = TRUE; /*< OK to collect from unknown thread */
     crtn = (GC_stack_context_t)GC_INTERNAL_MALLOC(
         sizeof(struct GC_StackContext_Rep), NORMAL);
 
@@ -1118,13 +1118,13 @@ GC_get_nprocs(void)
   /* Should be just `return sysconf(_SC_NPROCESSORS_ONLN)` but that     */
   /* appears to be buggy in many cases.  We look for lines "cpu<N>" in  */
   /* `/proc/stat` pseudo-file.                                          */
-#    define PROC_STAT_BUF_SZ ((1 + MAX_MARKERS) * 100) /* should be enough */
   /* No need to read the entire `/proc/stat` pseudo-file to get maximum */
   /* "cpu<N>" such as:                                                  */
   /* - the requested lines are located at the beginning of the file;    */
   /* - the lines with "cpu<N>" where `N` is greater than `MAX_MARKERS`  */
   /*   are not needed.                                                  */
-  char stat_buf[PROC_STAT_BUF_SZ + 1];
+#    define PROC_STAT_BUF_SZ ((1 + MAX_MARKERS) * 100)
+  char stat_buf[PROC_STAT_BUF_SZ + 1]; /*< the size should be enough */
   int f;
   int result, i, len;
 
@@ -1246,7 +1246,7 @@ GC_get_nprocs_present(void)
 #  endif /* LINUX && ARM32 */
 
 #  if defined(CAN_HANDLE_FORK) && defined(THREAD_SANITIZER)
-#    include "private/gc_pmark.h" /* for `MS_NONE` */
+#    include "private/gc_pmark.h" /*< for `MS_NONE` */
 
 /* Workaround for TSan which does not notice that the allocator lock    */
 /* is acquired in `fork_prepare_proc()`.                                */
@@ -1322,7 +1322,7 @@ STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
 /* not safe to call the system `malloc` between `fork` and `exec`.      */
 /* Thus we are doing no worse than it.)                                 */
 
-IF_CANCEL(static int fork_cancel_state;) /* protected by the allocator lock */
+IF_CANCEL(static int fork_cancel_state;) /*< protected by the allocator lock */
 
 #    ifdef PARALLEL_MARK
 #      ifdef THREAD_SANITIZER
@@ -2055,7 +2055,7 @@ GC_do_blocking_inner(ptr_t data, void *context)
   do_blocking_enter(&topOfStackUnset, me);
   READER_UNLOCK_RELEASE();
 
-  ((struct blocking_data *)data)->client_data /* result */
+  ((struct blocking_data *)data)->client_data /*< result */
       = ((struct blocking_data *)data)
             ->fn(((struct blocking_data *)data)->client_data);
 
@@ -2147,7 +2147,7 @@ GC_set_stackbottom(void *gc_thread_handle, const struct GC_stack_base *sb)
   GC_ASSERT(!KNOWN_FINISHED(t));
   crtn = t->crtn;
   GC_ASSERT((t->flags & DO_BLOCKING) == 0
-            && NULL == crtn->traced_stack_sect); /* for now */
+            && NULL == crtn->traced_stack_sect); /*< for now */
 
   crtn->stack_end = (ptr_t)sb->mem_base;
 #  ifdef E2K
@@ -2179,7 +2179,7 @@ GC_get_my_stackbottom(struct GC_stack_base *sb)
   sb->reg_base = crtn->backing_store_end;
 #  endif
   READER_UNLOCK();
-  return me; /* `gc_thread_handle` */
+  return me; /*< `gc_thread_handle` */
 }
 
 /* `GC_call_with_gc_active()` has the opposite to `GC_do_blocking()`    */
@@ -2224,7 +2224,7 @@ GC_call_with_gc_active(GC_fn_type fn, void *client_data)
     client_data = (*(GC_fn_type volatile *)&fn)(client_data);
     /* Prevent treating the above as a tail call.     */
     GC_noop1(COVERT_DATAFLOW(ADDR(&stacksect)));
-    return client_data; /* result */
+    return client_data; /*< result */
   }
 
 #  if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
@@ -2288,7 +2288,7 @@ GC_call_with_gc_active(GC_fn_type fn, void *client_data)
   me->flags |= DO_BLOCKING;
   crtn->stack_ptr = stacksect.saved_stack_ptr;
   READER_UNLOCK_RELEASE();
-  return client_data; /* result */
+  return client_data; /*< result */
 }
 
 STATIC void
@@ -2486,7 +2486,7 @@ GC_register_my_thread(const struct GC_stack_base *sb)
       me->mach_thread = mach_thread_self();
 #    endif
       GC_record_stack_base(me->crtn, sb);
-      me->flags &= (unsigned char)~FINISHED; /* but not `DETACHED` */
+      me->flags &= (unsigned char)~FINISHED; /*< but not `DETACHED` */
     } else
 #  endif
     /* else */ {
@@ -3202,7 +3202,7 @@ GC_get_sp_corrector(void)
   READER_UNLOCK();
   return fn;
 #  else
-  return 0; /* unsupported */
+  return 0; /*< unsupported */
 #  endif
 }
 

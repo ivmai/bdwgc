@@ -22,7 +22,7 @@
 #ifdef AO_HAVE_fetch_and_add1
 
 #  ifdef GC_PTHREADS
-#    include <errno.h> /* for `EAGAIN` */
+#    include <errno.h> /*< for `EAGAIN` */
 #    include <pthread.h>
 #    include <string.h>
 #  else

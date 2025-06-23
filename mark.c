@@ -30,7 +30,7 @@ GC_noop6(word arg1, word arg2, word arg3, word arg4, word arg5, word arg6)
   UNUSED_ARG(arg6);
   /* Avoid `GC_noop6` calls to be optimized away. */
 #if defined(AO_HAVE_compiler_barrier) && !defined(BASE_ATOMIC_OPS_EMULATED)
-  AO_compiler_barrier(); /* to serve as a special side-effect */
+  AO_compiler_barrier(); /*< to serve as a special side-effect */
 #else
   GC_noop1(0);
 #endif
@@ -70,18 +70,18 @@ GC_noop1_ptr(volatile void *p)
 /* adjusted in `GC_init()` for `EXTRA_BYTES`.                           */
 GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
   /* `PTRFREE` */
-  { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
+  { &GC_aobjfreelist[0], 0 /*< filled in dynamically */,
     /* `0 |` */ GC_DS_LENGTH, FALSE,
     FALSE
         /*, */ OK_DISCLAIM_INITZ },
   /* `NORMAL` */
   { &GC_objfreelist[0], 0,
-    /* `0 |` */ GC_DS_LENGTH, TRUE /* add length to descriptor template */,
+    /* `0 |` */ GC_DS_LENGTH, TRUE /*< add length to descriptor template */,
     TRUE
         /*, */ OK_DISCLAIM_INITZ },
   /* `UNCOLLECTABLE` */
   { &GC_uobjfreelist[0], 0,
-    /* `0 |` */ GC_DS_LENGTH, TRUE /* add length to descriptor template */,
+    /* `0 |` */ GC_DS_LENGTH, TRUE /*< add length to descriptor template */,
     TRUE
         /*, */ OK_DISCLAIM_INITZ },
 #ifdef GC_ATOMIC_UNCOLLECTABLE
@@ -110,7 +110,7 @@ GC_API void GC_CALL
 GC_set_pointer_mask(GC_word value)
 {
 #ifdef DYNAMIC_POINTER_MASK
-  GC_ASSERT(value >= 0xff); /* a simple sanity check */
+  GC_ASSERT(value >= 0xff); /*< a simple sanity check */
   GC_pointer_mask = value;
 #else
   if (value
@@ -297,7 +297,7 @@ GC_is_marked(const void *p)
   hdr *hhdr = HDR(h);
   size_t bit_no = MARK_BIT_NO((size_t)((ptr_t)p - (ptr_t)h), hhdr->hb_sz);
 
-  return (int)mark_bit_from_hdr(hhdr, bit_no); /* 0 or 1 */
+  return (int)mark_bit_from_hdr(hhdr, bit_no); /*< 0 or 1 */
 }
 
 /* Clear mark bits in all allocated heap blocks.  This invalidates the  */
@@ -681,16 +681,16 @@ GC_ATTR_NO_SANITIZE_ADDR_MEM_THREAD
 GC_INNER mse *
 GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
 {
-  GC_signed_word credit = HBLKSIZE; /* remaining credit for marking work */
+  GC_signed_word credit = HBLKSIZE; /*< remaining credit for marking work */
   word descr;
-  ptr_t current_p; /* pointer to the current candidate pointer */
-  ptr_t q;         /* the candidate pointer itself */
-  ptr_t limit = 0; /* the limit (incl.) of the current candidate range */
+  ptr_t current_p;    /*< pointer to the current candidate pointer */
+  ptr_t q;            /*< the candidate pointer itself */
+  ptr_t limit = NULL; /*< the limit (incl.) of the current candidate range */
   ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
   ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
   DECLARE_HDR_CACHE;
 
-#define SPLIT_RANGE_PTRS 128 /* must be power of 2 */
+#define SPLIT_RANGE_PTRS 128 /*< must be power of 2 */
 
   GC_objects_are_marked = TRUE;
   INIT_HDR_CACHE;
@@ -776,7 +776,7 @@ GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
         }
 #endif
         descr &= ~(word)GC_DS_TAGS;
-        credit -= (GC_signed_word)PTRS_TO_BYTES(CPP_PTRSZ / 2); /* guess */
+        credit -= (GC_signed_word)PTRS_TO_BYTES(CPP_PTRSZ / 2); /*< guess */
         for (; descr != 0; descr <<= 1, current_p += sizeof(ptr_t)) {
           if ((descr & SIGNB) == 0)
             continue;
@@ -1431,7 +1431,7 @@ GC_push_all(void *bottom, void *top)
   }
   length = (word)((ptr_t)top - (ptr_t)bottom);
 #if GC_DS_TAGS > ALIGNMENT - 1
-  length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /* round up */
+  length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /*< round up */
 #endif
   mark_stack_top->mse_start = (ptr_t)bottom;
   mark_stack_top->mse_descr = length | GC_DS_LENGTH;
@@ -1452,7 +1452,7 @@ GC_custom_push_range(void *bottom, void *top,
 
   length = (word)((ptr_t)top - (ptr_t)bottom);
 #if GC_DS_TAGS > ALIGNMENT - 1
-  length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /* round up */
+  length = (length + GC_DS_TAGS) & ~(word)GC_DS_TAGS; /*< round up */
 #endif
   return GC_custom_push_proc(length | GC_DS_LENGTH, bottom, mark_stack_top,
                              mark_stack_limit);
@@ -1657,7 +1657,7 @@ GC_mark_and_push_stack(ptr_t p)
 #ifdef THREADS
   /* Pointer is on the stack.  We may have dirtied the object       */
   /* it points to, but have not called `GC_dirty` yet.              */
-  GC_dirty(p); /* entire object */
+  GC_dirty(p); /*< entire object */
 #endif
   GC_mark_stack_top = GC_push_contents_hdr(
       r, GC_mark_stack_top, GC_mark_stack_limit, source, hhdr, FALSE);
@@ -2021,8 +2021,8 @@ GC_push_marked(struct hblk *h, const hdr *hhdr)
   /* Some quick shortcuts: */
   if ((/* `0 |` */ GC_DS_LENGTH) == hhdr->hb_descr)
     return;
-  if (GC_block_empty(hhdr) /* nothing marked */)
-    return;
+  if (GC_block_empty(hhdr))
+    return; /*< nothing marked */
 
 #if !defined(GC_DISABLE_INCREMENTAL)
   GC_n_rescuing_pages++;
@@ -2044,7 +2044,7 @@ GC_push_marked(struct hblk *h, const hdr *hhdr)
 #    endif
 #  endif /* !UNALIGNED_PTRS */
 #else
-  case 1: /* to suppress "switch statement contains no case" warning */
+  case 1: /*< to suppress "switch statement contains no case" warning */
 #endif
   default:
     plim = sz > MAXOBJBYTES ? h->hb_body

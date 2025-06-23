@@ -280,7 +280,7 @@ setup_header(hdr *hhdr, struct hblk *block, size_t lb_adjusted, int kind,
   /* allocated objects not smaller than `HBLKSIZE`.         */
   if (EXTRA_BYTES != 0 && (flags & IGNORE_OFF_PAGE) != 0 && kind == NORMAL
       && lb_adjusted >= HBLKSIZE)
-    descr += ALIGNMENT; /* or set to 0 */
+    descr += ALIGNMENT; /*< or set to 0 */
 #endif
   if (ok->ok_relocate_descr)
     descr += lb_adjusted;
@@ -394,7 +394,7 @@ GC_free_block_ending_at(struct hblk *h)
 {
   struct hblk *p = get_block_ending_at(h);
 
-  if (p /* `!= NULL` */) { /* CPPCHECK */
+  if (p /* `!= NULL` */) { /*< CPPCHECK */
     const hdr *hhdr = HDR(p);
 
     if (HBLK_IS_FREE(hhdr)) {
@@ -432,7 +432,7 @@ GC_add_to_fl(struct hblk *h, hdr *hhdr)
   GC_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes);
   hhdr->hb_next = second;
   hhdr->hb_prev = NULL;
-  if (second /* `!= NULL` */) { /* CPPCHECK */
+  if (second /* `!= NULL` */) { /*< CPPCHECK */
     hdr *second_hdr;
 
     GET_HDR(second, second_hdr);
@@ -702,7 +702,7 @@ GC_split_block(struct hblk *hbp, hdr *hhdr, struct hblk *last_hbp,
   last_hdr->hb_block = last_hbp;
   last_hdr->hb_sz = hhdr->hb_sz - h_size;
   last_hdr->hb_flags = 0;
-  if (prev /* `!= NULL` */) { /* CPPCHECK */
+  if (prev /* `!= NULL` */) { /*< CPPCHECK */
     HDR(prev)->hb_next = last_hbp;
   } else {
     GC_hblkfreelist[index] = last_hbp;
@@ -800,11 +800,11 @@ next_hblk_fits_better(const hdr *hhdr, size_t size_avail, size_t size_needed,
   struct hblk *next_hbp = hhdr->hb_next;
 
   if (NULL == next_hbp)
-    return FALSE; /* no next block */
+    return FALSE; /*< no next block */
   GET_HDR(next_hbp, nexthdr);
   next_size = nexthdr->hb_sz;
   if (size_avail <= next_size)
-    return FALSE; /* not enough size */
+    return FALSE; /*< not enough size */
 
   next_ofs = ALIGN_PAD_SZ(next_hbp, align_m1);
   return next_size >= size_needed + next_ofs
@@ -832,7 +832,7 @@ find_nonbl_hblk(struct hblk *last_hbp, size_t size_remain,
     last_hbp += divHBLKSZ(ALIGN_PAD_SZ(last_hbp, align_m1));
     next_hbp = GC_is_black_listed(last_hbp, eff_size_needed);
     if (NULL == next_hbp)
-      return last_hbp; /* not black-listed */
+      return last_hbp; /*< not black-listed */
     last_hbp = next_hbp;
   } while (ADDR_GE(search_end, (ptr_t)last_hbp));
   return NULL;
@@ -861,7 +861,7 @@ drop_hblk_in_chunks(size_t n, struct hblk *hbp, hdr *hhdr)
   GC_bytes_dropped += total_size;
   GC_remove_from_fl_at(hhdr, n);
   do {
-    (void)setup_header(hhdr, hbp, HBLKSIZE, PTRFREE, 0); /* cannot fail */
+    (void)setup_header(hhdr, hbp, HBLKSIZE, PTRFREE, 0); /*< cannot fail */
     if (GC_debugging_started)
       BZERO(hbp, HBLKSIZE);
     hbp++;
@@ -869,7 +869,7 @@ drop_hblk_in_chunks(size_t n, struct hblk *hbp, hdr *hhdr)
       break;
 
     hhdr = GC_install_header(hbp);
-  } while (EXPECT(hhdr != NULL, TRUE)); /* no header allocation failure? */
+  } while (EXPECT(hhdr != NULL, TRUE)); /*< no header allocation failure? */
 }
 #endif /* !NO_BLACK_LISTING */
 
@@ -925,7 +925,7 @@ retry:
 #endif
   /* Search for a big enough block in free list.      */
   for (hbp = GC_hblkfreelist[index];; hbp = hhdr->hb_next) {
-    size_t size_avail; /* bytes available in this block */
+    size_t size_avail; /*< bytes available in this block */
     size_t align_ofs;
 
     if (hbp /* `!= NULL` */) {
@@ -933,14 +933,14 @@ retry:
     } else {
       return NULL;
     }
-    GET_HDR(hbp, hhdr); /* set `hhdr` value */
+    GET_HDR(hbp, hhdr); /*< set `hhdr` value */
     size_avail = hhdr->hb_sz;
     if (!may_split && size_avail != size_needed)
       continue;
 
     align_ofs = ALIGN_PAD_SZ(hbp, align_m1);
     if (size_avail < size_needed + align_ofs)
-      continue; /* the block is too small */
+      continue; /*< the block is too small */
 
     if (size_avail != size_needed) {
       /* If the next heap block is obviously better, go on.   */
@@ -955,7 +955,7 @@ retry:
     /* case if page size is larger than the block size).    */
     GC_ASSERT(GC_page_size != 0);
     if (GC_page_size != HBLKSIZE
-        && (!GC_incremental /* not enabled yet */
+        && (!GC_incremental /*< not enabled yet */
             || GC_incremental_protection_needs() != GC_PROTECTS_NONE)
         && is_hblks_mix_in_page(hbp, kind == PTRFREE))
       continue;
@@ -1053,7 +1053,7 @@ retry:
 
   /* Add it to map of valid blocks.   */
   if (EXPECT(!GC_install_counts(hbp, size_needed), FALSE))
-    return NULL; /* This leaks memory under very rare conditions. */
+    return NULL; /*< note: this leaks memory under very rare conditions */
 
   /* Set up the header.       */
   GC_ASSERT(HDR(hbp) == hhdr);
@@ -1063,7 +1063,7 @@ retry:
 #else
   if (EXPECT(!setup_header(hhdr, hbp, lb_adjusted, kind, flags), FALSE)) {
     GC_remove_counts(hbp, size_needed);
-    return NULL; /* ditto */
+    return NULL; /*< ditto */
   }
 #endif
 
@@ -1150,7 +1150,7 @@ GC_freehblk(struct hblk *hbp)
   }
 
   /* Coalesce with predecessor, if possible. */
-  if (prev /* `!= NULL` */) { /* CPPCHECK */
+  if (prev /* `!= NULL` */) { /*< CPPCHECK */
     prevhdr = HDR(prev);
     if (IS_MAPPED(prevhdr)
 #ifdef CHERI_PURECAP

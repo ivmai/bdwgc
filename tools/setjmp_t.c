@@ -97,14 +97,14 @@ main(void)
   register
 #  endif
       int x
-      = (int)strlen(a_str); /* 1, slightly disguised */
+      = (int)strlen(a_str); /*< 1, slightly disguised */
   static volatile int y = 0;
 #endif
 
   STORE_APPROX_SP_TO(sp);
   printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
 #if defined(CPPCHECK)
-  (void)nested_sp(); /* to workaround a bug in cppcheck */
+  (void)nested_sp(); /*< to workaround a bug in cppcheck */
 #endif
   if (nested_sp_fn() < ADDR(sp)) {
     printf("Stack appears to grow down, which is the default.\n");

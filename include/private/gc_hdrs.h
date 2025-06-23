@@ -60,7 +60,7 @@ EXTERN_C_BEGIN
 #define TOP_SZ (1 << LOG_TOP_SZ)
 
 #ifdef COUNT_HDR_CACHE_HITS
-extern word GC_hdr_cache_hits; /* used for debugging/profiling */
+extern word GC_hdr_cache_hits; /*< used for debugging/profiling */
 extern word GC_hdr_cache_misses;
 #  define HC_HIT() (void)(++GC_hdr_cache_hits)
 #  define HC_MISS() (void)(++GC_hdr_cache_misses)
@@ -70,11 +70,11 @@ extern word GC_hdr_cache_misses;
 #endif
 
 typedef struct hce {
-  word block_addr; /* right-shifted by `LOG_HBLKSIZE` */
+  word block_addr; /*< right-shifted by `LOG_HBLKSIZE` */
   hdr *hce_hdr;
 } hdr_cache_entry;
 
-#define HDR_CACHE_SIZE 8 /* a power of two */
+#define HDR_CACHE_SIZE 8 /*< a power of two */
 
 #define DECLARE_HDR_CACHE hdr_cache_entry hdr_cache[HDR_CACHE_SIZE]
 
@@ -101,17 +101,17 @@ GC_INNER hdr *GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce);
 /* object beginning if `GC_all_interior_pointers` is true.  Sets `hhdr` */
 /* to `NULL` if `p` points to somewhere other than the first page of an */
 /* object, and it is not a valid pointer to the object.                 */
-#define HC_GET_HDR(p, hhdr, source)               \
-  { /* cannot use `do ... while (0)` here */      \
-    hdr_cache_entry *hce = HCE(p);                \
-    if (EXPECT(HCE_VALID_FOR(hce, p), TRUE)) {    \
-      HC_HIT();                                   \
-      hhdr = hce->hce_hdr;                        \
-    } else {                                      \
-      hhdr = HEADER_CACHE_MISS(p, hce, source);   \
-      if (NULL == hhdr)                           \
-        break; /* go to the enclosing loop end */ \
-    }                                             \
+#define HC_GET_HDR(p, hhdr, source)                \
+  { /*< cannot use `do ... while (0)` here */      \
+    hdr_cache_entry *hce = HCE(p);                 \
+    if (EXPECT(HCE_VALID_FOR(hce, p), TRUE)) {     \
+      HC_HIT();                                    \
+      hhdr = hce->hce_hdr;                         \
+    } else {                                       \
+      hhdr = HEADER_CACHE_MISS(p, hce, source);    \
+      if (NULL == hhdr)                            \
+        break; /*< go to the enclosing loop end */ \
+    }                                              \
   }
 
 typedef struct bi {
@@ -129,9 +129,9 @@ typedef struct bi {
   struct bi *asc_link;
   struct bi *desc_link;
 
-  word key; /* High-order address bits.     */
+  word key; /*< high-order address bits */
 #ifdef HASH_TL
-  struct bi *hash_link; /* Hash chain link.             */
+  struct bi *hash_link; /*< hash chain link */
 #endif
 } bottom_index;
 

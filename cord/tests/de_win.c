@@ -258,8 +258,8 @@ WndProc(HWND hwnd_arg, UINT message, WPARAM wParam, LPARAM lParam)
 
   case WM_LBUTTONUP:
     {
-      unsigned xpos = LOWORD(lParam); /* from left */
-      unsigned ypos = HIWORD(lParam); /* from top */
+      unsigned xpos = LOWORD(lParam); /*< from left */
+      unsigned ypos = HIWORD(lParam); /*< from top */
 
       set_position(xpos / (unsigned)char_width, ypos / (unsigned)char_height);
     }

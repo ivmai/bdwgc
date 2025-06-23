@@ -63,7 +63,7 @@ struct foo *GC;
 #if __cplusplus >= 201103L
 #  define GC_OVERRIDE override
 #else
-#  define GC_OVERRIDE /* empty */
+#  define GC_OVERRIDE /*< empty */
 #endif
 
 #define my_assert(e)                                                  \

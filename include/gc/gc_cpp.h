@@ -157,7 +157,7 @@ Cautions:
 #define GC_cdecl GC_CALLBACK
 
 #if !defined(GC_NO_OPERATOR_NEW_ARRAY)                  \
-    && !defined(_ENABLE_ARRAYNEW) /* Digimars */        \
+    && !defined(_ENABLE_ARRAYNEW) /*< Digital Mars */   \
     && (defined(__BORLANDC__) && (__BORLANDC__ < 0x450) \
         || (defined(__GNUC__) && !GC_GNUC_PREREQ(2, 6)) \
         || (defined(_MSC_VER) && _MSC_VER <= 1020)      \
@@ -207,7 +207,7 @@ Cautions:
 #endif
 
 #ifndef GC_NEW_DELETE_NEED_THROW
-#  define GC_DECL_NEW_THROW /* empty */
+#  define GC_DECL_NEW_THROW /*< empty */
 #elif __cplusplus >= 201703L || _MSVC_LANG >= 201703L
 // The "dynamic exception" syntax had been deprecated in C++11
 // and was removed in C++17.
@@ -215,7 +215,7 @@ Cautions:
 #elif defined(GC_INCLUDE_NEW)
 #  define GC_DECL_NEW_THROW throw(std::bad_alloc)
 #else
-#  define GC_DECL_NEW_THROW /* empty (as `bad_alloc` might be undeclared) */
+#  define GC_DECL_NEW_THROW /*< empty (as `bad_alloc` might be undeclared) */
 #endif
 
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)

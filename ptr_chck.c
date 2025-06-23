@@ -268,7 +268,7 @@ GC_pre_incr(void **p, ptrdiff_t how_much)
     (void)GC_is_valid_displacement(result);
   }
   *p = result;
-  return result; /* updated pointer */
+  return result; /*< updated pointer */
 }
 
 GC_API void *GC_CALL
@@ -281,7 +281,7 @@ GC_post_incr(void **p, ptrdiff_t how_much)
     (void)GC_is_valid_displacement(result);
   }
   *p = result;
-  return initial; /* original `*p` */
+  return initial; /*< original `*p` */
 }
 
 GC_API void GC_CALL

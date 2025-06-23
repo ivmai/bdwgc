@@ -62,13 +62,13 @@
 #endif
 
 #if !defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && defined(_DEBUG) \
-    && (_MSC_VER >= 1900) /* VS 2015+ */
+    && (_MSC_VER >= 1900 /* VS 2015+ */)
 #  ifndef _CRTDBG_MAP_ALLOC
 #    define _CRTDBG_MAP_ALLOC
 #  endif
 /* This should be included before `gc_priv.h` file (see the note about  */
 /* `_malloca` redefinition bug in `gcconfig.h` file).                   */
-#  include <crtdbg.h> /* for `_CrtDumpMemoryLeaks`, `_CrtSetDbgFlag` */
+#  include <crtdbg.h> /*< for `_CrtDumpMemoryLeaks`, `_CrtSetDbgFlag` */
 #endif
 
 #if (defined(GC_NO_FINALIZATION) || defined(DBG_HDRS_ALL)) \
@@ -86,13 +86,13 @@
 
 #if defined(GC_PRINT_VERBOSE_STATS) || defined(GCTEST_PRINT_VERBOSE)
 #  define print_stats VERBOSE
-#  define INIT_PRINT_STATS /* empty */
+#  define INIT_PRINT_STATS (void)0
 #else
 /* Use own variable as `GC_print_stats` might not be visible. */
 static int print_stats = 0;
 #  ifdef GC_READ_ENV_FILE
 /* `GETENV()` uses the collector internal function in this case. */
-#    define INIT_PRINT_STATS /* empty */
+#    define INIT_PRINT_STATS (void)0
 #  else
 #    define INIT_PRINT_STATS                          \
       {                                               \
@@ -132,7 +132,7 @@ static int print_stats = 0;
 #endif
 
 #ifndef INIT_FORK_SUPPORT
-#  define INIT_FORK_SUPPORT /* empty */
+#  define INIT_FORK_SUPPORT (void)0
 #endif
 
 #ifdef GC_PTHREADS
@@ -176,7 +176,7 @@ static CRITICAL_SECTION incr_cs;
     || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
 #  define GC_OPT_INIT GC_INIT()
 #else
-#  define GC_OPT_INIT /* empty */
+#  define GC_OPT_INIT (void)0
 #endif
 
 #define INIT_FIND_LEAK       \
@@ -882,7 +882,7 @@ reverse_test_inner(void *data)
   GC_noop1_ptr(data);
 #endif
 #ifndef BIG
-#  if defined(UNIX_LIKE) && defined(NO_GETCONTEXT) /* e.g. musl */
+#  if defined(UNIX_LIKE) && defined(NO_GETCONTEXT) /*< e.g. musl */
   /* Assume 128 KB stacks at least. */
 #    if defined(__aarch64__) || defined(__s390x__)
 #      define BIG 600
@@ -1365,7 +1365,7 @@ const GC_word bm_huge[320 / CPP_WORDSZ] = {
   (GC_word)((GC_signed_word)-1),
   (GC_word)((GC_signed_word)-1),
   (GC_word)((GC_signed_word)-1),
-  ((GC_word)((GC_signed_word)-1)) >> 8 /* highest byte is zero */
+  ((GC_word)((GC_signed_word)-1)) >> 8 /*< highest byte is zero */
 };
 
 /* A very simple test of explicitly typed allocation.   */
@@ -1766,7 +1766,7 @@ run_one_test(void)
   if (!GC_get_find_leak()) {
     void **p = (void **)GC_MALLOC_ATOMIC(sizeof(void *));
 
-    CHECK_OUT_OF_MEMORY(p); /* LINT2: do not use `checkOOM()` */
+    CHECK_OUT_OF_MEMORY(p); /*< LINT2: do not use `checkOOM()` */
     AO_fetch_and_add1(&atomic_count);
     *p = x;
     if (GC_register_disappearing_link(p) != 0) {
@@ -2332,7 +2332,7 @@ enable_incremental_mode(void)
 
 #if !defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
-#  if defined(_DEBUG) && (_MSC_VER >= 1900) /* VS 2015+ */
+#  if defined(_DEBUG) && (_MSC_VER >= 1900 /* VS 2015+ */)
 /* Ensure that there is no system-malloc-allocated objects at normal  */
 /* exit (i.e. no such memory leaked).                                 */
 #    define CRTMEM_CHECK_INIT() \
@@ -2604,7 +2604,7 @@ main(void)
 #endif /* GC_WIN32_THREADS */
 
 #if defined(GC_PTHREADS)
-#  include <errno.h> /* for `EAGAIN` */
+#  include <errno.h> /*< for `EAGAIN` */
 
 static void *
 thr_run_one_test(void *arg)
@@ -2807,7 +2807,7 @@ main(void)
   UNTESTED(GC_custom_push_range);
   UNTESTED(GC_push_proc);
   UNTESTED(GC_register_altstack);
-#  endif /* CPPCHECK */
+#  endif
 
 #  if !defined(GC_NO_DLOPEN) && !defined(DARWIN) && !defined(GC_WIN32_THREADS)
   {

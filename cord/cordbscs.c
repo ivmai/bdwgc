@@ -67,8 +67,8 @@ CORD__call_oom_fn(void)
   }
 
 struct Concatenation {
-  CORD left;  /* `length(left) > 0` is assumed  */
-  CORD right; /* `length(right) > 0` is assumed */
+  CORD left;  /*< `length(left) > 0` is assumed  */
+  CORD right; /*< `length(right) > 0` is assumed */
 };
 
 struct Function {
@@ -236,7 +236,7 @@ CORD_cat_char_star(CORD x, const char *y, size_t leny)
       } else {
         right_len = strlen(right);
       }
-      result_len = right_len + leny; /* length of `new_right` */
+      result_len = right_len + leny; /*< length of `new_right` */
       if (result_len <= SHORT_LIMIT) {
         new_right = (char *)GC_MALLOC_ATOMIC(result_len + 1);
         if (new_right == 0)

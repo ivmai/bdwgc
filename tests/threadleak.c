@@ -11,7 +11,7 @@
 #include "gc/leak_detector.h"
 
 #ifdef GC_PTHREADS
-#  include <errno.h> /* for `EAGAIN` */
+#  include <errno.h> /*< for `EAGAIN` */
 #  include <pthread.h>
 #  include <string.h>
 #else

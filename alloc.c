@@ -60,9 +60,9 @@ word GC_gc_no = 0;
 
 #ifndef NO_CLOCK
 
-static unsigned long full_gc_total_time = 0; /* in ms, may wrap */
+static unsigned long full_gc_total_time = 0; /*< in ms, may wrap */
 static unsigned long stopped_mark_total_time = 0;
-static unsigned32 full_gc_total_ns_frac = 0; /* fraction of 1 ms */
+static unsigned32 full_gc_total_ns_frac = 0; /*< fraction of 1 ms */
 static unsigned32 stopped_mark_total_ns_frac = 0;
 
 /* Do performance measurements if set to `TRUE` (e.g., accumulation of  */
@@ -134,7 +134,7 @@ GC_get_avg_stopped_mark_time_ns(void)
 #endif /* !NO_CLOCK */
 
 #ifndef GC_DISABLE_INCREMENTAL
-GC_INNER GC_bool GC_incremental = FALSE; /* By default, stop the world. */
+GC_INNER GC_bool GC_incremental = FALSE; /*< by default, stop the world */
 STATIC GC_bool GC_should_start_incremental_collection = FALSE;
 #endif
 
@@ -145,7 +145,7 @@ GC_is_incremental_mode(void)
 }
 
 #ifdef THREADS
-int GC_parallel = FALSE; /* parallel collection is off by default */
+int GC_parallel = FALSE; /*< parallel collection is off by default */
 #endif
 
 #if defined(GC_FULL_FREQ) && !defined(CPPCHECK)
@@ -226,7 +226,7 @@ int GC_dont_expand = FALSE;
 #endif
 
 #if defined(GC_FREE_SPACE_DIVISOR) && !defined(CPPCHECK)
-word GC_free_space_divisor = GC_FREE_SPACE_DIVISOR; /* must be > 0 */
+word GC_free_space_divisor = GC_FREE_SPACE_DIVISOR; /*< must be positive */
 #else
 word GC_free_space_divisor = 3;
 #endif
@@ -255,7 +255,7 @@ unsigned long GC_time_limit = 15;
 /* `GC_TIME_UNLIMITED`.                                                 */
 STATIC unsigned long GC_time_lim_nsec = 0;
 
-#  define TV_NSEC_LIMIT (1000UL * 1000) /* amount of nanoseconds in 1 ms */
+#  define TV_NSEC_LIMIT (1000UL * 1000) /*< amount of nanoseconds in 1 ms */
 
 GC_API void GC_CALL
 GC_set_time_limit_tv(struct GC_timeval_s tv)
@@ -455,7 +455,7 @@ STATIC void
 GC_clear_a_few_frames(void)
 {
 #ifndef CLEAR_STACK_NPTRS
-#  define CLEAR_STACK_NPTRS 64 /* pointers */
+#  define CLEAR_STACK_NPTRS 64 /*< pointers */
 #endif
   volatile ptr_t frames[CLEAR_STACK_NPTRS];
 
@@ -675,7 +675,7 @@ GC_try_to_collect_inner(GC_stop_func stop_func)
     /* TODO: Notify `GC_EVENT_ABANDON` */
     return FALSE;
   }
-  GC_invalidate_mark_state(); /* flush mark stack */
+  GC_invalidate_mark_state(); /*< flush mark stack */
   GC_clear_marks();
   SAVE_CALLERS_TO_LAST_STACK();
   GC_is_full_gc = TRUE;
@@ -704,7 +704,7 @@ GC_try_to_collect_inner(GC_stop_func stop_func)
     time_diff = MS_TIME_DIFF(current_time, start_time);
     ns_frac_diff = NS_FRAC_TIME_DIFF(current_time, start_time);
     if (measure_performance) {
-      full_gc_total_time += time_diff; /* may wrap */
+      full_gc_total_time += time_diff; /*< may wrap */
       full_gc_total_ns_frac += (unsigned32)ns_frac_diff;
       if (full_gc_total_ns_frac >= (unsigned32)1000000UL) {
         /* Overflow of the nanoseconds part. */
@@ -1022,7 +1022,7 @@ GC_stopped_mark(GC_stop_func stop_func)
     time_diff = MS_TIME_DIFF(current_time, start_time);
     ns_frac_diff = NS_FRAC_TIME_DIFF(current_time, start_time);
     if (measure_performance) {
-      stopped_mark_total_time += time_diff; /* may wrap */
+      stopped_mark_total_time += time_diff; /*< may wrap */
       stopped_mark_total_ns_frac += (unsigned32)ns_frac_diff;
       if (stopped_mark_total_ns_frac >= (unsigned32)1000000UL) {
         stopped_mark_total_ns_frac -= (unsigned32)1000000UL;
@@ -1173,7 +1173,7 @@ GC_clear_fl_marks(ptr_t q)
   struct hblk *h = HBLKPTR(q);
   const struct hblk *last_h = h;
   hdr *hhdr = HDR(h);
-  size_t sz = hhdr->hb_sz; /* normally set only once */
+  size_t sz = hhdr->hb_sz; /*< normally set only once */
 
   for (;;) {
     size_t bit_no = MARK_BIT_NO((size_t)((ptr_t)q - (ptr_t)h), sz);
@@ -1221,7 +1221,7 @@ set_all_fl_marks(void)
   unsigned kind;
 
   for (kind = 0; kind < GC_n_kinds; kind++) {
-    word size; /* current object size */
+    word size; /*< current object size */
 
     for (size = 1; size <= MAXOBJGRANULES; size++) {
       ptr_t q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
@@ -1240,7 +1240,7 @@ clear_all_fl_marks(void)
   unsigned kind;
 
   for (kind = 0; kind < GC_n_kinds; kind++) {
-    word size; /* current object size */
+    word size; /*< current object size */
 
     for (size = 1; size <= MAXOBJGRANULES; size++) {
       ptr_t q = (ptr_t)GC_obj_kinds[kind].ok_freelist[size];
@@ -1264,7 +1264,7 @@ GC_compute_heap_usage_percent(void)
   word used = GC_composite_in_use + GC_atomic_in_use + GC_bytes_allocd;
   word heap_sz = GC_heapsize - GC_unmapped_bytes;
 #if defined(CPPCHECK)
-  word limit = (GC_WORD_MAX >> 1) / 50; /* to avoid a false positive */
+  word limit = (GC_WORD_MAX >> 1) / 50; /*< to avoid a false positive */
 #else
   const word limit = GC_WORD_MAX / 100;
 #endif
@@ -1350,8 +1350,8 @@ GC_finish_collection(void)
   GC_start_reclaim(FALSE);
 
 #ifdef USE_MUNMAP
-  if (GC_unmap_threshold > 0          /* unmapping enabled? */
-      && EXPECT(GC_gc_no != 1, TRUE)) /* do not unmap during `GC_init` */
+  if (GC_unmap_threshold > 0          /*< memory unmapping enabled? */
+      && EXPECT(GC_gc_no != 1, TRUE)) /*< do not unmap during `GC_init` */
     GC_unmap_old(GC_unmap_threshold);
 
   GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
@@ -1435,7 +1435,7 @@ GC_try_to_collect_general(GC_stop_func stop_func, GC_bool force_unmap)
 #ifdef USE_MUNMAP
   old_unmap_threshold = GC_unmap_threshold;
   if (force_unmap || (GC_force_unmap_on_gcollect && old_unmap_threshold > 0))
-    GC_unmap_threshold = 1; /* unmap as much as possible */
+    GC_unmap_threshold = 1; /*< unmap as much as possible */
 #endif
   /* Minimize junk left in my registers.      */
   GC_noop6(0, 0, 0, 0, 0, 0);
@@ -1487,7 +1487,7 @@ GC_os_get_mem(size_t bytes)
   ptr_t space;
 
   GC_ASSERT(I_HOLD_LOCK());
-  space = (ptr_t)GET_MEM(bytes); /* `HBLKSIZE`-aligned */
+  space = (ptr_t)GET_MEM(bytes); /*< `HBLKSIZE`-aligned */
   if (EXPECT(NULL == space, FALSE))
     return NULL;
 #ifdef USE_PROC_FOR_LIBRARIES
@@ -1917,7 +1917,7 @@ GC_collect_or_expand(word needed_blocks, unsigned flags, GC_bool retry)
       GC_ASSERT(GC_heapsize >= GC_unmapped_bytes);
 #endif
 #if !defined(SMALL_CONFIG) && (CPP_WORDSZ >= 32)
-#  define MAX_HEAPSIZE_WARNED_IN_BYTES (5 << 20) /* 5 MB */
+#  define MAX_HEAPSIZE_WARNED_IN_BYTES (5 << 20) /*< 5 MB */
 
       if (GC_heapsize > (word)MAX_HEAPSIZE_WARNED_IN_BYTES) {
         WARN("Out of Memory! Heap size: %" WARN_PRIuPTR " MiB."

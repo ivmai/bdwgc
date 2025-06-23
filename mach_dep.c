@@ -126,7 +126,7 @@ GC_with_callee_saves_pushed(GC_with_callee_saves_func fn, ptr_t arg)
 #        endif
       GC_save_regs_in_stack();
 #      endif
-  if (NULL == context) /* `getcontext` failed */
+  if (NULL == context) /*< `getcontext` failed */
 #    endif /* !NO_GETCONTEXT */
   {
 #    if defined(HAVE_BUILTIN_UNWIND_INIT)

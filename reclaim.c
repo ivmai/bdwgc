@@ -266,7 +266,7 @@ GC_clear_block(ptr_t q, size_t sz, word *pcount)
 #ifdef USE_MARK_BYTES
   GC_ASSERT((sz & 1) == 0);
   GC_ASSERT((ADDR(p) & (2 * sizeof(ptr_t) - 1)) == 0);
-  p[1] = NULL; /* but do not clear link field */
+  p[1] = NULL; /*< but do not clear link field */
   for (p += 2; ADDR_LT((ptr_t)p, plim); p += 2) {
     CLEAR_DOUBLE(p);
   }
@@ -397,7 +397,7 @@ GC_check_leaked(ptr_t base)
       (*(GC_uintptr_t *)base & 1) != 0 &&
 #    endif
       GC_has_other_debug_info(base) >= 0)
-    return TRUE; /* object has leaked */
+    return TRUE; /*< object has leaked */
 
   /* Validate freed object's content. */
   p = (ptr_t *)(base + sizeof(oh));
@@ -412,7 +412,7 @@ GC_check_leaked(ptr_t base)
       break;
     }
 
-  return FALSE; /* `GC_debug_free()` has been called */
+  return FALSE; /*< `GC_debug_free()` has been called */
 }
 #  endif /* !SHORT_DBG_HDRS */
 
@@ -562,7 +562,7 @@ STATIC void GC_CALLBACK
 GC_reclaim_block(struct hblk *hbp, void *report_if_found)
 {
   hdr *hhdr;
-  size_t sz; /* size of objects in current block */
+  size_t sz; /*< size of objects in current block */
   struct obj_kind *ok;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -695,7 +695,7 @@ struct Print_stats {
   size_t total_bytes;
 };
 
-EXTERN_C_BEGIN /* to avoid "no previous prototype" clang warning */
+EXTERN_C_BEGIN /*< to avoid "no previous prototype" clang warning */
     unsigned
     GC_n_set_marks(const hdr *);
 EXTERN_C_END
@@ -744,7 +744,7 @@ GC_n_set_marks(const hdr *hhdr)
   size_t i;
 #    ifdef MARK_BIT_PER_OBJ
   size_t n_objs = HBLK_OBJS(hhdr->hb_sz);
-  size_t n_mark_words = divWORDSZ(n_objs > 0 ? n_objs : 1); /* round down */
+  size_t n_mark_words = divWORDSZ(n_objs > 0 ? n_objs : 1); /*< round down */
 
   for (i = 0; i <= n_mark_words; i++) {
     result += count_ones(hhdr->hb_marks[i]);
@@ -798,7 +798,7 @@ GC_print_block_descr(struct hblk *h, void *raw_ps)
   GC_printf("%u,%u,%u,%u\n", hhdr->hb_obj_kind, (unsigned)sz,
             (unsigned)n_marks, (unsigned)n_objs);
   ps->number_of_blocks++;
-  ps->total_bytes += (sz + HBLKSIZE - 1) & ~(HBLKSIZE - 1); /* round up */
+  ps->total_bytes += (sz + HBLKSIZE - 1) & ~(HBLKSIZE - 1); /*< round up */
 }
 
 void

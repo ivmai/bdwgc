@@ -48,7 +48,7 @@ GC_alloc_large(size_t lb_adjusted, int kind, unsigned flags, size_t align_m1)
 {
 #define MAX_ALLOCLARGE_RETRIES 3
   int retry_cnt;
-  size_t n_blocks; /* includes alignment */
+  size_t n_blocks; /*< includes alignment */
   struct hblk *h;
   ptr_t result;
 
@@ -56,7 +56,7 @@ GC_alloc_large(size_t lb_adjusted, int kind, unsigned flags, size_t align_m1)
   GC_ASSERT(lb_adjusted != 0 && (lb_adjusted & (GC_GRANULE_BYTES - 1)) == 0);
   n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(SIZET_SAT_ADD(lb_adjusted, align_m1));
   if (!EXPECT(GC_is_initialized, TRUE)) {
-    UNLOCK(); /* just to unset `GC_lock_holder` */
+    UNLOCK(); /*< just to unset `GC_lock_holder` */
     GC_init();
     LOCK();
   }
@@ -131,7 +131,7 @@ GC_extend_size_map(size_t i)
   GC_ASSERT(I_HOLD_LOCK());
   GC_ASSERT(0 == GC_size_map[i]);
   if (0 == GC_size_map[smaller_than_i]) {
-    low_limit = byte_sz - (byte_sz >> 2); /* much smaller than `i` */
+    low_limit = byte_sz - (byte_sz >> 2); /*< much smaller than `i` */
     lg = original_lg;
     while (GC_size_map[low_limit] != 0)
       low_limit++;
@@ -179,7 +179,7 @@ GC_generic_malloc_inner_small(size_t lb, int kind)
   if (EXPECT(NULL == op, FALSE)) {
     if (0 == lg) {
       if (!EXPECT(GC_is_initialized, TRUE)) {
-        UNLOCK(); /* just to unset `GC_lock_holder` */
+        UNLOCK(); /*< just to unset `GC_lock_holder` */
         GC_init();
         LOCK();
         lg = GC_size_map[lb];
@@ -233,7 +233,7 @@ GC_generic_malloc_inner(size_t lb, int kind, unsigned flags)
 
 #ifdef GC_COLLECT_AT_MALLOC
 #  if defined(CPPCHECK)
-size_t GC_dbg_collect_at_malloc_min_lb = 16 * 1024; /* e.g. */
+size_t GC_dbg_collect_at_malloc_min_lb = 16 * 1024; /*< some value */
 #  else
 size_t GC_dbg_collect_at_malloc_min_lb = (GC_COLLECT_AT_MALLOC);
 #  endif
@@ -271,7 +271,7 @@ GC_generic_malloc_aligned(size_t lb, int kind, unsigned flags, size_t align_m1)
 #endif
     /* else */ {
 #ifndef THREADS
-      size_t lg; /* CPPCHECK */
+      size_t lg; /*< CPPCHECK */
 #endif
 
       if (EXPECT(0 == lb, FALSE))
@@ -446,16 +446,16 @@ GC_generic_malloc_uncollectable(size_t lb, int kind)
   } else {
     op = GC_generic_malloc_aligned(lb, kind, 0 /* `flags` */,
                                    0 /* `align_m1` */);
-    if (op /* `!= NULL` */) { /* CPPCHECK */
+    if (op /* `!= NULL` */) { /*< CPPCHECK */
       hdr *hhdr = HDR(op);
 
-      GC_ASSERT(HBLKDISPL(op) == 0); /* large block */
+      GC_ASSERT(HBLKDISPL(op) == 0); /*< large block */
 
       /* We do not need to acquire the allocator lock before `HDR(op)`, */
       /* since we have an undisguised pointer, but we need it while we  */
       /* adjust the mark bits.                                          */
       LOCK();
-      set_mark_bit_from_hdr(hhdr, 0); /* Only object. */
+      set_mark_bit_from_hdr(hhdr, 0); /*< the only object */
 #ifndef THREADS
       /* This is not guaranteed in the multi-threaded case because  */
       /* the counter could be updated before locking.               */
@@ -496,7 +496,7 @@ GC_malloc_atomic_uncollectable(size_t lb)
 #  define GC_debug_malloc_replacement(lb) GC_debug_malloc(lb, GC_DBG_EXTRAS)
 
 #  if defined(CPPCHECK)
-#    define REDIRECT_MALLOC_F GC_malloc /* e.g. */
+#    define REDIRECT_MALLOC_F GC_malloc /*< e.g. */
 #  else
 #    define REDIRECT_MALLOC_F REDIRECT_MALLOC
 #  endif
@@ -538,10 +538,10 @@ GC_init_lib_bounds(void)
     return;
 
   DISABLE_CANCEL(cancel_state);
-  GC_init(); /* if not called yet */
+  GC_init(); /*< if not called yet */
 
 #    if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-  LOCK(); /* just to set `GC_lock_holder` */
+  LOCK(); /*< just to set `GC_lock_holder` */
 #    endif
 #    ifdef HAVE_LIBPTHREAD_SO
   if (!GC_text_mapping("libpthread-", &GC_libpthread_start,
@@ -565,9 +565,9 @@ GC_init_lib_bounds(void)
 void *
 calloc(size_t n, size_t lb)
 {
-  if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial test */
+  if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /*< fast initial test */
       && lb && n > GC_SIZE_MAX / lb)
-    return (*GC_get_oom_fn())(GC_SIZE_MAX); /* `n * lb` overflow */
+    return (*GC_get_oom_fn())(GC_SIZE_MAX); /*< `n * lb` overflow */
 #  ifdef REDIR_MALLOC_AND_LINUXTHREADS
   /* The linker may allocate some memory that is only pointed to by */
   /* mmapped thread stacks.  Make sure it is not collectible.       */
@@ -638,8 +638,8 @@ strndup(const char *str, size_t size)
 static void
 free_internal(void *p, const hdr *hhdr)
 {
-  size_t lb = hhdr->hb_sz;           /* size in bytes */
-  size_t lg = BYTES_TO_GRANULES(lb); /* size in granules */
+  size_t lb = hhdr->hb_sz;           /*< size in bytes */
+  size_t lg = BYTES_TO_GRANULES(lb); /*< size in granules */
   int kind = hhdr->hb_obj_kind;
 
   GC_bytes_freed += lb;
@@ -719,7 +719,7 @@ GC_free_inner(void *p)
 #if defined(REDIRECT_FREE) && !defined(REDIRECT_MALLOC_IN_HEADER)
 
 #  if defined(CPPCHECK)
-#    define REDIRECT_FREE_F GC_free /* e.g. */
+#    define REDIRECT_FREE_F GC_free /*< e.g. */
 #  else
 #    define REDIRECT_FREE_F REDIRECT_FREE
 #  endif
@@ -736,6 +736,7 @@ free(void *p)
   /* initialized, then the check fails, and that is safe, since we have */
   /* not allocated uncollectible objects neither.                       */
   ptr_t caller = (ptr_t)__builtin_return_address(0);
+
   /* This test does not need to ensure memory visibility, since   */
   /* the bounds will be set when/if we create another thread.     */
   if (ADDR_INSIDE(caller, GC_libld_start, GC_libld_end)

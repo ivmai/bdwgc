@@ -39,7 +39,7 @@
 #  endif
 
 #  ifdef THREAD_SANITIZER
-#    include "dbg_mlc.h" /* for `oh` type */
+#    include "dbg_mlc.h" /*< for `oh` type */
 #  endif
 
 EXTERN_C_BEGIN
@@ -49,7 +49,7 @@ EXTERN_C_BEGIN
 /* Open Watcom (as of v2 2024-11-02 Build) does not define `NT_TIB`     */
 /* in the platform `winnt.h` file.                                      */
 struct GC_NT_TIB_s {
-  /* `EXCEPTION_REGISTRATION_RECORD *` */ void *ExceptionList; /* unused */
+  /* `EXCEPTION_REGISTRATION_RECORD *` */ void *ExceptionList; /*< unused */
   PVOID StackBase;
   PVOID StackLimit;
   /* The remaining fields are unused. */
@@ -170,11 +170,11 @@ struct GC_Thread_Rep {
     /* (All but the first are guaranteed to be dead, but we may not yet */
     /* have registered the join.)                                       */
     struct GC_Thread_Rep *next;
-  } tm; /* table_management */
+  } tm; /*< table_management */
 
   GC_stack_context_t crtn;
 
-  thread_id_t id; /* hash table key */
+  thread_id_t id; /*< hash table key */
 #  ifdef DARWIN
   mach_port_t mach_thread;
 #  elif defined(GC_WIN32_THREADS) && defined(GC_PTHREADS)
@@ -265,7 +265,7 @@ struct GC_Thread_Rep {
 #    endif
   ptr_t reg_storage[NACL_GC_REG_STORAGE_SIZE];
 #  elif defined(PLATFORM_HAVE_GC_REG_STORAGE_SIZE)
-  word registers[PLATFORM_GC_REG_STORAGE_SIZE]; /* used externally */
+  word registers[PLATFORM_GC_REG_STORAGE_SIZE]; /*< used externally */
 #  endif
 
 #  if defined(WOW64_THREAD_CONTEXT_WORKAROUND) && defined(MSWINRT_FLAVOR)
@@ -301,7 +301,7 @@ typedef struct GC_Thread_Rep *GC_thread;
 #  endif
 
 #  ifdef GC_WIN32_THREADS
-#    define THREAD_TABLE_INDEX(id) /* `id` is of `DWORD` type */ \
+#    define THREAD_TABLE_INDEX(id) /*< `id` is of `DWORD` type */ \
       (int)((((id) >> 8) ^ (id)) % THREAD_TABLE_SZ)
 #  elif CPP_WORDSZ > 32
 #    define THREAD_TABLE_INDEX(id)                                          \
@@ -437,7 +437,7 @@ GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
       && !defined(SN_TARGET_PSP2)
 
 #    ifdef GC_PTHREAD_START_STANDALONE
-#      define GC_INNER_PTHRSTART /* empty */
+#      define GC_INNER_PTHRSTART /*< empty */
 #    else
 #      define GC_INNER_PTHRSTART GC_INNER
 #    endif

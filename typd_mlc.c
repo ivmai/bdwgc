@@ -126,7 +126,7 @@ STATIC GC_descr GC_bm_table[CPP_WORDSZ / 2];
 STATIC GC_descr
 GC_double_descr(GC_descr d, size_t lpw)
 {
-  GC_ASSERT(GC_bm_table[0] == GC_DS_BITMAP); /* `bm` table is initialized */
+  GC_ASSERT(GC_bm_table[0] == GC_DS_BITMAP); /*< `bm` table is initialized */
   if ((d & GC_DS_TAGS) == GC_DS_LENGTH) {
     d = GC_bm_table[BYTES_TO_PTRS(d)];
   }
@@ -491,11 +491,11 @@ GC_make_array_descriptor(size_t nelements, size_t size, GC_descr d,
 }
 
 struct GC_calloc_typed_descr_s {
-  complex_descriptor *complex_d; /* the first field, the only pointer */
+  complex_descriptor *complex_d; /*< the first field, the only pointer */
   struct LeafDescriptor leaf;
   GC_descr simple_d;
-  word alloc_lb;             /* of `size_t` type actually */
-  GC_signed_word descr_type; /* of `int` type actually */
+  word alloc_lb;             /*< of `size_t` type actually */
+  GC_signed_word descr_type; /*< of `int` type actually */
 };
 
 GC_API int GC_CALL
@@ -507,16 +507,16 @@ GC_calloc_prepare_explicitly_typed(struct GC_calloc_typed_descr_s *pctd,
                    == sizeof(struct GC_calloc_typed_descr_s));
   GC_ASSERT(GC_explicit_typing_initialized);
   GC_ASSERT(sizeof(struct GC_calloc_typed_descr_s) == ctd_sz);
-  (void)ctd_sz; /* unused currently */
+  (void)ctd_sz; /*< unused currently */
   if (EXPECT(0 == lb || 0 == n, FALSE))
     lb = n = 1;
-  if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /* fast initial check */
+  if (EXPECT((lb | n) > GC_SQRT_SIZE_MAX, FALSE) /*< fast initial check */
       && n > GC_SIZE_MAX / lb) {
     /* `n * lb` overflows. */
     pctd->alloc_lb = GC_SIZE_MAX;
     pctd->descr_type = NO_MEM;
     /* The rest of the fields are unset. */
-    return 0; /* failure */
+    return 0; /*< failure */
   }
 
   pctd->descr_type = GC_make_array_descriptor(n, lb, d, &pctd->simple_d,
@@ -536,7 +536,7 @@ GC_calloc_prepare_explicitly_typed(struct GC_calloc_typed_descr_s *pctd,
     pctd->alloc_lb = SIZET_SAT_ADD(lb * n, sizeof(ptr_t) - EXTRA_BYTES);
     break;
   }
-  return 1; /* success */
+  return 1; /*< success */
 }
 
 GC_API GC_ATTR_MALLOC void *GC_CALL
@@ -547,7 +547,7 @@ GC_calloc_do_explicitly_typed(const struct GC_calloc_typed_descr_s *pctd,
   size_t lpw_m1;
 
   GC_ASSERT(sizeof(struct GC_calloc_typed_descr_s) == ctd_sz);
-  (void)ctd_sz; /* unused currently */
+  (void)ctd_sz; /*< unused currently */
   switch (pctd->descr_type) {
   case NO_MEM:
     return (*GC_get_oom_fn())((size_t)pctd->alloc_lb);

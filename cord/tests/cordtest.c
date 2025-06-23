@@ -284,7 +284,7 @@ test_cords_f2(CORD w, CORD x, CORD y)
 static void
 test_extras(void)
 {
-#define FNAME1 "cordtst1.tmp" /* short name (8+3) for portability */
+#define FNAME1 "cordtst1.tmp" /*< short name (8+3) for portability */
 #define FNAME2 "cordtst2.tmp"
   int i;
   CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -470,13 +470,13 @@ main(void)
 #endif
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
-  CORD_set_oom_fn(CORD_get_oom_fn()); /* just to test these are existing */
+  CORD_set_oom_fn(CORD_get_oom_fn()); /*< just to test these are existing */
 
   test_basics();
   test_extras();
   test_printf();
 
-  GC_gcollect(); /* to close `f2` before the file removal */
+  GC_gcollect(); /*< to close `f2` before the file removal */
   if (remove(FNAME2) != 0) {
     fprintf(stderr, "WARNING: remove failed: " FNAME2 "\n");
   }

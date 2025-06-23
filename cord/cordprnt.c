@@ -327,7 +327,7 @@ CORD_vsprintf(CORD *out, CORD format, va_list args)
 #elif defined(__va_copy)
           __va_copy(vsprintf_args, args);
 #elif defined(__GNUC__) && !defined(__DJGPP__) \
-    && !defined(__EMX__) /* and probably in other cases */
+    && !defined(__EMX__) /*< and probably in other cases */
           va_copy(vsprintf_args, args);
 #else
           vsprintf_args = args;
@@ -434,7 +434,7 @@ CORD_fprintf(FILE *f, CORD format, ...)
 {
   va_list args;
   int result;
-  CORD out = CORD_EMPTY; /* initialized to prevent a compiler warning */
+  CORD out = CORD_EMPTY; /*< initialized to prevent a compiler warning */
 
   va_start(args, format);
   result = CORD_vsprintf(&out, format, args);

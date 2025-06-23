@@ -74,7 +74,7 @@ main(void)
   TA_assert(AO_fetch_and_add(&x, (AO_t)(-43)) == 55);
   TA_assert(AO_fetch_and_add1(&x) == 12);
   TA_assert(AO_fetch_and_sub1(&x) == 13);
-  TA_assert(AO_fetch_and_add1(&x) == 12); /* the 2nd call */
+  TA_assert(AO_fetch_and_add1(&x) == 12); /*< the 2nd call */
 #  endif
 #  ifdef AO_HAVE_compare_and_swap_release
   TA_assert(!AO_compare_and_swap_release(&x, 14, 42));

@@ -46,7 +46,7 @@ STATIC word *GC_incomplete_stack_bl = NULL;
 /* Number of bytes on stack blacklist.  */
 STATIC word GC_total_stack_black_listed = 0;
 
-GC_INNER word GC_black_list_spacing = MINHINCR * HBLKSIZE; /* initial guess */
+GC_INNER word GC_black_list_spacing = MINHINCR * HBLKSIZE; /*< initial guess */
 
 STATIC void GC_clear_bl(word *);
 

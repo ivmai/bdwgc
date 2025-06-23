@@ -39,7 +39,7 @@
 static GC_RAND_STATE_T seed;
 #define rand() GC_RAND_NEXT(&seed)
 
-#define MAX_LOG_MISC_SIZES 20 /* up to 1 MB */
+#define MAX_LOG_MISC_SIZES 20 /*< up to 1 MB */
 #define POP_SIZE 1000
 #define MUTATE_CNT_BASE (6 * 1000000)
 
@@ -200,7 +200,7 @@ pair_check_rec(pair_t p)
 /* Note: this excludes the main thread, which also runs a test.     */
 #    define NTHREADS 5
 #  endif
-#  include <errno.h> /* for `EAGAIN` */
+#  include <errno.h> /*< for `EAGAIN` */
 #  include <pthread.h>
 #else
 #  undef NTHREADS

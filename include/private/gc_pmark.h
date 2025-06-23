@@ -119,7 +119,7 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
 #define PUSH_CONTENTS(current, mark_stack_top, mark_stack_limit, source)   \
   do {                                                                     \
     hdr *my_hhdr;                                                          \
-    HC_GET_HDR(current, my_hhdr, source); /* contains `break` */           \
+    HC_GET_HDR(current, my_hhdr, source); /*< contains `break` */          \
     mark_stack_top = GC_push_contents_hdr(                                 \
         current, mark_stack_top, mark_stack_limit, source, my_hhdr, TRUE); \
   } while (0)
@@ -132,21 +132,21 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
 /* concurrent case.  This can result in the object being pushed     */
 /* twice.  But that is only a performance issue.                    */
 #    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                 \
-      { /* cannot use `do ... while (0)` here */                   \
+      { /*< cannot use `do ... while (0)` here */                  \
         volatile unsigned char *mark_byte_addr                     \
             = (unsigned char *)(hhdr)->hb_marks + (bit_no);        \
         /* Unordered atomic load and store are sufficient here. */ \
         if (AO_char_load(mark_byte_addr) != 0)                     \
-          break; /* go to the enclosing loop end */                \
+          break; /*< go to the enclosing loop end */               \
         AO_char_store(mark_byte_addr, 1);                          \
       }
 #  else
 #    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                 \
-      { /* cannot use `do ... while (0)` here */                   \
+      { /*< cannot use `do ... while (0)` here */                  \
         ptr_t mark_byte_addr = (ptr_t)(hhdr)->hb_marks + (bit_no); \
                                                                    \
         if (*mark_byte_addr != 0)                                  \
-          break; /* go to the enclosing loop end */                \
+          break; /*< go to the enclosing loop end */               \
         *mark_byte_addr = 1;                                       \
       }
 #  endif /* !PARALLEL_MARK */
@@ -161,23 +161,23 @@ GC_push_obj(ptr_t obj, const hdr *hhdr, mse *mark_stack_top,
 /* The following may fail to exit even if the bit was already set.  */
 /* For our uses, that is benign.                                    */
 #    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                            \
-      { /* cannot use `do ... while (0)` here */                              \
+      { /*< cannot use `do ... while (0)` here */                             \
         volatile AO_t *mark_word_addr = (hhdr)->hb_marks + divWORDSZ(bit_no); \
         word my_bits = (word)1 << modWORDSZ(bit_no);                          \
                                                                               \
         if ((MARK_WORD_READ(mark_word_addr) & my_bits) != 0)                  \
-          break; /* go to the enclosing loop end */                           \
+          break; /*< go to the enclosing loop end */                          \
         AO_or(mark_word_addr, my_bits);                                       \
       }
 #  else /* !PARALLEL_MARK */
 #    define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no)                   \
-      { /* cannot use `do ... while (0)` here */                     \
+      { /*< cannot use `do ... while (0)` here */                    \
         word *mark_word_addr = (hhdr)->hb_marks + divWORDSZ(bit_no); \
         word old = *mark_word_addr;                                  \
         word my_bits = (word)1 << modWORDSZ(bit_no);                 \
                                                                      \
         if ((old & my_bits) != 0)                                    \
-          break; /* go to the enclosing loop end */                  \
+          break; /*< go to the enclosing loop end */                 \
         *(mark_word_addr) = old | my_bits;                           \
       }
 #  endif
@@ -216,7 +216,7 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
     size_t displ = HBLKDISPL(current);
     ptr_t base = current;
 #ifdef MARK_BIT_PER_OBJ
-    unsigned32 gran_displ; /* `high_prod` */
+    unsigned32 gran_displ; /*< `high_prod` */
     unsigned32 inv_sz = hhdr->hb_inv_sz;
 
 #else
@@ -290,7 +290,7 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
 #endif
     TRACE(source, GC_log_printf("GC #%lu: passed validity tests\n",
                                 (unsigned long)GC_gc_no));
-    SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); /* contains `break` */
+    SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); /*< contains `break` */
     TRACE(source, GC_log_printf("GC #%lu: previously unmarked\n",
                                 (unsigned long)GC_gc_no));
     TRACE_TARGET(base, GC_log_printf("GC #%lu: marking %p from %p instead\n",

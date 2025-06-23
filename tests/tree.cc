@@ -176,7 +176,7 @@ main(void)
   keep_tree->verify();
   create_trees(is_find_leak, false);
   create_trees(is_find_leak, true);
-  keep_tree->verify(); // recheck
+  keep_tree->verify(); /*< recheck */
   if (is_find_leak)
     delete keep_tree;
   printf("SUCCEEDED\n");

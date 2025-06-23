@@ -50,7 +50,7 @@
 
 #if defined(__MINGW32__) && !defined(__MINGW_EXCPT_DEFINE_PSDK) \
     && defined(__i386__)                                        \
-    && defined(GC_EXTERN) /* defined in `extra/gc.c` file */
+    && defined(GC_EXTERN) /*< defined in `extra/gc.c` file */
 /* See the description in `mark.c` file. */
 #  define __MINGW_EXCPT_DEFINE_PSDK 1
 #endif
@@ -158,10 +158,10 @@ typedef char GC_bool;
 #      define GC_INNER __attribute__((__visibility__("hidden")))
 #    else
 /* The attribute is unsupported. */
-#      define GC_INNER /* empty */
+#      define GC_INNER /*< empty */
 #    endif
 #  else
-#    define GC_INNER /* empty */
+#    define GC_INNER /*< empty */
 #  endif
 
 #  define GC_EXTERN extern GC_INNER
@@ -176,7 +176,7 @@ typedef char GC_bool;
 
 #ifdef __cplusplus
 /* `register` storage specifier is deprecated in C++11. */
-#  define REGISTER /* empty */
+#  define REGISTER /*< empty */
 #else
 /* Used only for several local variables in the performance-critical  */
 /* functions.  Should not be used for new code.                       */
@@ -186,13 +186,13 @@ typedef char GC_bool;
 #if defined(CPPCHECK)
 #  define MACRO_BLKSTMT_BEGIN {
 #  define MACRO_BLKSTMT_END }
-#  define LOCAL_VAR_INIT_OK = 0 /* to avoid "uninit var" false positive */
+#  define LOCAL_VAR_INIT_OK = 0 /*< to avoid "uninit var" false positive */
 #else
 #  define MACRO_BLKSTMT_BEGIN do {
 #  define MACRO_BLKSTMT_END \
     }                       \
     while (0)
-#  define LOCAL_VAR_INIT_OK /* empty */
+#  define LOCAL_VAR_INIT_OK /*< empty */
 #endif
 
 #if defined(M68K) && defined(__GNUC__)
@@ -201,7 +201,7 @@ typedef char GC_bool;
 /* one on the given 32-bit architecture).                               */
 #  define GC_ATTR_PTRT_ALIGNED __attribute__((__aligned__(sizeof(ptr_t))))
 #else
-#  define GC_ATTR_PTRT_ALIGNED /* empty */
+#  define GC_ATTR_PTRT_ALIGNED /*< empty */
 #endif
 
 #ifdef CHERI_PURECAP
@@ -226,7 +226,7 @@ EXTERN_C_END
 
 #ifndef GC_ATTR_NO_SANITIZE_ADDR
 #  ifndef ADDRESS_SANITIZER
-#    define GC_ATTR_NO_SANITIZE_ADDR /* empty */
+#    define GC_ATTR_NO_SANITIZE_ADDR /*< empty */
 #  elif GC_CLANG_PREREQ(3, 8)
 #    define GC_ATTR_NO_SANITIZE_ADDR \
       __attribute__((__no_sanitize__("address")))
@@ -237,7 +237,7 @@ EXTERN_C_END
 
 #ifndef GC_ATTR_NO_SANITIZE_MEMORY
 #  ifndef MEMORY_SANITIZER
-#    define GC_ATTR_NO_SANITIZE_MEMORY /* empty */
+#    define GC_ATTR_NO_SANITIZE_MEMORY /*< empty */
 #  elif GC_CLANG_PREREQ(3, 8)
 #    define GC_ATTR_NO_SANITIZE_MEMORY \
       __attribute__((__no_sanitize__("memory")))
@@ -248,7 +248,7 @@ EXTERN_C_END
 
 #ifndef GC_ATTR_NO_SANITIZE_THREAD
 #  ifndef THREAD_SANITIZER
-#    define GC_ATTR_NO_SANITIZE_THREAD /* empty */
+#    define GC_ATTR_NO_SANITIZE_THREAD /*< empty */
 #  elif GC_CLANG_PREREQ(3, 8)
 #    define GC_ATTR_NO_SANITIZE_THREAD \
       __attribute__((__no_sanitize__("thread")))
@@ -287,7 +287,7 @@ EXTERN_C_END
 #  elif _MSC_VER >= 1400
 #    define GC_ATTR_NOINLINE __declspec(noinline)
 #  else
-#    define GC_ATTR_NOINLINE /* empty */
+#    define GC_ATTR_NOINLINE /*< empty */
 #  endif
 #endif
 
@@ -377,7 +377,7 @@ EXTERN_C_END
 
 /* Handy definitions to compare and adjust pointers in a stack.     */
 #ifdef STACK_GROWS_UP
-#  define HOTTER_THAN(p, q) ADDR_LT(q, p) /* inverse */
+#  define HOTTER_THAN(p, q) ADDR_LT(q, p) /*< inverse */
 #  define MAKE_COOLER(p, d) \
     (void)((p) -= ADDR(p) > (word)((d) * sizeof(*(p))) ? (d) : 0)
 #  define MAKE_HOTTER(p, d) (void)((p) += (d))
@@ -474,9 +474,9 @@ GC_INNER void GC_print_finalization_stats(void);
 
 #ifdef NEED_CALLINFO
 struct callinfo {
-  GC_return_addr_t ci_pc; /* `pc` of caller, not callee */
+  GC_return_addr_t ci_pc; /*< `pc` of caller, not callee */
 #  if NARGS > 0
-  GC_hidden_pointer ci_arg[NARGS]; /* hide to avoid retention */
+  GC_hidden_pointer ci_arg[NARGS]; /*< hide to avoid retention */
 #  endif
 #  if (NFRAMES * (NARGS + 1)) % 2 == 1
   /* Likely alignment problem. */
@@ -573,7 +573,8 @@ EXTERN_C_END
 #    define GET_TIME(x) (void)(x = n3ds_get_system_tick())
 #    define MS_TIME_DIFF(a, b) \
       ((unsigned long)n3ds_convert_tick_to_ms((a) - (b)))
-#    define NS_FRAC_TIME_DIFF(a, b) 0UL /* TODO: implement it */
+/* TODO: Implement NS_FRAC_TIME_DIFF(). */
+#    define NS_FRAC_TIME_DIFF(a, b) 0UL
 
 #  elif defined(HAVE_CLOCK_GETTIME)
 #    include <time.h>
@@ -698,7 +699,7 @@ GC_INNER void GC_start_world(void);
 
 /* Abandon ship. */
 #ifdef SMALL_CONFIG
-#  define GC_on_abort(msg) (void)0 /* be silent on abort */
+#  define GC_on_abort(msg) (void)0 /*< be silent on abort */
 #else
 GC_API_PRIV GC_abort_func GC_on_abort;
 #endif
@@ -718,7 +719,7 @@ GC_API_PRIV GC_abort_func GC_on_abort;
 /* this behavior if really needed.  This is also a workaround for   */
 /* x86mingw32ce toolchain (if it is still declaring `DebugBreak()`  */
 /* instead of defining it as a macro).                              */
-#    define DebugBreak() _exit(-1) /* there is no `abort()` in WinCE */
+#    define DebugBreak() _exit(-1) /*< there is no `abort()` in WinCE */
 #  endif
 #  if defined(MSWIN32) && (defined(NO_DEBUGGING) || defined(LINT2))
 /* A more user-friendly abort after showing fatal message.        */
@@ -728,10 +729,10 @@ GC_API_PRIV GC_abort_func GC_on_abort;
 #    define ABORT(msg) (GC_on_abort(msg), ExitProcess(-1))
 #  elif defined(MSWIN32) || defined(MSWINCE)
 #    if defined(_CrtDbgBreak) && defined(_DEBUG) && defined(_MSC_VER)
-#      define ABORT(msg)                         \
-        {                                        \
-          GC_on_abort(msg);                      \
-          _CrtDbgBreak() /* `__debugbreak()` */; \
+#      define ABORT(msg)                          \
+        {                                         \
+          GC_on_abort(msg);                       \
+          _CrtDbgBreak() /*< `__debugbreak()` */; \
         }
 #    else
 #      define ABORT(msg)    \
@@ -901,18 +902,18 @@ EXTERN_C_END
 #include <stdio.h>
 
 #if defined(CAN_HANDLE_FORK) && defined(GC_PTHREADS)
-#  include <pthread.h> /* for `pthread_t` */
+#  include <pthread.h> /*< for `pthread_t` */
 #endif
 
 #if __STDC_VERSION__ >= 201112L
-#  include <assert.h> /* for `static_assert` */
+#  include <assert.h> /*< for `static_assert` */
 #endif
 
 EXTERN_C_BEGIN
 
 /* Definitions depending on `word` size. */
 
-#define modWORDSZ(n) ((n) & (CPP_WORDSZ - 1)) /* `n mod size_of_word` */
+#define modWORDSZ(n) ((n) & (CPP_WORDSZ - 1)) /*< `n mod size_of_word` */
 #define divWORDSZ(n) ((n) / CPP_WORDSZ)
 
 #define SIGNB ((word)1 << (CPP_WORDSZ - 1))
@@ -1002,26 +1003,26 @@ EXTERN_C_BEGIN
   ((struct hblk *)PTR_ALIGN_DOWN((ptr_t)(objptr), GC_page_size))
 
 /* Round up allocation size (in bytes) to a multiple of a granule.      */
-#define ROUNDUP_GRANULE_SIZE(lb) /* `lb` should have no side-effect */ \
+#define ROUNDUP_GRANULE_SIZE(lb) /*< `lb` should have no side-effect */ \
   (SIZET_SAT_ADD(lb, GC_GRANULE_BYTES - 1) & ~(size_t)(GC_GRANULE_BYTES - 1))
 
 /* Round up byte allocation request (after adding `EXTRA_BYTES`) to */
 /* a multiple of a granule, then convert it to granules.            */
-#define ALLOC_REQUEST_GRANS(lb) /* `lb` should have no side-effect */ \
+#define ALLOC_REQUEST_GRANS(lb) /*< `lb` should have no side-effect */ \
   BYTES_TO_GRANULES(SIZET_SAT_ADD(lb, GC_GRANULE_BYTES - 1 + EXTRA_BYTES))
 
 #if MAX_EXTRA_BYTES == 0
 #  define ADD_EXTRA_BYTES(lb) (lb)
 #  define SMALL_OBJ(lb) EXPECT((lb) <= MAXOBJBYTES, TRUE)
 #else
-#  define ADD_EXTRA_BYTES(lb) /* `lb` should have no side-effect */ \
+#  define ADD_EXTRA_BYTES(lb) /*< `lb` should have no side-effect */ \
     SIZET_SAT_ADD(lb, EXTRA_BYTES)
 
 /* This really just tests that `lb` is not greater than             */
 /* `MAXOBJBYTES - EXTRA_BYTES`, but we try to avoid looking up      */
 /* `EXTRA_BYTES`.                                                   */
-#  define SMALL_OBJ(lb) /* `lb` should have no side-effect */ \
-    (EXPECT((lb) <= MAXOBJBYTES - MAX_EXTRA_BYTES, TRUE)      \
+#  define SMALL_OBJ(lb) /*< `lb` should have no side-effect */ \
+    (EXPECT((lb) <= MAXOBJBYTES - MAX_EXTRA_BYTES, TRUE)       \
      || (lb) <= MAXOBJBYTES - EXTRA_BYTES)
 #endif
 
@@ -1205,7 +1206,7 @@ struct hblkhdr {
     /* "one past the end" object is always set to avoid a special   */
     /* case test in the marker.                                     */
     char _hb_marks[HB_MARKS_SZ];
-    word dummy; /* force word alignment of mark bytes */
+    word dummy; /*< force word alignment of mark bytes */
   } _mark_byte_union;
 #  define hb_marks _mark_byte_union._hb_marks
 #else
@@ -1240,7 +1241,7 @@ struct hblk {
 
 /* Size of block (in units of `HBLKSIZE`) needed to hold objects of   */
 /* given `lb` (in bytes).  The checked variant prevents wrap around.  */
-#define OBJ_SZ_TO_BLOCKS_CHECKED(lb) /* `lb` should have no side-effect */ \
+#define OBJ_SZ_TO_BLOCKS_CHECKED(lb) /*< `lb` should have no side-effect */ \
   divHBLKSZ(SIZET_SAT_ADD(lb, HBLKSIZE - 1))
 
 /* The object free-list link.   */
@@ -1272,8 +1273,8 @@ struct exclusion {
 /* Under Win32, we need to do a better job of filtering overlaps, so    */
 /* we resort to sequential search, and pay the price.                   */
 struct roots {
-  ptr_t r_start; /* multiple of pointer size */
-  ptr_t r_end;   /* multiple of pointer size and greater than `r_start` */
+  ptr_t r_start; /*< multiple of pointer size */
+  ptr_t r_end;   /*< multiple of pointer size and greater than `r_start` */
 #ifndef ANY_MSWIN
   struct roots *r_next;
 #endif
@@ -1301,17 +1302,17 @@ struct roots {
 #    if defined(PARALLEL_MARK) && (defined(MSWIN32) || defined(CYGWIN32))
 #      define MAX_HEAP_SECTS 384
 #    else
-#      define MAX_HEAP_SECTS 128 /* Roughly 256 MB (128*2048*1024) */
+#      define MAX_HEAP_SECTS 128 /*< roughly 256 MB (`128 * 2048 * 1024`) */
 #    endif
 #  elif CPP_WORDSZ > 32
-#    define MAX_HEAP_SECTS 1024 /* Roughly 8 GB */
+#    define MAX_HEAP_SECTS 1024 /*< roughly 8 GB */
 #  else
-#    define MAX_HEAP_SECTS 512 /* Roughly 4 GB */
+#    define MAX_HEAP_SECTS 512 /*< roughly 4 GB */
 #  endif
 #endif /* !MAX_HEAP_SECTS */
 
 typedef struct GC_ms_entry {
-  ptr_t mse_start; /* Beginning of object, pointer-aligned one.    */
+  ptr_t mse_start; /*< beginning of object, pointer-aligned one */
 #ifdef PARALLEL_MARK
   volatile AO_t mse_descr;
 #else
@@ -1353,7 +1354,7 @@ typedef struct {
   /* The least significant bit corresponds to the first "pointer-sized" */
   /* word.                                                              */
   word ed_bitmap;
-  GC_bool ed_continued; /* next entry is continuation */
+  GC_bool ed_continued; /*< next entry is continuation */
 } typed_ext_descr_t;
 
 struct HeapSect {
@@ -1372,8 +1373,8 @@ struct HeapSect {
 /* that `gc_inline.h` file will work even if a different set of macros  */
 /* is defined when the client is compiled.                              */
 struct _GC_arrays {
-  word _heapsize;           /* Heap size in bytes (value never goes down).  */
-  word _requested_heapsize; /* Heap size due to explicit expansion. */
+  word _heapsize;           /*< heap size in bytes (value never goes down) */
+  word _requested_heapsize; /*< heap size due to explicit expansion */
 #define GC_heapsize_on_gc_disable GC_arrays._heapsize_on_gc_disable
   word _heapsize_on_gc_disable;
   word _last_heap_addr;
@@ -1432,7 +1433,7 @@ struct _GC_arrays {
   ptr_t _scratch_free_ptr;
   hdr *_hdr_free_list;
 #define GC_scratch_end_addr GC_arrays._scratch_end_addr
-  word _scratch_end_addr; /* the end point of the current scratch area */
+  word _scratch_end_addr; /*< the end point of the current scratch area */
 #if defined(IRIX5) || (defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX))
 #  define USE_SCRATCH_LAST_END_PTR
   /* The address of the end point of the last obtained scratch area.    */
@@ -1565,14 +1566,14 @@ struct _GC_arrays {
 #define GC_mark_stack_size GC_arrays._mark_stack_size
   size_t _mark_stack_size;
 #define GC_mark_state GC_arrays._mark_state
-  mark_state_t _mark_state; /* initialized to `MS_NONE` (0) */
+  mark_state_t _mark_state; /*< initialized to `MS_NONE` (0) */
 #define GC_capacity_heap_sects GC_arrays._capacity_heap_sects
   size_t _capacity_heap_sects;
 #define GC_n_heap_sects GC_arrays._n_heap_sects
-  size_t _n_heap_sects; /* number of separately added heap sections */
+  size_t _n_heap_sects; /*< number of separately added heap sections */
 #ifdef ANY_MSWIN
 #  define GC_n_heap_bases GC_arrays._n_heap_bases
-  size_t _n_heap_bases; /* see `GC_heap_bases[]` */
+  size_t _n_heap_bases; /*< see `GC_heap_bases[]` */
 #endif
 #ifdef USE_PROC_FOR_LIBRARIES
   /* Number of `GET_MEM`-allocated memory sections. */
@@ -1609,7 +1610,7 @@ struct _GC_arrays {
 #endif
 #ifdef TRACE_BUF
 #  define GC_trace_buf_pos GC_arrays._trace_buf_pos
-  size_t _trace_buf_pos; /* an index in the circular buffer */
+  size_t _trace_buf_pos; /*< an index in the circular buffer */
 #endif
 #ifdef ENABLE_DISCLAIM
 #  define GC_finalized_kind GC_arrays._finalized_kind
@@ -1620,12 +1621,12 @@ struct _GC_arrays {
   size_t _n_root_sets;
 
 #define GC_excl_table_entries GC_arrays._excl_table_entries
-  size_t _excl_table_entries; /* Number of entries in use.    */
+  size_t _excl_table_entries; /*< number of entries in use */
 #define GC_ed_size GC_arrays._ed_size
 #define GC_avail_descr GC_arrays._avail_descr
 #define GC_ext_descriptors GC_arrays._ext_descriptors
-  size_t _ed_size;     /* Current size of above arrays.        */
-  size_t _avail_descr; /* Next available slot.                 */
+  size_t _ed_size;     /*< current size of above arrays */
+  size_t _avail_descr; /*< next available slot */
 
 #if defined(CAN_HANDLE_FORK) && defined(GC_PTHREADS)
   /* Value of `pthread_self()` of the thread which called `fork()`. */
@@ -1821,7 +1822,7 @@ GC_EXTERN struct obj_kind {
   int(GC_CALLBACK *ok_disclaim_proc)(void * /* `obj` */);
 #  define OK_DISCLAIM_INITZ /* comma */ , FALSE, 0
 #else
-#  define OK_DISCLAIM_INITZ /* empty */
+#  define OK_DISCLAIM_INITZ /*< empty */
 #endif
 } GC_obj_kinds[MAXOBJKINDS];
 
@@ -1903,7 +1904,7 @@ GC_INNER void *GC_unix_get_mem(size_t lb);
 
 /* Round up allocation size to a multiple of a page size.           */
 /* `GC_setpagesize()` is assumed to be already invoked.             */
-#define ROUNDUP_PAGESIZE(lb) /* `lb` should have no side-effect */ \
+#define ROUNDUP_PAGESIZE(lb) /*< `lb` should have no side-effect */ \
   (SIZET_SAT_ADD(lb, GC_page_size - 1) & ~(GC_page_size - 1))
 
 /* Same as `ROUNDUP_PAGESIZE` but is used to make `GET_MEM()` argument safe. */
@@ -1930,7 +1931,7 @@ GC_EXTERN word GC_root_size;
 /* This is used by `GC_do_blocking()`. */
 struct blocking_data {
   GC_fn_type fn;
-  void *client_data; /* and result */
+  void *client_data; /*< and result */
 };
 
 /* This is used by `GC_call_with_gc_active`, `GC_push_all_stack_sections`. */
@@ -1949,7 +1950,7 @@ struct GC_traced_stack_sect_s {
 GC_INNER void
 GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
                            struct GC_traced_stack_sect_s *traced_stack_sect);
-GC_EXTERN word GC_total_stacksize; /* updated on every `GC_push_all_stacks` */
+GC_EXTERN word GC_total_stacksize; /*< updated on every `GC_push_all_stacks` */
 #else
 GC_EXTERN ptr_t GC_blocked_sp;
 
@@ -2039,8 +2040,8 @@ GC_INNER ptr_t GC_approx_sp(void);
 /* "undefined reference to llvm.frameaddress" error (clang-9/e2k);  */
 /* a crash in SystemZTargetLowering of libLLVM-3.8 (s390).          */
 #  define STORE_APPROX_SP_TO(sp) (void)(sp = (ptr_t)(&sp))
-#elif defined(CPPCHECK)                            \
-    || (__GNUC__ >= 4 /* `GC_GNUC_PREREQ(4, 0)` */ \
+#elif defined(CPPCHECK)                              \
+    || ((__GNUC__ >= 4 /* `GC_GNUC_PREREQ(4, 0)` */) \
         && !defined(STACK_NOT_SCANNED))
 /* TODO: Use `GC_GNUC_PREREQ` after fixing a bug in cppcheck. */
 /* Note: l-value is passed instead of pointer to `sp` (because of cppcheck). */
@@ -2163,7 +2164,7 @@ ptr_t GC_save_regs_in_stack(void);
 /* is valid only within the current function.                         */
 #  define GET_PROCEDURE_STACK_SIZE_INNER(psz_ull)                            \
     do {                                                                     \
-      *(psz_ull) = 0; /* might be redundant */                               \
+      *(psz_ull) = 0; /*< might be redundant */                              \
       if (syscall(__NR_access_hw_stacks, E2K_GET_PROCEDURE_STACK_SIZE, NULL, \
                   NULL, 0, psz_ull)                                          \
           == -1)                                                             \
@@ -2510,7 +2511,8 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func);
 GC_EXTERN GC_bool GC_in_thread_creation;
 #endif
 
-GC_EXTERN GC_bool GC_is_initialized; /* `GC_init()` has been run. */
+/* Has `GC_init()` been run? */
+GC_EXTERN GC_bool GC_is_initialized;
 
 /* Do `n_blocks` units of a garbage collection work, if appropriate.    */
 /* A unit is an amount appropriate for `HBLKSIZE` bytes of allocation.  */
@@ -2644,7 +2646,7 @@ GC_EXTERN GC_bool GC_findleak_delay_free;
 GC_EXTERN volatile AO_t GC_have_errors;
 #  define GC_SET_HAVE_ERRORS() AO_store(&GC_have_errors, (AO_t)TRUE)
 #  define get_have_errors() \
-    ((GC_bool)AO_load(&GC_have_errors)) /* no barrier */
+    ((GC_bool)AO_load(&GC_have_errors)) /*< no barrier */
 
 #else
 GC_EXTERN GC_bool GC_have_errors;
@@ -2688,7 +2690,7 @@ GC_rand_next(GC_RAND_STATE_T *pseed)
 }
 #else
 #  define GC_RAND_STATE_T unsigned32
-#  define GC_RAND_NEXT(pseed) /* overflow and race are OK */       \
+#  define GC_RAND_NEXT(pseed) /*< overflow and race are OK */      \
     (int)(*(pseed) = (*(pseed) * (unsigned32)1103515245UL + 12345) \
                      & (unsigned32)((unsigned)GC_RAND_MAX))
 #endif
@@ -2783,7 +2785,7 @@ GC_INNER void GC_stackbase_info_update_after_fork(void);
 GC_EXTERN GC_bool GC_manual_vdb;
 
 #  define GC_auto_incremental (GC_incremental && !GC_manual_vdb)
-GC_INNER void GC_dirty_inner(const void *p); /* does not require locking */
+GC_INNER void GC_dirty_inner(const void *p); /*< does not require locking */
 #  define GC_dirty(p) (GC_manual_vdb ? GC_dirty_inner(p) : (void)0)
 #  define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
 #endif /* !NO_MANUAL_VDB */
@@ -2976,12 +2978,12 @@ GC_EXTERN word GC_reclaimed_bytes_before_gc;
 #endif
 
 #ifdef USE_MUNMAP
-GC_EXTERN unsigned GC_unmap_threshold;        /* defined in `alloc.c` file */
-GC_EXTERN GC_bool GC_force_unmap_on_gcollect; /* defined in `misc.c` file */
+GC_EXTERN unsigned GC_unmap_threshold;        /*< defined in `alloc.c` file */
+GC_EXTERN GC_bool GC_force_unmap_on_gcollect; /*< defined in `misc.c` file */
 #endif
 
 #ifdef MSWIN32
-GC_EXTERN GC_bool GC_no_win32_dlls; /* defined in `os_dep.c` file */
+GC_EXTERN GC_bool GC_no_win32_dlls; /*< defined in `os_dep.c` file */
 
 /* Is Windows NT derivative?  */
 GC_EXTERN GC_bool GC_wnt;
@@ -3016,7 +3018,7 @@ GC_EXTERN ptr_t GC_save_regs_ret_val;
 #endif /* !THREADS */
 
 #ifdef THREAD_LOCAL_ALLOC
-GC_EXTERN GC_bool GC_world_stopped; /* defined in `alloc.c` file */
+GC_EXTERN GC_bool GC_world_stopped; /*< defined in `alloc.c` file */
 GC_INNER void GC_mark_thread_local_free_lists(void);
 #endif
 
@@ -3045,7 +3047,7 @@ void GC_check_dirty(void);
 
 GC_INNER void GC_setpagesize(void);
 
-GC_INNER void GC_initialize_offsets(void); /* defined in `obj_map.c` file */
+GC_INNER void GC_initialize_offsets(void); /*< defined in `obj_map.c` file */
 
 #if defined(REDIR_MALLOC_AND_LINUXTHREADS) \
     && !defined(REDIRECT_MALLOC_IN_HEADER)
@@ -3209,7 +3211,7 @@ GC_INNER word GC_compute_root_size(void);
 #elif defined(static_assert) && !defined(CPPCHECK) \
     && (__STDC_VERSION__ >= 201112L)
 #  define GC_STATIC_ASSERT(expr)                                            \
-    do { /* wrap into `do`-`while` for proper formatting by clang-format */ \
+    do { /* placed in `do`-`while` for proper formatting by clang-format */ \
       static_assert(expr, #expr);                                           \
     } while (0)
 #elif defined(mips) && !defined(__GNUC__) && !defined(CPPCHECK)
@@ -3285,12 +3287,12 @@ GC_INNER void GC_release_mark_lock(void);
 GC_INNER void GC_notify_all_builder(void);
 GC_INNER void GC_wait_for_reclaim(void);
 
-GC_EXTERN GC_signed_word GC_fl_builder_count; /* protected by the mark lock */
+GC_EXTERN GC_signed_word GC_fl_builder_count; /*< protected by the mark lock */
 
 GC_INNER void GC_notify_all_marker(void);
 GC_INNER void GC_wait_marker(void);
 
-GC_EXTERN word GC_mark_no; /* protected by the mark lock */
+GC_EXTERN word GC_mark_no; /*< protected by the mark lock */
 
 /* Try to help out parallel marker for mark cycle `my_mark_no`.         */
 /* Returns if the mark cycle finishes or was already done, or there was */
@@ -3456,10 +3458,10 @@ extern __thread unsigned char GC_cancel_disable_count;
       unsigned32 hx = (x) >> 16;                                        \
       unsigned32 hy = (y) >> 16;                                        \
       unsigned32 lxhy = lx * hy;                                        \
-      unsigned32 mid = hx * ly + lxhy; /* may overflow */               \
+      unsigned32 mid = hx * ly + lxhy; /*< may overflow */              \
       unsigned32 lxly = lx * ly;                                        \
                                                                         \
-      lprod = (mid << 16) + lxly; /* may overflow */                    \
+      lprod = (mid << 16) + lxly; /*< may overflow */                   \
       hprod = hx * hy + ((lprod) < lxly ? 1U : 0)                       \
               + (mid < lxhy ? (unsigned32)0x10000UL : 0) + (mid >> 16); \
     } while (0)

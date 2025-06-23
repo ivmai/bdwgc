@@ -33,7 +33,7 @@ extern "C" {
 #  if defined(GC_BUILD) || !defined(GC_DLL)
 #    define GC_APIVAR_CONST const
 #  else
-#    define GC_APIVAR_CONST /* empty */
+#    define GC_APIVAR_CONST /*< empty */
 #  endif
 #endif
 

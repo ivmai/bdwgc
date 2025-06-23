@@ -23,7 +23,7 @@
 
 #ifdef GC_BUILTIN_ATOMIC
 
-#  include "gc/gc.h" /* for `size_t` */
+#  include "gc/gc.h" /*< for `size_t` */
 
 #  ifdef __cplusplus
 extern "C" {
@@ -31,7 +31,7 @@ extern "C" {
 
 typedef size_t AO_t;
 
-#  ifdef GC_PRIVATE_H /* i.e. have `GC_INLINE` */
+#  ifdef GC_PRIVATE_H /*< i.e. have `GC_INLINE` */
 #    define AO_INLINE GC_INLINE
 #  else
 #    define AO_INLINE static __inline
@@ -54,7 +54,7 @@ typedef unsigned char AO_TS_t;
 #  if defined(__GCC_ATOMIC_TEST_AND_SET_TRUEVAL) && !defined(CPPCHECK)
 #    define AO_TS_SET __GCC_ATOMIC_TEST_AND_SET_TRUEVAL
 #  else
-#    define AO_TS_SET (AO_TS_t)1 /* true */
+#    define AO_TS_SET (AO_TS_t)1 /*< true */
 #  endif
 #  define AO_CLEAR(p) __atomic_clear(p, __ATOMIC_RELEASE)
 #  define AO_test_and_set_acquire(p) \

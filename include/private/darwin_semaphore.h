@@ -46,7 +46,7 @@ sem_init(sem_t *sem, int pshared, int value)
   int err;
 
   if (EXPECT(pshared != 0, FALSE)) {
-    errno = EPERM; /* unsupported */
+    errno = EPERM; /*< unsupported */
     return -1;
   }
   sem->value = value;

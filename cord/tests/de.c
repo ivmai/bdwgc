@@ -28,7 +28,7 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h> /* for `exit` */
+#include <stdlib.h> /*< for `exit` */
 
 #include "gc.h"
 #include "gc/cord.h"
@@ -49,7 +49,7 @@
 #  include <windows.h>
 #else
 #  include <curses.h>
-#  include <unistd.h> /* for `sleep` */
+#  include <unistd.h> /*< for `sleep` */
 #  define de_error(s)     \
     {                     \
       fprintf(stderr, s); \
@@ -92,7 +92,7 @@ typedef struct LineMapRep *line_map;
 struct HistoryRep {
   CORD file_contents;
   struct HistoryRep *previous;
-  line_map map; /* note: this is invalid for the first record `now` */
+  line_map map; /*< note: this is invalid for the first record `now` */
 };
 typedef struct HistoryRep *history;
 
@@ -119,7 +119,7 @@ static int dis_col = 0;
 
 #define ALL -1
 #define NONE -2
-static int need_redisplay = 0; /* line that needs to be redisplayed */
+static int need_redisplay = 0; /*< line that needs to be redisplayed */
 
 /* Current cursor position. Always within file. */
 static int line = 0;
@@ -134,7 +134,7 @@ invalidate_map(int i)
 {
   for (;;) {
     if (NULL == current_map)
-      exit(4); /* for CSA, should not happen */
+      exit(4); /*< for CSA, should not happen */
     if (current_map->line <= i)
       break;
     current_map = current_map->previous;
@@ -194,7 +194,7 @@ line_pos(int i, int *c)
 
   while (map->line > i)
     map = map->previous;
-  if (map->line < i - 2) /* rebuild */
+  if (map->line < i - 2) /*< rebuild */
     invalidate_map(i);
   for (j = map->line, cur = map->pos; j < i;) {
     cur = CORD_chr(current, cur, '\n');
@@ -317,7 +317,7 @@ retrieve_line(CORD s, size_t pos, unsigned column)
 }
 
 #ifdef WIN32
-#  define refresh() /* Empty */
+#  define refresh() (void)0
 
 const void *
 retrieve_screen_line(int i)
@@ -446,11 +446,11 @@ beep(void)
 
 #define NO_PREFIX -1
 #define BARE_PREFIX -2
-static int repeat_count = NO_PREFIX; /* the current command prefix */
+static int repeat_count = NO_PREFIX; /*< the current command prefix */
 
-static int locate_mode = 0; /* currently between 2 ^Ls */
+static int locate_mode = 0; /*< currently between 2 ^Ls */
 
-static CORD locate_string = CORD_EMPTY; /* the current search string */
+static CORD locate_string = CORD_EMPTY; /*< the current search string */
 
 char *arg_file_name;
 

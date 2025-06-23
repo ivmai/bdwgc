@@ -77,7 +77,7 @@ GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
 #      define I_HOLD_LOCK() \
         (!GC_need_to_lock || GC_lock_holder == GetCurrentThreadId())
 #      ifdef THREAD_SANITIZER
-#        define I_DONT_HOLD_LOCK() TRUE /* Conservatively say yes */
+#        define I_DONT_HOLD_LOCK() TRUE /*< conservatively say yes */
 #      else
 #        define I_DONT_HOLD_LOCK() \
           (!GC_need_to_lock || GC_lock_holder != GetCurrentThreadId())
@@ -145,7 +145,7 @@ EXTERN_C_BEGIN
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(GC_uintptr_t)(id))
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
 #      define NUMERIC_THREAD_ID_UNIQUE
-#    elif defined(__WINPTHREADS_VERSION_MAJOR) /* winpthreads */
+#    elif defined(__WINPTHREADS_VERSION_MAJOR) /*< winpthreads */
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
 /* `NUMERIC_THREAD_ID()` is 32-bit and, thus, not unique on Win64. */
@@ -297,7 +297,7 @@ GC_INNER void GC_lock(void);
         (!GC_need_to_lock   \
          || GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))
 #      if !defined(NUMERIC_THREAD_ID_UNIQUE) || defined(THREAD_SANITIZER)
-#        define I_DONT_HOLD_LOCK() TRUE /* Conservatively say yes */
+#        define I_DONT_HOLD_LOCK() TRUE /*< conservatively say yes */
 #      else
 #        define I_DONT_HOLD_LOCK() \
           (!GC_need_to_lock        \
@@ -398,7 +398,8 @@ EXTERN_C_END
 
 #ifdef READER_LOCK
 #  define HAS_REAL_READER_LOCK
-#  define I_HOLD_READER_LOCK() TRUE /* TODO: implement */
+/* TODO: Implement I_HOLD_READER_LOCK, conservatively say yes for now. */
+#  define I_HOLD_READER_LOCK() TRUE
 #else
 #  define READER_LOCK() LOCK()
 #  define READER_UNLOCK() UNLOCK()

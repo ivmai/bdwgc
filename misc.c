@@ -82,7 +82,7 @@ int GC_dont_gc = FALSE;
 
 int GC_dont_precollect = FALSE;
 
-GC_bool GC_quiet = 0; /* used also in `msvc_dbg.c` file */
+GC_bool GC_quiet = 0; /*< used also in `msvc_dbg.c` file */
 
 #if !defined(NO_CLOCK) || !defined(SMALL_CONFIG)
 GC_INNER int GC_print_stats = 0;
@@ -304,9 +304,9 @@ STATIC ptr_t GC_high_water = NULL;
 #  endif
 
 #  if defined(__APPLE_CC__) && !GC_CLANG_PREREQ(6, 0)
-#    define CLEARSTACK_LIMIT_MODIFIER volatile /* to workaround some bug */
+#    define CLEARSTACK_LIMIT_MODIFIER volatile /*< to workaround some bug */
 #  else
-#    define CLEARSTACK_LIMIT_MODIFIER /* empty */
+#    define CLEARSTACK_LIMIT_MODIFIER /*< empty */
 #  endif
 
 EXTERN_C_BEGIN
@@ -320,7 +320,7 @@ EXTERN_C_END
 void *
 GC_clear_stack_inner(void *arg, CLEARSTACK_LIMIT_MODIFIER ptr_t limit)
 {
-#    define CLEAR_SIZE 213 /* granularity */
+#    define CLEAR_SIZE 213 /*< granularity */
   volatile ptr_t dummy[CLEAR_SIZE];
 
   BZERO(CAST_AWAY_VOLATILE_PVOID(dummy), sizeof(dummy));
@@ -590,7 +590,7 @@ fill_prof_stats(struct GC_prof_stats_s *pstats)
   pstats->bytes_allocd_since_gc = GC_bytes_allocd;
   pstats->allocd_bytes_before_gc = GC_bytes_allocd_before_gc;
   pstats->non_gc_bytes = GC_non_gc_bytes;
-  pstats->gc_no = GC_gc_no; /* could be -1 */
+  pstats->gc_no = GC_gc_no; /*< could be -1 */
 #  ifdef PARALLEL_MARK
   pstats->markers_m1 = (word)((GC_signed_word)GC_markers_m1);
 #  else
@@ -600,11 +600,11 @@ fill_prof_stats(struct GC_prof_stats_s *pstats)
   pstats->bytes_reclaimed_since_gc
       = GC_bytes_found > 0 ? (word)GC_bytes_found : 0;
   pstats->reclaimed_bytes_before_gc = GC_reclaimed_bytes_before_gc;
-  pstats->expl_freed_bytes_since_gc = GC_bytes_freed; /* since gc-7.7 */
-  pstats->obtained_from_os_bytes = GC_our_mem_bytes;  /* since gc-8.2 */
+  pstats->expl_freed_bytes_since_gc = GC_bytes_freed; /*< since gc-7.7 */
+  pstats->obtained_from_os_bytes = GC_our_mem_bytes;  /*< since gc-8.2 */
 }
 
-#  include <string.h> /* for `memset()` */
+#  include <string.h> /*< for `memset()` */
 
 GC_API size_t GC_CALL
 GC_get_prof_stats(struct GC_prof_stats_s *pstats, size_t stats_sz)
@@ -711,7 +711,7 @@ GC_envfile_init(void)
   unsigned ofs;
   unsigned len;
   DWORD nBytesRead;
-  TCHAR path[_MAX_PATH + 0x10]; /* buffer for file path with extension */
+  TCHAR path[_MAX_PATH + 0x10]; /*< buffer for file path with extension */
   size_t bytes_to_get;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -1020,7 +1020,7 @@ GC_parse_mem_size_arg(const char *str)
   char ch;
 
   if ('\0' == *str)
-    return GC_WORD_MAX; /* bad value */
+    return GC_WORD_MAX; /*< bad value */
   result = (word)STRTOULL(str, &endptr, 10);
   ch = *endptr;
   if (ch != '\0') {
@@ -1754,7 +1754,7 @@ GC_CreateLogFile(void)
 {
   HANDLE hFile;
 #  ifdef MSWINRT_FLAVOR
-  TCHAR pathBuf[_MAX_PATH + 0x10]; /* buffer for file path plus extension */
+  TCHAR pathBuf[_MAX_PATH + 0x10]; /*< buffer for file path plus extension */
 
   hFile = INVALID_HANDLE_VALUE;
   if (getWinRTLogPath(pathBuf, _MAX_PATH + 1)) {
@@ -1777,7 +1777,7 @@ GC_CreateLogFile(void)
   BOOL appendToFile = FALSE;
 #    endif
 #    if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
-  TCHAR pathBuf[_MAX_PATH + 0x10]; /* buffer for file path plus extension */
+  TCHAR pathBuf[_MAX_PATH + 0x10]; /*< buffer for file path plus extension */
 
   logPath = pathBuf;
 #    endif
@@ -2025,7 +2025,7 @@ GC_write(int fd, const char *buf, size_t len)
     do {                                                      \
       va_list args;                                           \
       va_start(args, format);                                 \
-      (buf)[sizeof(buf) - 1] = 0x15; /* guard */              \
+      (buf)[sizeof(buf) - 1] = 0x15; /*< guard */             \
       (void)GC_VSNPRINTF(buf, sizeof(buf) - 1, format, args); \
       va_end(args);                                           \
       if ((buf)[sizeof(buf) - 1] != 0x15)                     \
@@ -2282,7 +2282,7 @@ GC_snprintf_s_ld_s(char *buf, size_t buf_sz, const char *prefix, long lv,
       long r = lv / 10;
 
       if (EXPECT(0 == pos, FALSE))
-        break; /* overflow */
+        break; /*< overflow */
       num_buf[--pos] = (char)(r * 10 - lv + '0');
       lv = r;
     } while (lv < 0);
@@ -2531,7 +2531,7 @@ GC_call_with_gc_active(GC_fn_type fn, void *client_data)
     client_data = (*(GC_fn_type volatile *)&fn)(client_data);
     /* Prevent treating the above as a tail call.     */
     GC_noop1(COVERT_DATAFLOW(ADDR(&stacksect)));
-    return client_data; /* result */
+    return client_data; /*< result */
   }
 
   /* Setup new "stack section".       */
@@ -2561,7 +2561,7 @@ GC_call_with_gc_active(GC_fn_type fn, void *client_data)
 #  endif
   GC_blocked_sp = stacksect.saved_stack_ptr;
 
-  return client_data; /* result */
+  return client_data; /*< result */
 }
 
 /* This is nearly the same as in `pthread_support.c` file. */
@@ -2580,7 +2580,7 @@ GC_do_blocking_inner(ptr_t data, void *context)
 #    endif
 #  endif
 
-  ((struct blocking_data *)data)->client_data /* result */
+  ((struct blocking_data *)data)->client_data /*< result */
       = ((struct blocking_data *)data)
             ->fn(((struct blocking_data *)data)->client_data);
 
@@ -2597,7 +2597,7 @@ GC_set_stackbottom(void *gc_thread_handle, const struct GC_stack_base *sb)
   GC_ASSERT(sb->mem_base != NULL);
   GC_ASSERT(NULL == gc_thread_handle || &GC_stackbottom == gc_thread_handle);
   GC_ASSERT(NULL == GC_blocked_sp
-            && NULL == GC_traced_stack_sect); /* for now */
+            && NULL == GC_traced_stack_sect); /*< for now */
   UNUSED_ARG(gc_thread_handle);
 
   GC_stackbottom = (char *)sb->mem_base;
@@ -2616,7 +2616,7 @@ GC_get_my_stackbottom(struct GC_stack_base *sb)
 #  elif defined(E2K)
   sb->reg_base = NULL;
 #  endif
-  return &GC_stackbottom; /* `gc_thread_handle` */
+  return &GC_stackbottom; /*< `gc_thread_handle` */
 }
 
 #endif /* !THREADS */
@@ -2629,7 +2629,7 @@ GC_do_blocking(GC_fn_type fn, void *client_data)
   my_data.fn = fn;
   my_data.client_data = client_data;
   GC_with_callee_saves_pushed(GC_do_blocking_inner, (ptr_t)(&my_data));
-  return my_data.client_data; /* result */
+  return my_data.client_data; /*< result */
 }
 
 #if !defined(NO_DEBUGGING)

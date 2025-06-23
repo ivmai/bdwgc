@@ -35,7 +35,7 @@
 /* to dynamic loading.                                                  */
 
 #ifdef IRIX5
-#  include <malloc.h> /* for locking */
+#  include <malloc.h> /*< for locking */
 #  include <sys/uio.h>
 #endif
 
@@ -194,7 +194,7 @@ GC_get_maps(void)
   if (0 == maps_size)
     ABORT("Cannot determine length of /proc/self/maps");
 #  else
-  maps_size = 4000; /* Guess */
+  maps_size = 4000; /*< guess */
 #  endif
 
   /* Read `/proc/self/maps` file, growing `maps_buf` as necessary.  */
@@ -291,7 +291,7 @@ GC_parse_map_entry(const char *maps_ptr, ptr_t *p_start, ptr_t *p_end,
                    const char **p_mapping_name)
 {
   const unsigned char *start_start, *end_start, *maj_dev_start;
-  const unsigned char *p; /* unsigned for `isspace`, `isxdigit` */
+  const unsigned char *p; /*< unsigned for `isspace`, `isxdigit` */
 
   if (maps_ptr == NULL || *maps_ptr == '\0') {
     return NULL;
@@ -493,7 +493,7 @@ GC_init_linux_data_start(void)
   if (GC_no_dls) {
     /* Not needed, avoids the `SIGSEGV` caused by       */
     /* `GC_find_limit` which complicates debugging.     */
-    GC_data_start = data_end; /* set data root size to 0 */
+    GC_data_start = data_end; /*< set data root size to 0 */
     return;
   }
 
@@ -607,7 +607,7 @@ GC_skip_hole_openbsd(ptr_t p, ptr_t bound)
 
 #  include <stddef.h>
 
-#  if !defined(__IBMC__) && !defined(__WATCOMC__) /* e.g. EMX */
+#  if !defined(__IBMC__) && !defined(__WATCOMC__) /*< e.g. EMX */
 
 struct exe_hdr {
   unsigned short magic_number;
@@ -897,7 +897,7 @@ GC_get_stack_base(struct GC_stack_base *sb)
 GC_API int GC_CALL
 GC_get_stack_base(struct GC_stack_base *sb)
 {
-  PTIB ptib; /* thread information block */
+  PTIB ptib; /*< thread information block */
   PPIB ppib;
 
   if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
@@ -1032,7 +1032,7 @@ GC_reset_fault_handler(void)
 
 #if defined(NEED_FIND_LIMIT) \
     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
-#  define MIN_PAGE_SIZE 256 /* Smallest conceivable page size, in bytes. */
+#  define MIN_PAGE_SIZE 256 /*< smallest conceivable page size, in bytes */
 
 /* Return the first non-addressable location greater than `p` (if `up`) */
 /* or the smallest location `q` such that [`q`,`p`) is addressable (if  */
@@ -1347,7 +1347,7 @@ GC_get_main_stack_base(void)
       && (defined(THREADS) || defined(USE_GET_STACKBASE_FOR_MAIN))
 #    include <pthread.h>
 #    ifdef HAVE_PTHREAD_NP_H
-#      include <pthread_np.h> /* for `pthread_attr_get_np()` */
+#      include <pthread_np.h> /*< for `pthread_attr_get_np()` */
 #    endif
 #  elif defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)
 /* We could use `pthread_get_stackaddr_np` even in case of a            */
@@ -2053,7 +2053,7 @@ ld_cap_search(struct dl_phdr_info *info, size_t size, void *cd)
   region->ld_cap = (ptr_t)cheri_bounds_set(
       cheri_address_set(load_ptr, region->start_addr),
       region->end_addr - region->start_addr);
-  return 1; /* stop */
+  return 1; /*< stop */
 }
 
 static ptr_t
@@ -2073,7 +2073,7 @@ derive_cap_from_ldr(ptr_t range_start, ptr_t range_end)
   /* read-only capability provided by loader.                           */
   region.start_addr = scan_start;
   region.end_addr = scan_end;
-  region.ld_cap = NULL; /* prevent compiler warning */
+  region.ld_cap = NULL; /*< prevent a compiler warning */
   if (!dl_iterate_phdr(ld_cap_search, &region))
     ABORT("Cannot find static roots for capability system");
   GC_ASSERT(region.ld_cap != NULL);
@@ -2160,13 +2160,13 @@ GC_register_data_segments(void)
 #  define PBUFSIZ 512
   UCHAR path[PBUFSIZ];
   FILE *myexefile;
-  struct exe_hdr hdrdos; /* MSDOS header */
-  struct e32_exe hdr386; /* real header for my executable */
-  struct o32_obj seg;    /* current segment */
+  struct exe_hdr hdrdos; /*< MSDOS header */
+  struct e32_exe hdr386; /*< real header for my executable */
+  struct o32_obj seg;    /*< current segment */
   int nsegs;
 
 #  if defined(CPPCHECK)
-  hdrdos.padding[0] = 0; /* to prevent "field unused" warnings */
+  hdrdos.padding[0] = 0; /*< to prevent "field unused" warnings */
   hdr386.exe_format_level = 0;
   hdr386.os = 0;
   hdr386.padding1[0] = 0;
@@ -2528,7 +2528,7 @@ GC_get_mem(size_t bytes)
 GC_INNER void *
 GC_get_mem(size_t bytes)
 {
-  void *result = NULL; /* initialized to prevent warning */
+  void *result = NULL; /*< initialized to prevent a compiler warning */
   size_t i;
 
   GC_ASSERT(GC_page_size != 0);
@@ -3081,9 +3081,9 @@ GC_or_pages(page_hash_table pht1, const word *pht2)
 
 #ifdef GWW_VDB
 
+/* Note: this is still susceptible to overflow, if there are very large */
+/* allocations, and everything is dirty.                                */
 #  define GC_GWW_BUF_LEN (MAXHINCR * HBLKSIZE / 4096 /* x86 page size */)
-/* Still susceptible to overflow, if there are very large allocations, */
-/* and everything is dirty.                                            */
 static PVOID gww_buf[GC_GWW_BUF_LEN];
 
 #  ifndef MPROTECT_VDB
@@ -3155,7 +3155,7 @@ GC_gww_read_dirty(GC_bool output_unneeded)
         }
         /* Done with this section.    */
         count = 1;
-      } else if (!output_unneeded) { /* succeeded */
+      } else if (!output_unneeded) { /*< succeeded */
         const PVOID *pages_end = pages + count;
 
         while (pages != pages_end) {
@@ -3370,7 +3370,7 @@ is_header_found_async(const void *p)
             (si->si_code == BUS_PAGE_FAULT || si->si_code == SEGV_ACCERR)
 #        endif
 #      elif defined(OSF1)
-#        define CODE_OK (si->si_code == 2 /* experimentally determined */)
+#        define CODE_OK (si->si_code == 2) /*< experimentally determined */
 #      elif defined(IRIX5)
 #        define CODE_OK (si->si_code == EACCES)
 #      elif defined(AIX) || defined(COSMO) || defined(CYGWIN32) \
@@ -3397,7 +3397,7 @@ GC_write_fault_handler(int sig, siginfo_t *si, void *raw_sc)
         (exc_info->ExceptionRecord->ExceptionCode == STATUS_ACCESS_VIOLATION)
 #      define CODE_OK                                       \
         (exc_info->ExceptionRecord->ExceptionInformation[0] \
-         == 1) /* write fault */
+         == 1) /*< write fault */
 STATIC LONG WINAPI
 GC_write_fault_handler(struct _EXCEPTION_POINTERS *exc_info)
 #    endif
@@ -3644,7 +3644,7 @@ GC_protect_heap(void)
     ptr_t start = GC_heap_sects[i].hs_start;
     size_t len = GC_heap_sects[i].hs_bytes;
     struct hblk *current;
-    struct hblk *current_start; /* start of block to be protected */
+    struct hblk *current_start; /*< start of block to be protected */
     ptr_t limit;
 
     GC_ASSERT((ADDR(start) & (GC_page_size - 1)) == 0);
@@ -3753,7 +3753,7 @@ GC_handle_protected_regions_limit(void)
 #endif /* MPROTECT_VDB */
 
 #if !defined(THREADS) && (defined(PROC_VDB) || defined(SOFT_VDB))
-static pid_t saved_proc_pid; /* `pid` used to compose `/proc` file names */
+static pid_t saved_proc_pid; /*< `pid` used to compose `/proc` file names */
 #endif
 
 #ifdef PROC_VDB
@@ -3772,17 +3772,17 @@ static pid_t saved_proc_pid; /* `pid` used to compose `/proc` file names */
 /* This exists only to check `PROC_VDB` code compilation (on Linux).  */
 #    define PG_MODIFIED 1
 struct prpageheader {
-  long dummy[2]; /* `pr_tstamp` */
+  long dummy[2]; /*< `pr_tstamp` */
   long pr_nmap;
   long pr_npage;
 };
 struct prasmap {
   GC_uintptr_t pr_vaddr;
   size_t pr_npage;
-  char dummy1[64 + 8]; /* `pr_mapname`, `pr_offset` */
+  char dummy1[64 + 8]; /*< `pr_mapname`, `pr_offset` */
   int pr_mflags;
   int pr_pagesize;
-  int dummy2[2]; /* `pr_shmid`, `pr_filler` */
+  int dummy2[2]; /*< `pr_shmid`, `pr_filler` */
 };
 #  else
 /* Use the new structured `/proc` definitions. */
@@ -3865,7 +3865,7 @@ GC_proc_read_dirty(GC_bool output_unneeded)
   /* Note, this is not needed for multi-threaded case because           */
   /* `fork_child_proc()` reopens the file right after `fork()` call.    */
   if (getpid() != saved_proc_pid
-      && (-1 == GC_proc_fd /* no need to retry */
+      && (-1 == GC_proc_fd /*< no need to retry */
           || (close(GC_proc_fd), !proc_dirty_open_files()))) {
     /* Failed to reopen the file.  Punt!    */
     if (!output_unneeded)
@@ -3997,7 +3997,7 @@ open_proc_fd(pid_t pid, const char *slash_filename, int mode)
   return f;
 }
 
-#  include <stdint.h> /* for `uint64_t` */
+#  include <stdint.h> /*< for `uint64_t` */
 
 typedef uint64_t pagemap_elem_t;
 
@@ -4085,11 +4085,11 @@ detect_soft_dirty_supported(ptr_t vaddr)
     clear_soft_dirty_bits();
     *vaddr = 0;
   }
-  return TRUE; /* success */
+  return TRUE; /*< success */
 }
 
 #  ifndef NO_SOFT_VDB_LINUX_VER_RUNTIME_CHECK
-#    include <string.h> /* for strcmp() */
+#    include <string.h> /*< for strcmp() */
 #    include <sys/utsname.h>
 
 /* Ensure the linux (kernel) major/minor version is as given or higher. */
@@ -4164,7 +4164,7 @@ GC_dirty_init(void)
   return TRUE;
 }
 
-static off_t pagemap_buf_fpos; /* valid only if `pagemap_buf_len > 0` */
+static off_t pagemap_buf_fpos; /*< valid only if `pagemap_buf_len > 0` */
 
 static size_t pagemap_buf_len;
 
@@ -4318,7 +4318,7 @@ soft_set_grungy_pages(ptr_t start, ptr_t limit, ptr_t next_start_hint,
         /* VDB is also identified such by the mprotect-based one.   */
         if (!is_static_root
             && get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(vaddr))) {
-          ptr_t my_start, my_end; /* the values are not used */
+          ptr_t my_start, my_end; /*< the values are not used */
 
           /* There could be a hash collision, thus we need to       */
           /* verify the page is clean using slow `GC_get_maps()`.   */
@@ -4340,7 +4340,7 @@ GC_soft_read_dirty(GC_bool output_unneeded)
 #  ifndef THREADS
   /* Similar as for `GC_proc_read_dirty`. */
   if (getpid() != saved_proc_pid
-      && (-1 == clear_refs_fd /* no need to retry */
+      && (-1 == clear_refs_fd /*< no need to retry */
           || (close(clear_refs_fd), close(pagemap_fd),
               !soft_dirty_open_files()))) {
     /* Failed to reopen the files.  */
@@ -4359,7 +4359,7 @@ GC_soft_read_dirty(GC_bool output_unneeded)
     size_t i;
 
     BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
-    pagemap_buf_len = 0; /* invalidate `soft_vdb_buf` */
+    pagemap_buf_len = 0; /*< invalidate `soft_vdb_buf` */
 
     for (i = 0; i < GC_n_heap_sects; ++i) {
       ptr_t start = GC_heap_sects[i].hs_start;
@@ -4522,8 +4522,8 @@ GC_remove_protection(struct hblk *h, size_t nblocks, GC_bool is_ptrfree)
 {
 #  ifdef MPROTECT_VDB
   struct hblk *current;
-  struct hblk *h_trunc; /* truncated to page boundary */
-  ptr_t h_end;          /* page boundary following the block end */
+  struct hblk *h_trunc; /*< truncated to page boundary */
+  ptr_t h_end;          /*< page boundary following the block end */
 #  endif
 
 #  ifndef PARALLEL_MARK
@@ -4679,7 +4679,7 @@ STATIC struct ports_s {
 #  if defined(THREADS)
   mach_port_t reply;
 #  endif
-} GC_ports = { { /* this is to prevent stripping these routines as dead */
+} GC_ports = { { /*< this is to prevent stripping these routines as dead */
                  (void (*)(void))catch_exception_raise,
                  (void (*)(void))catch_exception_raise_state,
                  (void (*)(void))catch_exception_raise_state_identity },
@@ -4778,7 +4778,7 @@ GC_dirty_update_child(void)
   }
 
   GC_ASSERT(GC_mprotect_state == GC_MP_NORMAL);
-  GC_task_self = mach_task_self(); /* needed by `UNPROTECT()` */
+  GC_task_self = mach_task_self(); /*< needed by `UNPROTECT()` */
   GC_unprotect_all_heap();
 
   /* Restore the old task exception ports.  */
@@ -4826,9 +4826,9 @@ GC_mprotect_thread(void *arg)
   mach_msg_id_t id;
 
   if (ADDR(arg) == GC_WORD_MAX)
-    return 0; /* to prevent a compiler warning */
+    return 0; /*< to prevent a compiler warning */
 #  if defined(CPPCHECK)
-  reply.data[0] = 0; /* to prevent "field unused" warnings */
+  reply.data[0] = 0; /*< to prevent "field unused" warnings */
   msg.data[0] = 0;
 #  endif
 
@@ -4898,7 +4898,7 @@ GC_mprotect_thread(void *arg)
         ABORT("mach_msg failed while sending exception reply");
 #  endif
       }
-    } /* switch */
+    }
   }
 }
 
@@ -5399,7 +5399,7 @@ EXTERN_C_END
 
 #  ifdef SAVE_CALL_CHAIN
 
-#    if NARGS == 0 && NFRAMES % 2 == 0 /* No padding */ \
+#    if NARGS == 0 && NFRAMES % 2 == 0 /*< no padding */ \
         && defined(GC_HAVE_BUILTIN_BACKTRACE)
 
 #      ifdef REDIRECT_MALLOC
@@ -5671,7 +5671,7 @@ GC_print_callers(struct callinfo info[NFRAMES])
           }
           if (strncmp(result_buf, "main",
                       nl != NULL
-                          ? (size_t)(ADDR(nl) /* a cppcheck workaround */
+                          ? (size_t)(ADDR(nl) /*< CPPCHECK */
                                      - COVERT_DATAFLOW(ADDR(result_buf)))
                           : result_len)
               == 0) {

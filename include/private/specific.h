@@ -65,7 +65,7 @@ typedef void *ts_entry_value_t;
 /* corresponding thread specific value.  This invariant must be         */
 /* preserved at all times, since asynchronous reads are allowed.        */
 typedef struct thread_specific_entry {
-  volatile AO_t qtid; /* a "quick thread identifier", only for cache */
+  volatile AO_t qtid; /*< a "quick thread identifier", only for cache */
   ts_entry_value_t value;
   struct thread_specific_entry *next;
   pthread_t thread;
@@ -89,7 +89,7 @@ typedef struct thread_specific_entry {
 #define INVALID_THREADID ((pthread_t)0)
 
 typedef struct thread_specific_data {
-  tse *volatile cache[TS_CACHE_SIZE]; /* a faster index to the hash table */
+  tse *volatile cache[TS_CACHE_SIZE]; /*< a faster index to the hash table */
   tse *hash[TS_HASH_SIZE];
   pthread_mutex_t lock;
 } tsd;
@@ -119,7 +119,7 @@ GC_getspecific(tsd *key)
 {
   size_t qtid = ts_quick_thread_id();
   tse *volatile *entry_ptr = &key->cache[TS_CACHE_HASH(qtid)];
-  const tse *entry = *entry_ptr; /* must be loaded only once */
+  const tse *entry = *entry_ptr; /*< must be loaded only once */
 
   GC_ASSERT(qtid != INVALID_QTID);
   if (EXPECT(entry->qtid == qtid, TRUE)) {

@@ -16,7 +16,7 @@
 #ifdef ENABLE_DISCLAIM
 
 #  include "gc/gc_disclaim.h"
-#  include "private/dbg_mlc.h" /* for `oh` type */
+#  include "private/dbg_mlc.h" /*< for `oh` type */
 
 #  if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
 /* The first bit is already used for a debug purpose. */

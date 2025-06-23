@@ -48,7 +48,7 @@
 #ifdef GC_GRANULE_BYTES
 #  define GC_GRANULE_PTRS (GC_GRANULE_BYTES / GC_SIZEOF_PTR)
 #else
-#  define GC_GRANULE_PTRS 2 /* in pointers */
+#  define GC_GRANULE_PTRS 2 /*< in pointers */
 #  define GC_GRANULE_BYTES (GC_GRANULE_PTRS * GC_SIZEOF_PTR)
 #endif /* !GC_GRANULE_BYTES */
 
@@ -68,7 +68,7 @@
 #  if GC_GRANULE_BYTES >= 16
 #    define GC_TINY_FREELISTS 25
 #  else
-#    define GC_TINY_FREELISTS 33 /* Up to and including 256 bytes */
+#    define GC_TINY_FREELISTS 33 /*< up to and including 256 bytes */
 #  endif
 #endif /* !GC_TINY_FREELISTS */
 
