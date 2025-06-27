@@ -189,12 +189,6 @@ EXTERN_C_BEGIN
 #  define NOSYS
 #  define mach_type_known
 #endif
-#if defined(sun) && defined(mc68000) && !defined(CPPCHECK)
-#  error SunOS 4.x no longer supported
-#endif
-#if defined(hp9000s300) && !defined(CPPCHECK)
-#  error M68K based HP machines no longer supported
-#endif
 #if defined(vax) || defined(__vax__)
 #  define VAX
 #  ifdef ultrix
@@ -249,9 +243,6 @@ EXTERN_C_BEGIN
 #  define OS2
 #  define mach_type_known
 #endif
-#if defined(ibm032) && !defined(CPPCHECK)
-#  error IBM PC/RT no longer supported
-#endif
 #if (defined(sun) || defined(__sun)) && (defined(sparc) || defined(__sparc))
 /* SunOS 5.x */
 EXTERN_C_END
@@ -280,9 +271,6 @@ EXTERN_C_BEGIN
 #    define SCO
 #  endif
 #  define mach_type_known
-#endif
-#if defined(_AUX_SOURCE) && !defined(CPPCHECK)
-#  error A/UX no longer supported
 #endif
 #if defined(_PA_RISC1_0) || defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
     || defined(hppa) || defined(__hppa__)
@@ -424,11 +412,6 @@ EXTERN_C_BEGIN
 #  define S370
 #  define UTS4
 #  define mach_type_known
-#endif
-#if defined(__pj__) && !defined(CPPCHECK)
-#  error PicoJava no longer supported
-/* The implementation had problems, and I have not heard of users   */
-/* in ages.  If you want it resurrected, let me know.               */
 #endif
 #if defined(__embedded__) && defined(PPC)
 #  define POWERPC
@@ -1356,9 +1339,6 @@ extern int etext[];
 #    define DYNAMIC_LOADING
 #  endif
 #  ifdef LINUX
-#    if !defined(__ELF__) && !defined(CPPCHECK)
-#      error Linux SPARC a.out not supported
-#    endif
 extern int _etext[];
 #    ifdef __arch64__
 #      define DATASTART GC_SysVGetDataStart(0x100000, (ptr_t)_etext)

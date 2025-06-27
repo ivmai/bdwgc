@@ -659,8 +659,7 @@ EXTERN_C_END
 #endif /* !NO_CLOCK */
 
 /* We use `bzero()` and `bcopy()` internally.  They may not be available. */
-#if defined(SPARC) && defined(SUNOS4) || (defined(M68K) && defined(NEXT)) \
-    || defined(VAX)
+#if defined(M68K) && defined(NEXT) || defined(VAX)
 #  define BCOPY_EXISTS
 #elif defined(DARWIN)
 #  include <string.h>

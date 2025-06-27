@@ -1420,10 +1420,7 @@ GC_init(void)
 #  ifdef FUNCPTR_IS_DATAPTR
   GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(GC_funcptr_uint));
 #  endif
-#  if !defined(_AUX_SOURCE) || defined(__GNUC__)
-  GC_STATIC_ASSERT((word)(-1) > (word)0);
-  /* `word` should be unsigned. */
-#  endif
+  GC_STATIC_ASSERT((word)(-1) > (word)0); /*< `word` should be unsigned */
   /* We no longer check for `((void *)(-1) > NULL)` since all pointers  */
   /* are explicitly cast to `word` in every less/greater comparison.    */
   GC_STATIC_ASSERT((GC_signed_word)(-1) < (GC_signed_word)0);

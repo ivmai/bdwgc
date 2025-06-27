@@ -1,6 +1,6 @@
 !	SPARCompiler 3.0 and later apparently no longer handles
 !	asm outside functions.  So we need a separate .s file
-!	This is only set up for SunOS 5, not SunOS 4.
+!	This is only set up for SunOS 5 or later.
 !	Assumes this is called before the stack contents are
 !	examined.
 
