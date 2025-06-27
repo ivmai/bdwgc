@@ -29,7 +29,6 @@
  * a two-level tree.
  */
 
-/* A non-macro variant of header location routine.      */
 GC_INNER hdr *
 GC_find_header(const void *h)
 {
@@ -42,12 +41,6 @@ GC_find_header(const void *h)
 #endif
 }
 
-/* Handle a header cache miss.  Returns a pointer to the header         */
-/* corresponding to `p`, if `p` can possibly be a valid object pointer, */
-/* and `NULL` otherwise.  Guaranteed to return `NULL` for a pointer     */
-/* past the first page of an object unless both                         */
-/* `GC_all_interior_pointers` is set and `p` is in fact a valid object  */
-/* pointer.  Never returns a pointer to a free `hblk`.                  */
 GC_INNER hdr *
 #ifdef PRINT_BLACK_LIST
 GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce, ptr_t source)

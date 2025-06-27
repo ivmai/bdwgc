@@ -38,12 +38,6 @@ GC_rand(void)
 
 #  define RANDOM() (long)GC_rand()
 
-/* Store back pointer to source in dest, if that appears to be possible. */
-/* This is not completely safe, since we may mistakenly conclude that    */
-/* dest has a debugging wrapper.  But the error probability is very      */
-/* small, and this should not be used in production code.                */
-/* We assume that dest is the real base pointer.  Source will usually    */
-/* be a pointer to the interior of an object.                            */
 GC_INNER void
 GC_store_back_pointer(ptr_t source, ptr_t dest)
 {
@@ -541,9 +535,6 @@ GC_debug_generic_malloc(size_t lb, int kind, GC_EXTRA_PARAMS)
 }
 
 #ifdef DBG_HDRS_ALL
-/* An allocation function for internal use.  Normally internally      */
-/* allocated objects do not have debug information.  But in this      */
-/* case, we need to make sure that all objects have debug headers.    */
 GC_INNER void *
 GC_debug_generic_malloc_inner(size_t lb, int kind, unsigned flags)
 {
@@ -789,7 +780,6 @@ GC_debug_free(void *p)
 }
 
 #if defined(THREADS) && defined(DBG_HDRS_ALL)
-/* Used internally; we assume it is called correctly. */
 GC_INNER void
 GC_debug_free_inner(void *p)
 {

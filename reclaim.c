@@ -21,17 +21,11 @@
 #  include "gc/gc_disclaim.h"
 #endif
 
-/* Number of bytes of memory reclaimed minus the number of bytes        */
-/* originally on free lists which we had to drop.                       */
 GC_INNER GC_signed_word GC_bytes_found = 0;
 
-#if defined(PARALLEL_MARK)
-/* Number of threads currently building free lists without holding    */
-/* the allocator lock.  It is not safe to collect if this is nonzero. */
-/* Also, together with the mark lock, it is used as a semaphore       */
-/* during marker threads startup.                                     */
+#ifdef PARALLEL_MARK
 GC_INNER GC_signed_word GC_fl_builder_count = 0;
-#endif /* PARALLEL_MARK */
+#endif
 
 /* We defer printing of leaked objects until we are done with the GC    */
 /* cycle, since the routine for printing objects needs to run outside   */
@@ -172,8 +166,6 @@ GC_INNER GC_bool GC_have_errors = FALSE;
 
 GC_INNER GC_bool GC_debugging_started = FALSE;
 
-/* Print all objects on the list after printing any smashed objects.    */
-/* Clear both lists.  Called without the allocator lock held.           */
 GC_INNER void
 GC_print_all_errors(void)
 {
@@ -239,8 +231,6 @@ GC_print_all_errors(void)
 
 /* The reclaim phase.   */
 
-/* Test whether a block is completely empty, i.e. contains no marked    */
-/* objects.  This does not require the block to be in physical memory.  */
 GC_INNER GC_bool
 GC_block_empty(const hdr *hhdr)
 {
@@ -464,8 +454,6 @@ GC_reclaim_check(struct hblk *hbp, const hdr *hhdr, size_t sz)
 #  define IS_PTRFREE_SAFE(hhdr) IS_PTRFREE(hhdr)
 #endif
 
-/* Generic procedure to rebuild a free list in `hbp`.  Also called  */
-/* directly from `GC_malloc_many`.  `sz` is in bytes.               */
 GC_INNER ptr_t
 GC_reclaim_generic(struct hblk *hbp, hdr *hhdr, size_t sz, GC_bool init,
                    ptr_t list, word *pcount)
@@ -851,8 +839,6 @@ GC_clear_fl_links(void **flp)
   }
 }
 
-/* Perform `GC_reclaim_block` on the entire heap, after first clearing  */
-/* small-object free lists (if we are not just looking for leaks).      */
 GC_INNER void
 GC_start_reclaim(GC_bool report_if_found)
 {
@@ -942,12 +928,6 @@ GC_continue_reclaim(size_t lg, int kind)
   }
 }
 
-/* Reclaim all small blocks waiting to be reclaimed.  Abort and return  */
-/* `FALSE` when/if `(*stop_func)()` returns `TRUE`.  If this returns    */
-/* `TRUE`, then it is safe to restart the world with incorrectly        */
-/* cleared mark bits.  If `ignore_old`, then reclaim only blocks that   */
-/* have been recently reclaimed, and discard the rest.  `stop_func` may */
-/* be 0.                                                                */
 GC_INNER GC_bool
 GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 {

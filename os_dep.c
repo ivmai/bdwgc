@@ -161,8 +161,6 @@ GC_get_maps_len(void)
 }
 #  endif /* THREADS */
 
-/* Copy the content of `/proc/self/maps` file to a buffer in our        */
-/* address space.  Return the address of the buffer.                    */
 GC_INNER const char *
 GC_get_maps(void)
 {
@@ -281,10 +279,6 @@ GC_get_maps(void)
       || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)     \
       || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB))       \
       || defined(REDIR_MALLOC_AND_LINUXTHREADS)
-/* Assign various fields of the first line in `maps_ptr` to `*p_start`, */
-/* `*p_end`, `*p_prot`, `*p_maj_dev` and `*p_mapping_name`.             */
-/* `p_mapping_name` may be `NULL`. `*p_prot` and `*p_mapping_name` are  */
-/* assigned pointers into the original buffer.                          */
 GC_INNER const char *
 GC_parse_map_entry(const char *maps_ptr, ptr_t *p_start, ptr_t *p_end,
                    const char **p_prot, unsigned *p_maj_dev,
@@ -344,10 +338,6 @@ GC_parse_map_entry(const char *maps_ptr, ptr_t *p_start, ptr_t *p_end,
 
 #  if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
       || (defined(CHECK_SOFT_VDB) && defined(MPROTECT_VDB))
-/* Try to read the backing store base from `/proc/self/maps` file.      */
-/* Return the bounds of the writable mapping with a 0 major device,     */
-/* which includes the address passed as data.  Return `FALSE` if there  */
-/* is no such mapping.                                                  */
 GC_INNER GC_bool
 GC_enclosing_writable_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
 {
@@ -377,8 +367,6 @@ GC_enclosing_writable_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
 #  endif /* IA64 || INCLUDE_LINUX_THREAD_DESCR */
 
 #  ifdef REDIR_MALLOC_AND_LINUXTHREADS
-/* Find the text (code) mapping for the library whose name, after   */
-/* stripping the directory part, starts with `nm`.                  */
 GC_INNER GC_bool
 GC_text_mapping(const char *nm, ptr_t *startp, ptr_t *endp)
 {
@@ -688,7 +676,6 @@ struct o32_obj {
 
 #endif /* OS2 */
 
-/* Find the page size.  */
 GC_INNER size_t GC_page_size = 0;
 #ifdef REAL_PAGESIZE_NEEDED
 GC_INNER size_t GC_real_page_size = 0;
@@ -1658,10 +1645,10 @@ GC_get_stack_base(struct GC_stack_base *b)
 #endif /* !HAVE_GET_STACK_BASE */
 
 #ifndef GET_MAIN_STACKBASE_SPECIAL
-/* This is always called from the main thread.  Default implementation. */
 GC_INNER ptr_t
 GC_get_main_stack_base(void)
 {
+  /* Default implementation. */
   struct GC_stack_base sb;
 
   if (GC_get_stack_base(&sb) != GC_SUCCESS)
@@ -1792,7 +1779,6 @@ detect_GetWriteWatch(void)
 
 GC_INNER GC_bool GC_no_win32_dlls = FALSE;
 
-/* This is a Windows NT derivative, i.e. NT, Win2K, XP or later.    */
 GC_INNER GC_bool GC_wnt = FALSE;
 
 GC_INNER void
@@ -1991,8 +1977,6 @@ GC_free_malloc_heap_list(void)
 }
 #  endif /* USE_WINALLOC && !REDIRECT_MALLOC */
 
-/* Is `p` the start of either the `malloc` heap, or of one of our   */
-/* heap sections?                                                   */
 GC_INNER GC_bool
 GC_is_heap_base(const void *p)
 {
@@ -2231,12 +2215,12 @@ GC_register_data_segments(void)
 }
 
 #elif defined(OPENBSD)
-/* Depending on arch alignment, there can be multiple holes between     */
-/* `DATASTART` and `DATAEND`.  Scan in `DATASTART` .. `DATAEND` and     */
-/* register each region.                                                */
 GC_INNER void
 GC_register_data_segments(void)
 {
+  /* Depending on arch alignment, there can be multiple holes between   */
+  /* `DATASTART` and `DATAEND`.  Scan in `DATASTART` .. `DATAEND` and   */
+  /* register each region.                                              */
   ptr_t region_start = DATASTART;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -2903,10 +2887,6 @@ GC_remap(ptr_t start, size_t bytes)
 #  endif
 }
 
-/* Two adjacent blocks have already been unmapped and are about to      */
-/* be merged.  Unmap the whole block.  This typically requires          */
-/* that we unmap a small section in the middle that was not previously  */
-/* unmapped due to alignment constraints.                               */
 GC_INNER void
 GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2, size_t bytes2)
 {
@@ -3191,7 +3171,6 @@ static int clear_refs_fd = -1;
 /* The client asserts that unallocated pages in the heap are never    */
 /* written.                                                           */
 
-/* Initialize virtual dirty bit implementation.       */
 GC_INNER GC_bool
 GC_dirty_init(void)
 {
@@ -4386,8 +4365,6 @@ GC_soft_read_dirty(GC_bool output_unneeded)
 #ifndef NO_MANUAL_VDB
 GC_INNER GC_bool GC_manual_vdb = FALSE;
 
-/* Manually mark the page containing p as dirty.  Logically, this     */
-/* dirties the entire object.                                         */
 GC_INNER void
 GC_dirty_inner(const void *p)
 {
@@ -4403,12 +4380,6 @@ GC_dirty_inner(const void *p)
 #endif /* !NO_MANUAL_VDB */
 
 #ifndef GC_DISABLE_INCREMENTAL
-/* Retrieve system dirty bits for the heap to a local buffer (unless    */
-/* `output_unneeded`).  Restore the systems notion of which pages are   */
-/* dirty.  We assume that either the world is stopped or it is OK to    */
-/* lose dirty bits while it is happening (`GC_enable_incremental` is    */
-/* the caller and `output_unneeded` is `TRUE` at least if               */
-/* multi-threading support is on).                                      */
 GC_INNER void
 GC_read_dirty(GC_bool output_unneeded)
 {
@@ -4463,11 +4434,6 @@ GC_is_vdb_for_static_roots(void)
 }
 #  endif
 
-/* Is the `HBLKSIZE`-sized page at `h` marked dirty in the local        */
-/* buffer?  If the actual page size is different, this returns `TRUE`   */
-/* if any of the pages overlapping `h` are dirty.  This routine may err */
-/* on the side of labeling pages as dirty (and this implementation      */
-/* does).                                                               */
 GC_INNER GC_bool
 GC_page_was_dirty(struct hblk *h)
 {
@@ -4489,7 +4455,6 @@ GC_page_was_dirty(struct hblk *h)
 }
 
 #  if defined(CHECKSUMS) || defined(PROC_VDB)
-/* Could any valid GC heap pointer ever have been written to this page? */
 GC_INNER GC_bool
 GC_page_was_ever_dirty(struct hblk *h)
 {
@@ -5408,8 +5373,6 @@ STATIC GC_bool GC_in_save_callers = FALSE;
 #        if defined(THREADS) && defined(DBG_HDRS_ALL)
 #          include "private/dbg_mlc.h"
 
-/* A dummy variant of `GC_save_callers()` which does not call       */
-/* `backtrace()`.                                                   */
 GC_INNER void
 GC_save_callers_no_unlock(struct callinfo info[NFRAMES])
 {
@@ -5518,7 +5481,6 @@ GC_save_callers(struct callinfo info[NFRAMES])
 
 #  endif /* SAVE_CALL_CHAIN */
 
-/* Print `info` to `stderr`.  We do not hold the allocator lock. */
 GC_INNER void
 GC_print_callers(struct callinfo info[NFRAMES])
 {

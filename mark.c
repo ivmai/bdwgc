@@ -170,16 +170,12 @@ GC_get_pointer_shift(void)
 #endif
 }
 
-/* Is a collection in progress?  Note that this can return `TRUE` in    */
-/* the non-incremental case, if a collection has been abandoned and     */
-/* the mark state is now `MS_INVALID`.                                  */
 GC_INNER GC_bool
 GC_collection_in_progress(void)
 {
   return GC_mark_state != MS_NONE;
 }
 
-/* Clear all mark bits in the header.   */
 GC_INNER void
 GC_clear_hdr_marks(hdr *hhdr)
 {
@@ -199,7 +195,6 @@ GC_clear_hdr_marks(hdr *hhdr)
   hhdr->hb_n_marks = 0;
 }
 
-/* Set all mark bits in the header.  Used for uncollectible blocks. */
 GC_INNER void
 GC_set_hdr_marks(hdr *hhdr)
 {
@@ -297,9 +292,6 @@ GC_is_marked(const void *p)
   return (int)mark_bit_from_hdr(hhdr, bit_no); /*< 0 or 1 */
 }
 
-/* Clear mark bits in all allocated heap blocks.  This invalidates the  */
-/* marker invariant, and sets `GC_mark_state` to reflect this.  (This   */
-/* implicitly starts marking to reestablish the invariant.)             */
 GC_INNER void
 GC_clear_marks(void)
 {
@@ -312,8 +304,6 @@ GC_clear_marks(void)
   GC_scan_ptr = NULL;
 }
 
-/* Initiate a garbage collection.  Initiates a full collection if the   */
-/* mark state is invalid.                                               */
 GC_INNER void
 GC_initiate_gc(void)
 {
@@ -389,12 +379,6 @@ GC_get_on_mark_stack_empty(void)
   return fn;
 }
 
-/* Perform a small amount of marking.  We try to touch roughly a page   */
-/* of memory.  Return `TRUE` if we just finished a mark phase.          */
-/* `cold_gc_frame` argument is an address inside a frame of the         */
-/* collector that remains valid until all marking is complete.          */
-/* A zero value indicates that it is OK to miss some register values.   */
-/* In the case of an incremental collection, the world may be running.  */
 #ifdef WRAP_MARK_SOME
 /* For Win32, this is called after we establish a structured  */
 /* exception (or signal) handler, in case Windows unmaps one  */
@@ -660,20 +644,6 @@ GC_signal_mark_stack_overflow(mse *msp)
   return msp - GC_MARK_STACK_DISCARDS;
 }
 
-/*
- * Mark objects pointed to by the regions described by
- * mark stack entries between `mark_stack` and `mark_stack_top`,
- * inclusive.  Assumes the upper limit of a mark stack entry
- * is never 0.  A mark stack entry never has size 0.
- * We try to traverse on the order of a `hblk` of memory before we return.
- * Caller is responsible for calling this until the mark stack is empty.
- * Note that this is the most performance critical routine in the
- * collector.  Hence it contains all sorts of ugly hacks to speed
- * things up.  In particular, we avoid procedure calls on the common
- * path, we take advantage of peculiarities of the mark descriptor
- * encoding, we optionally maintain a cache for the block address to
- * header mapping, we prefetch when an object is "grayed", etc.
- */
 GC_ATTR_NO_SANITIZE_ADDR_MEM_THREAD
 GC_INNER mse *
 GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
@@ -999,8 +969,6 @@ GC_INNER word GC_mark_no = 0;
 #    define LOCAL_MARK_STACK_SIZE HBLKSIZE
 #  endif
 
-/* Wait all markers to finish initialization (i.e. store `marker_sp`,   */
-/* `marker_bsp`, `marker_mach_threads`, `GC_marker_Id`).                */
 GC_INNER void
 GC_wait_for_markers_init(void)
 {
@@ -1317,8 +1285,6 @@ GC_do_parallel_mark(void)
   GC_notify_all_marker();
 }
 
-/* Try to help out the marker, if it is running.  We hold the mark lock */
-/* only, the initiating thread holds the allocator lock.                */
 GC_INNER void
 GC_help_marker(word my_mark_no)
 {
@@ -1778,7 +1744,6 @@ GC_push_all_stack(ptr_t bottom, ptr_t top)
 }
 
 #if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
-/* Similar to `GC_push_conditional` but scans the whole region immediately. */
 GC_ATTR_NO_SANITIZE_ADDR_MEM_THREAD
 GC_INNER void
 GC_push_conditional_eager(void *bottom, void *top, GC_bool all)

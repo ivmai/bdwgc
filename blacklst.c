@@ -121,8 +121,6 @@ GC_copy_bl(const word *old, word *dest)
 
 static word total_stack_black_listed(void);
 
-/* Signal the completion of a collection.  Turn the incomplete black    */
-/* lists into new black lists, etc.                                     */
 GC_INNER void
 GC_promote_black_lists(void)
 {
@@ -178,9 +176,6 @@ GC_unpromote_black_lists(void)
       set_pht_entry_from_index(bl, index)
 #  endif
 
-/* The argument `p` is not a valid pointer reference, but it falls      */
-/* inside the plausible heap bounds.  Add it to the normal incomplete   */
-/* black list if appropriate.                                           */
 #  ifdef PRINT_BLACK_LIST
 GC_INNER void
 GC_add_to_black_list_normal(ptr_t p, ptr_t source)
@@ -209,7 +204,6 @@ GC_add_to_black_list_normal(ptr_t p)
   }
 }
 
-/* And the same for false pointers from the stack. */
 #  ifdef PRINT_BLACK_LIST
 GC_INNER void
 GC_add_to_black_list_stack(ptr_t p, ptr_t source)

@@ -271,10 +271,6 @@ GC_gcj_malloc(size_t lb, const void *vtable_ptr)
 
 #  endif /* GC_GCJ_SUPPORT */
 
-/* The thread support layer must arrange to mark thread-local   */
-/* free lists explicitly, since the link field is often         */
-/* invisible to the marker.  It knows how to find all threads;  */
-/* we take care of an individual thread free-list structure.    */
 GC_INNER void
 GC_mark_thread_local_fls_for(GC_tlfs p)
 {

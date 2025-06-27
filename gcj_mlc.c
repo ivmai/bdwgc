@@ -127,9 +127,6 @@ GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
 #  undef ignore_gcj_info
 }
 
-/* Allocate an object, clear it, and store the pointer to the type      */
-/* structure ("vtable" in `gcj`).  This adds a byte at the end of the   */
-/* object if `GC_malloc` would.                                         */
 #  ifdef THREAD_LOCAL_ALLOC
 GC_INNER
 #  else

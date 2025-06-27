@@ -87,8 +87,15 @@ typedef struct hce {
 #define HCE_HDR(h) ((hce)->hce_hdr)
 
 #ifdef PRINT_BLACK_LIST
+/* Handle a header cache miss.  Returns a pointer to the header         */
+/* corresponding to `p`, if the latter can possibly be a valid object   */
+/* pointer, and `NULL` otherwise.  Guaranteed to return `NULL` for      */
+/* a pointer past the first page of an object unless both               */
+/* `GC_all_interior_pointers` is set and `p` is in fact a valid object  */
+/* pointer.  Never returns a pointer to a free `hblk`.                  */
 GC_INNER hdr *GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce,
                                    ptr_t source);
+
 #  define HEADER_CACHE_MISS(p, hce, source) \
     GC_header_cache_miss(p, hce, source)
 #else

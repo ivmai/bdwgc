@@ -123,7 +123,6 @@ add_hb_sz(struct hblk *h, int i, void *total_free_ptr)
 #  endif
 }
 
-/* Should return the same value as `GC_large_free_bytes`. */
 GC_INNER word
 GC_compute_large_free_bytes(void)
 {
@@ -506,8 +505,6 @@ GC_adjust_num_unmapped(struct hblk *h, hdr *hhdr)
 #  endif
 }
 
-/* Unmap blocks that have not been recently touched.  This is the only  */
-/* way blocks are ever unmapped.                                        */
 GC_INNER void
 GC_unmap_old(unsigned threshold)
 {
@@ -553,9 +550,6 @@ GC_unmap_old(unsigned threshold)
   }
 }
 
-/* Merge all unmapped blocks that are adjacent to other free blocks.    */
-/* This may involve remapping, since all blocks are either fully mapped */
-/* or fully unmapped.  Returns `TRUE` if at least one block was merged. */
 GC_INNER GC_bool
 GC_merge_unmapped(void)
 {
@@ -1100,8 +1094,6 @@ GC_free_profiler_hook(void *p)
 }
 #endif /* VALGRIND_TRACKING */
 
-/* Free a heap block.  Coalesce it with its neighbors if possible.      */
-/* All mark words are assumed to be cleared.                            */
 GC_INNER void
 GC_freehblk(struct hblk *hbp)
 {

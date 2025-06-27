@@ -28,7 +28,6 @@
 int GC_no_dls = 0;
 
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
-/* Should return the same value as `GC_root_size`. */
 GC_INNER word
 GC_compute_root_size(void)
 {
@@ -79,8 +78,6 @@ rt_hash(ptr_t addr)
   return (size_t)((val >> LOG_RT_SIZE) ^ val) & (RT_SIZE - 1);
 }
 
-/* Is a range starting at `b` already in the table?  If so, then return */
-/* a pointer to it, else `NULL`.                                        */
 GC_INNER void *
 GC_roots_present(ptr_t b)
 {
@@ -119,12 +116,6 @@ GC_add_roots(void *b, void *e)
   UNLOCK();
 }
 
-/* Add [`b`,`e`) to the root set.  Adding the same interval a second    */
-/* time is a moderately fast no-op, and hence benign.  We do not handle */
-/* different but overlapping intervals efficiently.  (We do handle      */
-/* them correctly.)                                                     */
-/* Tmp specifies that the interval may be deleted before                */
-/* re-registering dynamic libraries.                                    */
 GC_INNER void
 GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
@@ -364,9 +355,6 @@ swap_static_roots(size_t i, size_t j)
   GC_static_roots[j].r_tmp = r_tmp;
 }
 
-/* Remove given range from every static root which intersects with  */
-/* the range.  It is assumed `GC_remove_tmp_roots` is called before */
-/* this function is called repeatedly by `GC_register_map_entries`. */
 GC_INNER void
 GC_remove_roots_subregion(ptr_t b, ptr_t e)
 {
@@ -541,7 +529,6 @@ GC_next_exclusion(ptr_t start_addr)
   return GC_excl_table + low;
 }
 
-/* The range boundaries should be properly aligned and valid.   */
 GC_INNER void
 GC_exclude_static_roots_inner(ptr_t start, ptr_t finish)
 {
@@ -642,7 +629,6 @@ GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top, GC_bool all)
 }
 
 #ifdef IA64
-/* Similar to `GC_push_all_stack_sections` but for IA-64 registers store. */
 GC_INNER void
 GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi, GC_bool eager,
                               struct GC_traced_stack_sect_s *traced_stack_sect)
@@ -873,13 +859,6 @@ GC_push_regs_and_stack(ptr_t cold_gc_frame)
   GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
 }
 
-/* Call the mark routines (`GC_push_one` for a single pointer,          */
-/* `GC_push_conditional` on groups of pointers) on every top level      */
-/* accessible pointer.  If not `all`, then arrange to push only         */
-/* possibly altered values.  `cold_gc_frame` is an address inside       */
-/* a collector frame that remains valid until all marking is complete;  */
-/* a `NULL` pointer indicates that it is OK to miss some register       */
-/* values.                                                              */
 GC_INNER void
 GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
 {

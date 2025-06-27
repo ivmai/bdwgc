@@ -56,10 +56,6 @@ static ptr_t copy_ptr_regs(word *regs, const CONTEXT *pcontext);
 /* `GC_use_threads_discovery()` before other GC routines.               */
 
 #    ifndef GC_DISCOVER_TASK_THREADS
-/* `GC_win32_dll_threads` must be set (if needed) at the    */
-/* application initialization time, i.e. before any         */
-/* collector or thread calls.  We make it a "dynamic"       */
-/* option only to avoid multiple library versions.          */
 GC_INNER GC_bool GC_win32_dll_threads = FALSE;
 #    endif
 #  else
@@ -126,8 +122,6 @@ STATIC GC_bool GC_please_stop = FALSE;
 #  endif /* GC_NO_THREADS_DISCOVERY && GC_ASSERTIONS */
 
 #  if defined(WRAP_MARK_SOME) && !defined(GC_PTHREADS)
-/* Return `TRUE` if a thread was attached since we last asked or since  */
-/* `GC_attached_thread` was explicitly reset.                           */
 GC_INNER GC_bool
 GC_started_thread_while_stopped(void)
 {
@@ -169,12 +163,6 @@ static struct GC_StackContext_Rep dll_crtn_table[MAX_THREADS];
 /* Largest index in `dll_thread_table` that was ever used. */
 STATIC volatile LONG GC_max_thread_index = 0;
 
-/* This may be called from `DllMain`, and hence operates under unusual  */
-/* constraints.  In particular, it must be lock-free if                 */
-/* `GC_win32_dll_threads` is set.  Always called from the thread being  */
-/* added.  If not `GC_win32_dll_threads`, then we already hold the      */
-/* allocator lock except possibly during single-threaded startup code.  */
-/* Does not initialize thread-local free lists.                         */
 GC_INNER GC_thread
 GC_register_my_thread_inner(const struct GC_stack_base *sb,
                             thread_id_t self_id)
@@ -300,11 +288,6 @@ GC_get_max_thread_index(void)
 }
 
 #  ifndef GC_NO_THREADS_DISCOVERY
-/* Search in `dll_thread_table` and return the `GC_thread[]` entity     */
-/* corresponding to the given thread `id`.                              */
-/* May be called without a lock, but should be called in contexts in    */
-/* those the requested thread cannot be asynchronously deleted, e.g.    */
-/* from the thread itself.                                              */
 GC_INNER GC_thread
 GC_win32_dll_lookup_thread(thread_id_t id)
 {
@@ -346,10 +329,6 @@ GC_win32_cache_self_pthread(thread_id_t self_id)
   SET_PTHREAD_MAP_CACHE(self, self_id);
 }
 
-/* Return a `GC_thread` corresponding to a given `pthread_t`, or `NULL` */
-/* if it is not there.  We assume that this is only called for          */
-/* `pthreads` ids that have not yet terminated or are still joinable,   */
-/* and cannot be terminated concurrently.                               */
 GC_INNER GC_thread
 GC_lookup_by_pthread(pthread_t thread)
 {
@@ -543,7 +522,6 @@ GC_suspend(GC_thread t)
 
 #  if defined(GC_ASSERTIONS) \
       && ((defined(MSWIN32) && !defined(CONSOLE_LOG)) || defined(MSWINCE))
-/* Note: set to `TRUE` only if `GC_stop_world()` has acquired `GC_write_cs`. */
 GC_INNER GC_bool GC_write_disabled = FALSE;
 #  endif
 
@@ -1048,8 +1026,6 @@ GC_push_stack_for(GC_thread thread, thread_id_t self_id, GC_bool *pfound_me)
   return stack_end - sp;
 }
 
-/* Should do exactly the right thing if the world is stopped; should    */
-/* not fail if it is not.                                               */
 GC_INNER void
 GC_push_all_stacks(void)
 {
@@ -1106,10 +1082,8 @@ GC_push_all_stacks(void)
 }
 
 #  ifdef PARALLEL_MARK
-/* Last known minimum (hottest) address in stack (or `ADDR_LIMIT` if    */
-/* unset) for markers.                                                  */
 GC_INNER ptr_t GC_marker_last_stack_min[MAX_MARKERS - 1] = { 0 };
-#  endif /* PARALLEL_MARK */
+#  endif
 
 GC_INNER void
 GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo, ptr_t *phi)
@@ -1227,9 +1201,6 @@ GC_get_next_stack(ptr_t start, ptr_t limit, ptr_t *plo, ptr_t *phi)
 /* Events with manual reset (one for each mark helper).     */
 STATIC HANDLE GC_marker_cv[MAX_MARKERS - 1] = { 0 };
 
-/* This table is used for mapping helper threads id to mark helper  */
-/* index (linear search is used since the mapping contains only     */
-/* a few entries).                                                  */
 GC_INNER thread_id_t GC_marker_Id[MAX_MARKERS - 1] = { 0 };
 
 /* `mark_mutex_event`, `builder_cv`, `mark_cv` are initialized in   */

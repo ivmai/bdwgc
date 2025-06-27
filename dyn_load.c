@@ -932,12 +932,12 @@ GC_register_dynamic_libraries(void)
 #      define IRIX6
 #    endif
 
-/* We use `/proc` to track down all parts of the address space that are */
-/* mapped by the process, and throw out regions we know we should not   */
-/* worry about.  This may also work under other SVR4 variants.          */
 GC_INNER void
 GC_register_dynamic_libraries(void)
 {
+  /* We use `/proc` to track down all parts of the address space that   */
+  /* are mapped by the process, and throw out regions we know we should */
+  /* not worry about.  This may also work under other SVR4 variants.    */
   static int fd = -1;
   static prmap_t *addr_map = 0;
   /* Number of records currently in `addr_map`. */
@@ -1567,7 +1567,6 @@ GC_register_dynamic_libraries(void)
 #endif
 
 #if !defined(HAVE_REGISTER_MAIN_STATIC_DATA) && defined(DYNAMIC_LOADING)
-/* Do we need to separately register the main static data segment? */
 GC_INNER GC_bool
 GC_register_main_static_data(void)
 {

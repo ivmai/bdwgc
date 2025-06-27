@@ -315,8 +315,9 @@ typedef struct GC_Thread_Rep *GC_thread;
             % THREAD_TABLE_SZ)
 #  endif
 
-/* The set of all known threads.  We intercept thread creation and      */
-/* join/detach.  Protected by the allocator lock.                       */
+/* The set (hash table) of all known threads.  We intercept thread      */
+/* creation and join/detach.  Protected by the allocator lock.          */
+/* Not used if `GC_win32_dll_threads` is set.                           */
 GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
 
 #  ifndef MAX_MARKERS
@@ -340,17 +341,35 @@ GC_EXTERN GC_on_thread_event_proc GC_on_thread_event;
 #    elif defined(GC_DISCOVER_TASK_THREADS)
 #      define GC_win32_dll_threads TRUE
 #    else
+/* `GC_win32_dll_threads` must be set (if needed) at the application    */
+/* initialization time, i.e. before any collector or thread calls.      */
+/* We make it a "dynamic" option only to avoid multiple library         */
+/* versions.                                                            */
 GC_EXTERN GC_bool GC_win32_dll_threads;
 #    endif
 
 #    ifdef PARALLEL_MARK
 GC_EXTERN int GC_available_markers_m1;
+
+/* The desired amount of marker threads (including the initiating one). */
+/* Note: the default value (0) means the number of markers should be    */
+/* selected automatically.                                              */
 GC_EXTERN unsigned GC_required_markers_cnt;
+
+/* The cold end of the stack for markers. */
 GC_EXTERN ptr_t GC_marker_sp[MAX_MARKERS - 1];
+
+/* Last known minimum (hottest) address in stack (or `ADDR_LIMIT` if    */
+/* unset) for markers.                                                  */
 GC_EXTERN ptr_t GC_marker_last_stack_min[MAX_MARKERS - 1];
+
 #      ifndef GC_PTHREADS_PARAMARK
+/* This table is used for mapping helper threads id to mark helper  */
+/* index (linear search is used since the mapping contains only     */
+/* a few entries).                                                  */
 GC_EXTERN thread_id_t GC_marker_Id[MAX_MARKERS - 1];
 #      endif
+
 #      if !defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) && !defined(MSWINCE)
 GC_INNER void GC_init_win32_thread_naming(HMODULE hK32);
 #      endif
@@ -363,19 +382,38 @@ GC_INNER unsigned __stdcall GC_mark_thread(void *);
 #      endif
 #    endif /* PARALLEL_MARK */
 
+/* Add a thread to `GC_threads`.  We assume it was not already there.   */
+/* Note: the `id` field should be set by the caller.                    */
 GC_INNER GC_thread GC_new_thread(thread_id_t);
+
 GC_INNER void GC_record_stack_base(GC_stack_context_t crtn,
                                    const struct GC_stack_base *sb);
+
+/* This may be called from `DllMain`, and hence operates under unusual  */
+/* constraints.  In particular, it must be lock-free if                 */
+/* `GC_win32_dll_threads` is set.  Always called from the thread being  */
+/* added.  If not `GC_win32_dll_threads`, then we already hold the      */
+/* allocator lock except possibly during single-threaded startup code.  */
+/* Does not initialize thread-local free lists.                         */
 GC_INNER GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                                thread_id_t self_id);
 
 #    ifdef GC_PTHREADS
 GC_INNER void GC_win32_cache_self_pthread(thread_id_t);
 #    else
+/* Delete a thread from `GC_threads`.  We assume it is there.  (The     */
+/* code intentionally traps if it was not.)  It is also safe to delete  */
+/* the main thread.  If `GC_win32_dll_threads` is set, it should be     */
+/* called only from the thread being deleted (except for                */
+/* `DLL_PROCESS_DETACH` case).  If a thread has been joined, but we     */
+/* have not yet been notified, then there may be more than one thread   */
+/* in the table with the same thread id - this is OK because we delete  */
+/* a specific one.                                                      */
 GC_INNER void GC_delete_thread(GC_thread);
 #    endif
 
 #    ifdef CAN_HANDLE_FORK
+/* Prepare for a process fork if requested. */
 GC_INNER void GC_setup_atfork(void);
 #    endif
 
@@ -384,7 +422,12 @@ GC_EXTERN thread_id_t GC_main_thread_id;
 #    endif
 
 #    ifndef GC_NO_THREADS_DISCOVERY
-GC_INNER GC_thread GC_win32_dll_lookup_thread(thread_id_t);
+/* Search in `dll_thread_table` and return the `GC_thread[]` entity     */
+/* corresponding to the given thread `id`.                              */
+/* May be called without a lock, but should be called in contexts in    */
+/* those the requested thread cannot be asynchronously deleted, e.g.    */
+/* from the thread itself.                                              */
+GC_INNER GC_thread GC_win32_dll_lookup_thread(thread_id_t id);
 #    endif
 
 #    ifdef MPROTECT_VDB
@@ -404,16 +447,30 @@ GC_INNER void GC_win32_unprotect_thread(GC_thread);
 
 #  ifdef GC_PTHREADS
 #    ifdef GC_WIN32_THREADS
+/* Return a `GC_thread` corresponding to a given `pthread_t`, or `NULL` */
+/* if it is not there.  We assume that this is only called for          */
+/* `pthreads` ids that have not yet terminated or are still joinable,   */
+/* and cannot be terminated concurrently.                               */
 GC_INNER GC_thread GC_lookup_by_pthread(pthread_t);
 #    else
 #      define GC_lookup_by_pthread(t) GC_lookup_thread(t)
 #    endif
 #  endif /* GC_PTHREADS */
 
-GC_INNER GC_thread GC_lookup_thread(thread_id_t);
+/* Return a `GC_thread` corresponding to a given thread `id`, or `NULL` */
+/* if it is not there.  Caller holds the allocator lock at least in the */
+/* reader mode or otherwise inhibits updates.  If there is more than    */
+/* one thread with the given `id`, we return the most recent one.       */
+GC_INNER GC_thread GC_lookup_thread(thread_id_t id);
+
 #  define GC_self_thread_inner() GC_lookup_thread(thread_id_self())
 
-GC_INNER void GC_wait_for_gc_completion(GC_bool);
+/* We hold the allocator lock.  Wait until an in-progress GC has        */
+/* finished.  Repeatedly releases the allocator lock in order to wait.  */
+/* If `wait_for_all`, then we exit with the allocator lock held         */
+/* and no collection is in progress; otherwise we just wait for the     */
+/* current collection to finish.                                        */
+GC_INNER void GC_wait_for_gc_completion(GC_bool wait_for_all);
 
 #  ifdef NACL
 GC_INNER void GC_nacl_initialize_gc_thread(GC_thread);
@@ -423,13 +480,17 @@ GC_INNER void GC_nacl_shutdown_gc_thread(void);
 #  if defined(PTHREAD_STOP_WORLD_IMPL)            \
           && !defined(NO_SIGNALS_UNBLOCK_IN_MAIN) \
       || defined(GC_EXPLICIT_SIGNALS_UNBLOCK)
+/* Some targets (e.g., Solaris) might require this to be called when  */
+/* doing thread registering from the thread destructor.               */
 GC_INNER void GC_unblock_gc_signals(void);
 #  endif
 
 #  if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
 GC_INNER void GC_suspend_self_inner(GC_thread me, size_t suspend_cnt);
 
-/* A wrapper over `GC_suspend_self_inner()`. */
+/* A wrapper over `GC_suspend_self_inner()`.  Similar to                */
+/* `GC_do_blocking_inner()` but assuming the allocator lock is held and */
+/* `fn` is `GC_suspend_self_inner`.                                     */
 GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
 #  endif
 
@@ -444,9 +505,19 @@ GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
 
 GC_INNER_PTHRSTART void *GC_CALLBACK
 GC_pthread_start_inner(struct GC_stack_base *sb, void *arg);
+
+/* Called from `GC_pthread_start_inner()`.  Defined in this file to     */
+/* minimize the number of files included from `pthread_start.c` file    */
+/* (because `sem_t` and `sem_post()` are not used in that file          */
+/* directly).                                                           */
 GC_INNER_PTHRSTART GC_thread
 GC_start_rtn_prepare_thread(void *(**pstart)(void *), void **pstart_arg,
                             struct GC_stack_base *sb, void *arg);
+
+/* Called at thread exit.  Never called for main thread.  That is OK,   */
+/* since it results in at most a tiny one-time leak.  And LinuxThreads  */
+/* implementation does not reclaim the primordial (main) thread         */
+/* resources or id anyway.                                              */
 GC_INNER_PTHRSTART void GC_thread_exit_proc(void *);
 #  endif /* GC_PTHREADS */
 
@@ -455,6 +526,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *);
 GC_INNER ptr_t GC_FindTopOfStack(unsigned long);
 #    endif
 #    if defined(PARALLEL_MARK) && !defined(GC_NO_THREADS_DISCOVERY)
+/* Note: this is used only by `GC_suspend_thread_list()`. */
 GC_INNER GC_bool GC_is_mach_marker(thread_act_t);
 #    endif
 #  endif /* DARWIN */

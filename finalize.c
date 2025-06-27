@@ -1043,8 +1043,6 @@ GC_make_disappearing_links_disappear(struct dl_hashtbl_s *dl_hashtbl,
     GC_dirty(dl_hashtbl->head); /*< entire object */
 }
 
-/* Cause disappearing links to disappear and unreachable objects to be  */
-/* enqueued for finalization.  Called with the world running.           */
 GC_INNER void
 GC_finalize(void)
 {

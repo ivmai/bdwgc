@@ -794,8 +794,6 @@ GC_is_thread_suspended(GC_SUSPEND_THREAD_ID thread)
 #    undef ao_store_release_async
 #  endif /* !NACL */
 
-/* Should do exactly the right thing if the world is stopped; should    */
-/* not fail if it is not.                                               */
 GC_INNER void
 GC_push_all_stacks(void)
 {

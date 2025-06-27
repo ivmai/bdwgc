@@ -50,8 +50,6 @@ GC_key_create_inner(tsd **key_ptr)
   return 0;
 }
 
-/* Set the thread-local value associated with the key.  Should not  */
-/* be used to overwrite a previously set value.                     */
 GC_INNER int
 GC_setspecific(tsd *key, void *value)
 {
@@ -94,9 +92,6 @@ GC_setspecific(tsd *key, void *value)
   return 0;
 }
 
-/* Remove thread-specific data for a given thread.  This function is    */
-/* called at fork from the child process for all threads except for the */
-/* survived one.  `GC_remove_specific` should be called on thread exit. */
 GC_INNER void
 GC_remove_specific_after_fork(tsd *key, pthread_t t)
 {
@@ -175,7 +170,6 @@ GC_update_specific_after_fork(tsd *key)
 }
 #  endif
 
-/* Note that even the slow path does not lock. */
 GC_INNER void *
 GC_slow_getspecific(tsd *key, size_t qtid, tse *volatile *cache_ptr)
 {

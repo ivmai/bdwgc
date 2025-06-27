@@ -98,7 +98,6 @@ GC_INNER GC_bool GC_print_back_height = FALSE;
 
 #ifndef NO_DEBUGGING
 #  ifdef GC_DUMP_REGULARLY
-/* Generate regular debugging dumps if set. */
 GC_INNER GC_bool GC_dump_regularly = TRUE;
 #  else
 GC_INNER GC_bool GC_dump_regularly = FALSE;
@@ -110,7 +109,6 @@ STATIC CLOCK_TYPE GC_init_time;
 #endif /* !NO_DEBUGGING */
 
 #ifdef KEEP_BACK_PTRS
-/* Number of random backtraces to generate for each collection. */
 GC_INNER long GC_backtraces = 0;
 #endif
 
@@ -151,8 +149,6 @@ GC_finalizer_notifier_proc GC_finalizer_notifier
     = (GC_finalizer_notifier_proc)0;
 
 #ifdef GC_FORCE_UNMAP_ON_GCOLLECT
-/* Has no effect unless `USE_MUNMAP` is defined; has no effect on   */
-/* implicitly-initiated garbage collections.                        */
 GC_INNER GC_bool GC_force_unmap_on_gcollect = TRUE;
 #else
 GC_INNER GC_bool GC_force_unmap_on_gcollect = FALSE;
@@ -178,7 +174,6 @@ GC_oom_func GC_oom_fn = GC_default_oom_fn;
 
 #ifdef CAN_HANDLE_FORK
 #  ifdef HANDLE_FORK
-/* Note: the value is examined by `GC_thr_init`. */
 GC_INNER int GC_handle_fork = 1;
 #  else
 GC_INNER int GC_handle_fork = FALSE;
@@ -758,8 +753,6 @@ GC_envfile_init(void)
 #  endif
 }
 
-/* This routine scans `GC_envfile_content` for the specified        */
-/* environment variable (and returns its value if found).           */
 GC_INNER char *
 GC_envfile_getenv(const char *name)
 {
@@ -2489,7 +2482,6 @@ GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 
 #ifndef THREADS
 
-/* Note: `NULL` value means we are not inside `GC_do_blocking()` call. */
 GC_INNER ptr_t GC_blocked_sp = NULL;
 
 #  ifdef IA64

@@ -133,7 +133,10 @@ typedef struct {
 #  define ADD_CALL_CHAIN(base, ra) GC_save_callers(((oh *)(base))->oh_ci)
 #  if defined(REDIRECT_MALLOC) && defined(THREADS) && defined(DBG_HDRS_ALL) \
       && NARGS == 0 && NFRAMES % 2 == 0 && defined(GC_HAVE_BUILTIN_BACKTRACE)
+/* A dummy variant of `GC_save_callers()` which does not call       */
+/* `backtrace()`.                                                   */
 GC_INNER void GC_save_callers_no_unlock(struct callinfo info[NFRAMES]);
+
 #    define ADD_CALL_CHAIN_INNER(base) \
       GC_save_callers_no_unlock(((oh *)(base))->oh_ci)
 #  endif

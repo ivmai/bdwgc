@@ -342,8 +342,6 @@ GC_timeout_stop_func(void)
 #endif /* !GC_DISABLE_INCREMENTAL */
 
 #ifdef THREADS
-/* The total size, in bytes, of all stacks.  Updated on every   */
-/* `GC_push_all_stacks()` call.                                 */
 GC_INNER word GC_total_stacksize = 0;
 #endif
 
@@ -477,7 +475,6 @@ GC_start_incremental_collection(void)
 #endif
 }
 
-/* Have we allocated enough to amortize a collection? */
 GC_INNER GC_bool
 GC_should_collect(void)
 {
@@ -617,9 +614,6 @@ GC_get_on_collection_event(void)
   return fn;
 }
 
-/* Stop the world garbage collection.  If `stop_func` is not        */
-/* `GC_never_stop_func`, then abort if `stop_func` returns `TRUE`.  */
-/* Return `TRUE` if we successfully completed the collection.       */
 GC_INNER GC_bool
 GC_try_to_collect_inner(GC_stop_func stop_func)
 {
@@ -1697,10 +1691,6 @@ GC_scratch_recycle_inner(void *ptr, size_t sz)
     GC_add_to_heap((struct hblk *)((ptr_t)ptr + displ), recycled_bytes);
 }
 
-/* This explicitly increases the size of the heap.  It is used          */
-/* internally, but may also be invoked from `GC_expand_hp` by the user. */
-/* The argument is in units of `HBLKSIZE`.  (An argument of zero is     */
-/* treated as 1.)  Returns `FALSE` on failure.                          */
 GC_INNER GC_bool
 GC_expand_hp_inner(word n)
 {
@@ -1788,8 +1778,6 @@ GC_expand_hp(size_t bytes)
   return (int)result;
 }
 
-/* How many consecutive collection/expansion failures?  Reset by    */
-/* `GC_allochblk()`.                                                */
 GC_INNER unsigned GC_fail_count = 0;
 
 /* The minimum value of the ratio of allocated bytes since the latest   */
@@ -1817,11 +1805,6 @@ GC_get_allocd_bytes_per_finalizer(void)
 static word last_fo_entries = 0;
 static word last_bytes_finalized = 0;
 
-/* Collect or expand heap in an attempt make the indicated number of    */
-/* free blocks available.  Should be called until the blocks are        */
-/* available (setting `retry` value to `TRUE` unless this is the first  */
-/* call in a loop) or until it fails by returning `FALSE`.  The `flags` */
-/* argument should be `IGNORE_OFF_PAGE` or 0.                           */
 GC_INNER GC_bool
 GC_collect_or_expand(word needed_blocks, unsigned flags, GC_bool retry)
 {

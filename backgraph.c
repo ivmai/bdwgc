@@ -398,8 +398,6 @@ add_back_edges(ptr_t p, size_t sz, word descr)
   }
 }
 
-/* Rebuild the representation of the backward reachability graph.       */
-/* Does not examine mark bits.  Can be called before GC.                */
 GC_INNER void
 GC_build_back_graph(void)
 {

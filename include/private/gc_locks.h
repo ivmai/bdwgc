@@ -305,7 +305,10 @@ GC_INNER void GC_lock(void);
 #      endif
 #    endif /* GC_ASSERTIONS */
 #    if !defined(GC_WIN32_THREADS)
+/* A hint that we are in the collector and holding the allocator lock */
+/* for an extended period.                                            */
 GC_EXTERN volatile unsigned char GC_collecting;
+
 #      ifdef AO_HAVE_char_store
 #        if defined(GC_ASSERTIONS) && defined(AO_HAVE_char_fetch_and_add1)
 /* Ensure `ENTER_GC()` is not used recursively. */

@@ -98,9 +98,18 @@ typedef tsd *GC_key_t;
 
 #define GC_key_create(key, d) GC_key_create_inner(key)
 GC_INNER int GC_key_create_inner(tsd **key_ptr);
+
+/* Set the thread-local value associated with `key`.  Should not be     */
+/* used to overwrite a previously set value.                            */
 GC_INNER int GC_setspecific(tsd *key, void *value);
+
+/* This function is called on thread exit. */
 #define GC_remove_specific(key) \
   GC_remove_specific_after_fork(key, pthread_self())
+
+/* Remove thread-specific data for a given thread.  This function is    */
+/* called at fork from the child process for all threads except for the */
+/* survived one.                                                        */
 GC_INNER void GC_remove_specific_after_fork(tsd *key, pthread_t t);
 
 #ifdef CAN_HANDLE_FORK
@@ -110,7 +119,8 @@ GC_INNER void GC_remove_specific_after_fork(tsd *key, pthread_t t);
 GC_INNER void GC_update_specific_after_fork(tsd *key);
 #endif
 
-/* An internal variant of `GC_getspecific` that assumes a cache miss. */
+/* An internal variant of `GC_getspecific` that assumes a cache miss.   */
+/* Note that even the slow path does not lock.                          */
 GC_INNER void *GC_slow_getspecific(tsd *key, size_t qtid,
                                    tse *volatile *entry_ptr);
 

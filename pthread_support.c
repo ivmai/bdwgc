@@ -294,10 +294,6 @@ GC_INNER GC_bool GC_need_to_lock = FALSE;
 
 #  ifdef THREAD_LOCAL_ALLOC
 
-/* We must explicitly mark `ptrfree` and `gcj` free lists, since the    */
-/* free list links would not otherwise be found.  We also set them in   */
-/* the normal free lists, since that involves touching less memory than */
-/* if we scanned them normally.                                         */
 GC_INNER void
 GC_mark_thread_local_free_lists(void)
 {
@@ -350,7 +346,6 @@ GC_check_tls(void)
         || (defined(IA64)                                            \
             && (defined(HAVE_PTHREAD_ATTR_GET_NP)                    \
                 || defined(HAVE_PTHREAD_GETATTR_NP)))
-/* The cold end of the stack for markers.   */
 GC_INNER_WIN32THREAD ptr_t GC_marker_sp[MAX_MARKERS - 1] = { 0 };
 #    endif /* GC_WIN32_THREADS || USE_PROC_FOR_LIBRARIES */
 
@@ -361,7 +356,6 @@ static ptr_t marker_bsp[MAX_MARKERS - 1] = { 0 };
 #    if defined(DARWIN) && !defined(GC_NO_THREADS_DISCOVERY)
 static mach_port_t marker_mach_threads[MAX_MARKERS - 1] = { 0 };
 
-/* Note: this is used only by `GC_suspend_thread_list()`. */
 GC_INNER GC_bool
 GC_is_mach_marker(thread_act_t thread)
 {
@@ -662,8 +656,6 @@ GC_start_mark_threads_inner(void)
 
 #  endif /* GC_PTHREADS_PARAMARK */
 
-/* A hash table to keep information about the registered threads.       */
-/* Not used if `GC_win32_dll_threads` is set.                           */
 GC_INNER GC_thread GC_threads[THREAD_TABLE_SZ] = { 0 };
 
 /* It may not be safe to allocate when we register the first thread.    */
@@ -751,8 +743,6 @@ GC_count_threads(void)
 }
 #  endif /* DEBUG_THREADS */
 
-/* Add a thread to `GC_threads`.  We assume it was not already there.   */
-/* The `id` field is set by the caller.                                 */
 GC_INNER_WIN32THREAD GC_thread
 GC_new_thread(thread_id_t self_id)
 {
@@ -815,14 +805,6 @@ GC_new_thread(thread_id_t self_id)
   return result;
 }
 
-/* Delete a thread from `GC_threads`.  We assume it is there.  (The     */
-/* code intentionally traps if it was not.)  It is also safe to delete  */
-/* the main thread.  If `GC_win32_dll_threads` is set, it should be     */
-/* called only from the thread being deleted (except for                */
-/* `DLL_PROCESS_DETACH` case).  If a thread has been joined, but we     */
-/* have not yet been notified, then there may be more than one thread   */
-/* in the table with the same thread id - this is OK because we delete  */
-/* a specific one.                                                      */
 GC_INNER_WIN32THREAD void
 GC_delete_thread(GC_thread t)
 {
@@ -884,10 +866,6 @@ GC_delete_thread(GC_thread t)
   }
 }
 
-/* Return a `GC_thread` corresponding to a given thread `id`, or `NULL` */
-/* if it is not there.  Caller holds the allocator lock at least in the */
-/* reader mode or otherwise inhibits updates.  If there is more than    */
-/* one thread with the given `id`, we return the most recent one.       */
 GC_INNER GC_thread
 GC_lookup_thread(thread_id_t id)
 {
@@ -918,7 +896,6 @@ GC_self_thread(void)
 }
 
 #  ifndef GC_NO_FINALIZATION
-/* Called by `GC_finalize()` (in case of an allocation failure observed). */
 GC_INNER void
 GC_reset_finalizer_nested(void)
 {
@@ -926,11 +903,6 @@ GC_reset_finalizer_nested(void)
   GC_self_thread_inner()->crtn->finalizer_nested = 0;
 }
 
-/* Checks and updates the thread-local level of finalizers recursion.   */
-/* Returns `NULL` if `GC_invoke_finalizers()` should not be called by   */
-/* the collector (to minimize the risk of a deep finalizers recursion), */
-/* otherwise returns a pointer to the thread-local `finalizer_nested`.  */
-/* Called by `GC_notify_or_invoke_finalizers()` only.                   */
 GC_INNER unsigned char *
 GC_check_finalizer_nested(void)
 {
@@ -1053,9 +1025,6 @@ GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
 
 #  if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
       && defined(IA64)
-/* Find the largest stack base smaller than bound.  May be used       */
-/* to find the boundary between a register stack and adjacent         */
-/* immediately preceding memory stack.                                */
 GC_INNER ptr_t
 GC_greatest_stack_base_below(ptr_t bound)
 {
@@ -1261,11 +1230,6 @@ collection_in_progress(void)
 #    define collection_in_progress() GC_collection_in_progress()
 #  endif
 
-/* We hold the allocator lock.  Wait until an in-progress GC has        */
-/* finished.  Repeatedly releases the allocator lock in order to wait.  */
-/* If `wait_for_all`, then we exit with the allocator lock held         */
-/* and no collection is in progress; otherwise we just wait for the     */
-/* current collection to finish.                                        */
 GC_INNER void
 GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
@@ -1643,7 +1607,6 @@ GC_atfork_child(void)
     fork_child_proc();
 }
 
-/* Prepare for a process fork if requested. */
 GC_INNER_WIN32THREAD void
 GC_setup_atfork(void)
 {
@@ -1673,8 +1636,6 @@ __thread int GC_dummy_thread_local;
 static void setup_mark_lock(void);
 #    endif
 
-/* Note: the default value (0) means the number of markers should be  */
-/* selected automatically.                                            */
 GC_INNER_WIN32THREAD unsigned GC_required_markers_cnt = 0;
 
 GC_API void GC_CALL
@@ -1684,7 +1645,6 @@ GC_set_markers_count(unsigned markers)
 }
 #  endif /* PARALLEL_MARK */
 
-/* Note: this variable is protected by the allocator lock.      */
 GC_INNER GC_bool GC_in_thread_creation = FALSE;
 
 GC_INNER_WIN32THREAD void
@@ -1911,9 +1871,6 @@ GC_thr_init(void)
 
 #  endif /* !GC_WIN32_THREADS */
 
-/* Perform all initializations, including those that may require        */
-/* allocation, e.g. initialize thread-local free lists if used.         */
-/* Must be called before a thread is created.                           */
 GC_INNER void
 GC_init_parallel(void)
 {
@@ -2096,8 +2053,6 @@ GC_do_blocking_inner(ptr_t data, void *context)
 }
 
 #  if defined(GC_ENABLE_SUSPEND_THREAD) && defined(SIGNAL_BASED_STOP_WORLD)
-/* Similar to `GC_do_blocking_inner()` but assuming the allocator lock  */
-/* is held and `fn` is `GC_suspend_self_inner`.                         */
 GC_INNER void
 GC_suspend_self_blocked(ptr_t thread_me, void *context)
 {
@@ -2428,8 +2383,6 @@ GC_allow_register_threads(void)
 #  if defined(PTHREAD_STOP_WORLD_IMPL)            \
           && !defined(NO_SIGNALS_UNBLOCK_IN_MAIN) \
       || defined(GC_EXPLICIT_SIGNALS_UNBLOCK)
-/* Some targets (e.g., Solaris) might require this to be called when  */
-/* doing thread registering from the thread destructor.               */
 GC_INNER void
 GC_unblock_gc_signals(void)
 {
@@ -2512,10 +2465,6 @@ GC_register_my_thread(const struct GC_stack_base *sb)
 #  if defined(GC_PTHREADS) && !defined(PLATFORM_THREADS) \
       && !defined(SN_TARGET_PSP2)
 
-/* Called at thread exit.  Never called for main thread.      */
-/* That is OK, since it results in at most a tiny one-time    */
-/* leak.  And LinuxThreads implementation does not reclaim    */
-/* the primordial (main) thread resources or id anyway.       */
 GC_INNER_PTHRSTART void
 GC_thread_exit_proc(void *arg)
 {
@@ -2624,10 +2573,6 @@ struct start_info {
   unsigned char flags;
 };
 
-/* Called from `GC_pthread_start_inner()`.  Defined in this file to     */
-/* minimize the number of files included from `pthread_start.c` file    */
-/* (because `sem_t` and `sem_post()` are not used in that file          */
-/* directly).                                                           */
 GC_INNER_PTHRSTART GC_thread
 GC_start_rtn_prepare_thread(void *(**pstart)(void *), void **pstart_arg,
                             struct GC_stack_base *sb, void *arg)
@@ -2886,8 +2831,6 @@ GC_generic_lock(pthread_mutex_t *lock)
 #  endif /* !USE_SPIN_LOCK || ... */
 
 #  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
-/* A hint that we are in the collector and holding the allocator lock */
-/* for an extended period.                                            */
 GC_INNER volatile unsigned char GC_collecting = FALSE;
 
 #    if defined(AO_HAVE_char_load) && !defined(BASE_ATOMIC_OPS_EMULATED)

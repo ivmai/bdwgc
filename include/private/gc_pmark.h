@@ -353,10 +353,22 @@ GC_push_contents_hdr(ptr_t current, mse *mark_stack_top, mse *mark_stack_limit,
           p, mark_stack_top, GC_mark_stack_limit, (void **)(source)); \
   } while (0)
 
-/* Mark starting at mark stack entry `top` (incl.) down to mark stack   */
-/* entry `bottom` (incl.).  Stop after performing about one page worth  */
-/* of work.  Return the new value of mark stack entry `top`.            */
-GC_INNER mse *GC_mark_from(mse *top, mse *bottom, mse *limit);
+/*
+ * Mark objects pointed to by the regions described by mark stack entries
+ * between `mark_stack` and `mark_stack_top`, inclusive.  Assumes the upper
+ * limit of a mark stack entry is never `NULL`.  A mark stack entry never
+ * has zero size.  Return the new value of `mark_stack_top`.
+ * We try to traverse on the order of a `hblk` of memory before we return.
+ * Caller is responsible for calling this until the mark stack is empty.
+ * Note that this is the most performance critical routine in the collector.
+ * Hence it contains all sorts of ugly hacks to speed things up.
+ * In particular, we avoid procedure calls on the common path, we take
+ * advantage of peculiarities of the mark descriptor encoding, we optionally
+ * maintain a cache for the block address to header mapping, we prefetch
+ * when an object is "grayed", etc.
+ */
+GC_INNER mse *GC_mark_from(mse *mark_stack_top, mse *mark_stack,
+                           mse *mark_stack_limit);
 
 #define MARK_FROM_MARK_STACK()                                       \
   GC_mark_stack_top = GC_mark_from(GC_mark_stack_top, GC_mark_stack, \
