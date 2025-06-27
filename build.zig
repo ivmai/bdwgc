@@ -166,7 +166,6 @@ pub fn build(b: *std.Build) void {
         "mark_rts.c",
         "misc.c",
         "new_hblk.c",
-        "obj_map.c",
         "os_dep.c",
         "ptr_chck.c",
         "reclaim.c",

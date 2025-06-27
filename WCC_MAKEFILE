@@ -101,8 +101,7 @@ check: check-deps .SYMBOLIC
 OBJS= allchblk.obj alloc.obj backgraph.obj blacklst.obj checksums.obj &
       dbg_mlc.obj dyn_load.obj finalize.obj fnlz_mlc.obj gcj_mlc.obj &
       headers.obj mach_dep.obj malloc.obj mallocx.obj mark.obj mark_rts.obj &
-      misc.obj new_hblk.obj obj_map.obj os_dep.obj ptr_chck.obj reclaim.obj &
-      typd_mlc.obj
+      misc.obj new_hblk.obj os_dep.obj ptr_chck.obj reclaim.obj typd_mlc.obj
 
 gc.lib: $(OBJS)
         @%create $*.lb1

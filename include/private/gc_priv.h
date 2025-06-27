@@ -3187,7 +3187,7 @@ void GC_check_dirty(void);
 
 GC_INNER void GC_setpagesize(void);
 
-GC_INNER void GC_initialize_offsets(void); /*< defined in `obj_map.c` file */
+GC_INNER void GC_initialize_offsets(void);
 
 #if defined(REDIR_MALLOC_AND_LINUXTHREADS) \
     && !defined(REDIRECT_MALLOC_IN_HEADER)

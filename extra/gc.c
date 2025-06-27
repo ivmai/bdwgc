@@ -46,7 +46,6 @@
 #include "../gcj_mlc.c"
 #include "../headers.c"
 #include "../new_hblk.c"
-#include "../obj_map.c"
 #include "../ptr_chck.c"
 
 #include "../allchblk.c"

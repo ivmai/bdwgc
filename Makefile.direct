@@ -112,17 +112,17 @@ RANLIB?= ranlib
 OBJS= allchblk.o alloc.o backgraph.o blacklst.o checksums.o \
   darwin_stop_world.o dbg_mlc.o finalize.o fnlz_mlc.o gc_dlopen.o \
   gcj_mlc.o headers.o mach_dep.o malloc.o mallocx.o mark.o mark_rts.o misc.o \
-  new_hblk.o obj_map.o os_dep.o pthread_start.o pthread_stop_world.o \
-  pthread_support.o ptr_chck.o reclaim.o specific.o thread_local_alloc.o \
-  typd_mlc.o win32_threads.o
+  new_hblk.o os_dep.o pthread_start.o pthread_stop_world.o pthread_support.o \
+  ptr_chck.o reclaim.o specific.o thread_local_alloc.o typd_mlc.o \
+  win32_threads.o
 
 # Almost matches `OBJS` but also includes `dyn_load.c` file.
 CSRCS= allchblk.c alloc.c backgraph.c blacklst.c checksums.c \
   darwin_stop_world.c dbg_mlc.c dyn_load.c finalize.c fnlz_mlc.c gc_dlopen.c \
   gcj_mlc.c headers.c mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c \
-  new_hblk.c obj_map.c os_dep.c pthread_start.c pthread_stop_world.c \
-  pthread_support.c ptr_chck.c reclaim.c specific.c thread_local_alloc.c \
-  typd_mlc.c win32_threads.c
+  new_hblk.c os_dep.c pthread_start.c pthread_stop_world.c pthread_support.c \
+  ptr_chck.c reclaim.c specific.c thread_local_alloc.c typd_mlc.c \
+  win32_threads.c
 
 CORD_SRCS= cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c cord/tests/de.c \
   cord/tests/cordtest.c include/gc/cord.h include/gc/ec.h \
