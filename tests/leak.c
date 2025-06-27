@@ -68,6 +68,13 @@ main(void)
     if (i == 3)
       free_sized(p[i], i /* `strlen(p[i])` */ + 1);
   }
+  p[0] = calloc(3, 16);
+  CHECK_OUT_OF_MEMORY(p[0]);
+#if defined(sun) || defined(__sun)
+  cfree(p[0], 3, 16);
+#else
+  cfree(p[0]);
+#endif
 #ifdef GC_REQUIRE_WCSDUP
   {
     static const wchar_t ws[] = { 'w', 0 };

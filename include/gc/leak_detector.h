@@ -73,6 +73,13 @@
 #define free_aligned_sized(p, a, n) \
   (GC_free(p) /* non-debug */, (void)(a), (void)(n))
 
+#undef cfree /*< obsolete */
+#if defined(sun) || defined(__sun)
+#  define cfree(p, m, n) ((void)(m), (void)(n), free(p))
+#else
+#  define cfree(p) free(p)
+#endif
+
 #undef _aligned_malloc
 #define _aligned_malloc(n, a) GC_memalign(a, n) /*< reverse args order */
 #undef _aligned_free
