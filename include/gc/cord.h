@@ -150,7 +150,7 @@ CORD_API CORD CORD_balance(CORD);
 /* Function to iteratively apply to individual characters in cord.      */
 typedef int (*CORD_iter_fn)(char, void * /* `client_data` */);
 
-/* Function to apply to substrings of a cord.  Each substring is a      */
+/* Function to apply to substrings of a cord.  Each substring is        */
 /* a C character string, not a general cord.                            */
 typedef int (*CORD_batched_iter_fn)(const char *, void * /* `client_data` */);
 
