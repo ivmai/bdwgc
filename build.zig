@@ -667,8 +667,10 @@ fn addTestExt(b: *std.Build, gc: *std.Build.Step.Compile,
               filename: []const u8) void {
     const test_exe = b.addExecutable(.{
         .name = testname,
-        .optimize = gc.root_module.optimize.?,
-        .target = gc.root_module.resolved_target.?
+        .root_module = b.createModule(.{
+            .optimize = gc.root_module.optimize.?,
+            .target = gc.root_module.resolved_target.?
+        })
     });
     test_exe.addCSourceFile(.{
         .file = b.path(filename),
