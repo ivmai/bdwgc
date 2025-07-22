@@ -728,7 +728,7 @@ may_be_in_stack(ptr_t s)
 /* registers are included in case client code was compiled with the     */
 /* "omit frame pointer" optimization.  The context register values are  */
 /* stored to `regs` argument which is expected to be of                 */
-/* `PUSHED_REGS_COUNT` length exactly.  The functions returns the       */
+/* `PUSHED_REGS_COUNT` length exactly.  The function returns the        */
 /* context stack pointer value.                                         */
 static ptr_t
 copy_ptr_regs(word *regs, const CONTEXT *pcontext)
