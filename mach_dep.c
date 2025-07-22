@@ -21,11 +21,6 @@
 GC_INNER ptr_t GC_save_regs_ret_val = NULL;
 #  endif
 
-/* Routine to mark from registers that are preserved by the C compiler. */
-/* This must be ported to every new architecture.  It is not optional,  */
-/* and should not be used on platforms that are either UNIX-like, or    */
-/* require thread support.                                              */
-
 #  if defined(UNIX_LIKE) && !defined(STACK_NOT_SCANNED)
 #    include <signal.h>
 #    ifndef NO_GETCONTEXT
