@@ -17,7 +17,7 @@
 
 /* We want to make sure that `GC_thread_exit_proc()` is unconditionally */
 /* invoked, even if the client is not compiled with `-fexceptions`      */
-/* option, but the the collector is.  The workaround is to put          */
+/* option, but the collector is.  The workaround is to put              */
 /* `GC_pthread_start_inner()` in its own file (this one), and           */
 /* undefine `__EXCEPTIONS` in the GCC case at the top of the file.      */
 /* FIXME: it is still unclear whether this will actually cause the      */

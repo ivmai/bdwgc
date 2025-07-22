@@ -86,7 +86,7 @@ typedef struct {
   /* to allow it to be distinguished from a free-list         */
   /* link.  This means the plain variant must have the least  */
   /* significant bit of zero.  Note that blocks dropped by    */
-  /* black-listing will also have the the least significant   */
+  /* black-listing will also have the least significant       */
   /* bit clear once debugging has started; we are careful     */
   /* never to overwrite such a value.                         */
 #  if ALIGNMENT == 1

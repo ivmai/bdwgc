@@ -364,7 +364,7 @@ GC_API GC_ATTR_DEPRECATED char *GC_stackbottom;
 /* set only if the client wants a chance to manually initialize the     */
 /* root set before the first collection.  Interferes with blacklisting. */
 /* Wizards only.  The setter and the getter are unsynchronized (and no  */
-/* external locking is needed since the value is accessed at the the    */
+/* external locking is needed since the value is accessed at the        */
 /* collector initialization only).                                      */
 GC_API GC_ATTR_DEPRECATED int GC_dont_precollect;
 GC_API void GC_CALL GC_set_dont_precollect(int);
