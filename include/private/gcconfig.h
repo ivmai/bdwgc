@@ -1776,7 +1776,7 @@ extern int __data_start[];
 /* this.)                                                       */
 /* This technique also does not work with HP/UX 11.xx.  The     */
 /* stack size is settable using the kernel `maxssiz` variable,  */
-/* and in 11.23 and latter, the size can be set dynamically.    */
+/* and in 11.23 and later, the size can be set dynamically.     */
 /* It also does not handle `SHMEM_MAGIC` binaries which have    */
 /* stack and data in the first quadrant.                        */
 /* This is from platform `/etc/conf/h/param.h` file.            */
@@ -2921,7 +2921,7 @@ EXTERN_C_BEGIN
 
 #ifndef GC_PREFETCH_FOR_WRITE
 /* The default `GC_PREFETCH_FOR_WRITE(x)` is defined in `gc_inline.h`   */
-/* file, the later one is included from `gc_priv.h` file.               */
+/* file, the latter one is included from `gc_priv.h` file.              */
 #endif
 
 #ifndef CACHE_LINE_SIZE

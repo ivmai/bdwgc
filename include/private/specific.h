@@ -72,7 +72,7 @@ typedef struct thread_specific_entry {
 } tse;
 
 /* We represent each thread-specific datum as two tables.  The first is */
-/* a cache, indexed by a "quick thread identifier".  The later is an    */
+/* a cache, indexed by a "quick thread identifier".  The latter is an   */
 /* easy-to-compute value, which is guaranteed to determine the thread,  */
 /* though a thread may correspond to more than one value.  We typically */
 /* use the address of a page in the stack.  The second is a hash table, */

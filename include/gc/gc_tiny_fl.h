@@ -74,7 +74,7 @@
 
 /* The `i`-th free list corresponds to size `i * GC_GRANULE_BYTES`. */
 /* Internally to the collector, the index `i` can be computed with  */
-/* `ALLOC_REQUEST_GRANS()`.  The later also depends on the values   */
+/* `ALLOC_REQUEST_GRANS()`.  The latter also depends on the values  */
 /* returned by `GC_get_dont_add_byte_at_end()` and                  */
 /* `GC_get_all_interior_pointers()`.                                */
 

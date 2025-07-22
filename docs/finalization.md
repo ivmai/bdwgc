@@ -78,8 +78,8 @@ finalization is the right choice.
 To understand the justification, observe that if `A`'s finalization procedure
 does not refer to `B`, we could fairly easily have avoided the dependency.
 We could have split `A` into `A1` and `A2` such that any references to `A`
-become references to `A1`, the later points to `A2` but not vice-versa, only
-fields needed for finalization are stored in `A2`, and the later is enabled
+become references to `A1`, the latter points to `A2` but not vice-versa, only
+fields needed for finalization are stored in `A2`, and the latter is enabled
 for finalization. (`GC_register_disappearing_link` provides an alternative
 mechanism that does not require breaking up objects.)
 

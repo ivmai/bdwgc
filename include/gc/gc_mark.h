@@ -70,7 +70,7 @@ struct GC_hblk_s {
 /* object).  Thus mark procedures may not count on the presence of a    */
 /* type descriptor, and must handle this case correctly somehow.  Also, */
 /* a mark procedure should be prepared to be executed concurrently from */
-/* the marker threads (the later ones are created only if the client    */
+/* the marker threads (the latter ones are created only if the client   */
 /* has called `GC_start_mark_threads()` or started a user thread        */
 /* previously).  For the compatibility reason, addr is a pointer to     */
 /* word, but it should be treated as a pointer to void pointer.         */

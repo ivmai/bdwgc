@@ -1009,7 +1009,7 @@ GC_API unsigned GC_CALL GC_get_supported_vdbs(void);
 /* For best performance, should be called as early as possible.         */
 /* On some platforms, calling it later may have adverse effects.        */
 /* Safe to call before the collector initialization; it performs the    */
-/* later if not done yet.                                               */
+/* latter if not done yet.                                              */
 GC_API void GC_CALL GC_enable_incremental(void);
 
 /* Return 1 (true) if the incremental mode is on, 0 otherwise.          */

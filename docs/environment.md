@@ -26,7 +26,7 @@ built with `SMALL_CONFIG` macro defined.
 
 `GC_ONLY_LOG_TO_FILE` - Turns off redirection of `GC_stdout` and `GC_stderr`
 to the log file specified by `GC_LOG_FILE` environment variable.  Has no
-effect unless the later is set; has no effect if the collector is built with
+effect unless the latter is set; has no effect if the collector is built with
 `SMALL_CONFIG` macro defined.
 
 `GC_PRINT_VERBOSE_STATS` - Turns on even more logging.  Has no effect if the
