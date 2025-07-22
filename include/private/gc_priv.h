@@ -394,7 +394,7 @@ EXTERN_C_END
   (ptr_t)((GC_uintptr_t)(p) & ~(GC_uintptr_t)(word)(mask))
 #define CPTR_SET_FLAGS(p, mask) (ptr_t)((GC_uintptr_t)(p) | (word)(mask))
 
-/* Easily changeable parameters ae below.   */
+/* Easily changeable parameters are below. */
 
 #ifdef ALL_INTERIOR_POINTERS
 /* Forces all pointers into the interior of an object to be         */
