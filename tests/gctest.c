@@ -14,11 +14,12 @@
  * modified is included with the above copyright notice.
  */
 
-/* An incomplete test for the garbage collector.  Some more obscure */
-/* entry points are not tested at all.  This must be compiled with  */
-/* the same flags used to build the collector.  It uses the         */
-/* collector internals to allow more precise results checking for   */
-/* some of the tests.                                               */
+/*
+ * An incomplete test for the garbage collector.  Some more obscure entry
+ * points are not tested at all.  This must be compiled with the same flags
+ * used to build the collector.  It uses the collector internals to allow
+ * more precise results checking for some of the tests.
+ */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -48,8 +49,10 @@
 
 /* Number of additional threads to fork. */
 #ifndef NTHREADS
-/* This excludes the main thread, which also runs a test.             */
-/* In the single-threaded case, a number of times to rerun it.        */
+/*
+ * This excludes the main thread, which also runs a test.
+ * In the single-threaded case, a number of times to rerun it.
+ */
 #  define NTHREADS 5
 #endif
 
@@ -57,7 +60,7 @@
 #  include <winbase.h>
 /* `define assert ASSERT` */
 #else
-/* Not normally used, but handy for debugging.      */
+/* Not normally used, but handy for debugging. */
 #  include <assert.h>
 #endif
 
@@ -66,8 +69,10 @@
 #  ifndef _CRTDBG_MAP_ALLOC
 #    define _CRTDBG_MAP_ALLOC
 #  endif
-/* This should be included before `gc_priv.h` file (see the note about  */
-/* `_malloca` redefinition bug in `gcconfig.h` file).                   */
+/*
+ * This should be included before `gc_priv.h` file (see the note about
+ * `_malloca` redefinition bug in `gcconfig.h` file).
+ */
 #  include <crtdbg.h> /*< for `_CrtDumpMemoryLeaks`, `_CrtSetDbgFlag` */
 #endif
 
@@ -121,12 +126,13 @@ static int print_stats = 0;
 #  include <sys/wait.h>
 #  include <unistd.h>
 #  if defined(HANDLE_FORK) && defined(CAN_CALL_ATFORK)
-/* This causes abort in `GC_init` on `pthread_atfork` failure.  */
+/* This causes abort in `GC_init` on `pthread_atfork` failure. */
 #    define INIT_FORK_SUPPORT GC_set_handle_fork(1)
 #  elif !defined(TEST_FORK_WITHOUT_ATFORK)
-/* Note: passing -1 implies `fork()` should be as well manually */
-/* surrounded with `GC_atfork_prepare`, `GC_atfork_parent` and  */
-/* `GC_atfork_child` calls.                                     */
+/*
+ * Note: passing -1 implies `fork()` should be as well manually surrounded
+ * with `GC_atfork_prepare`, `GC_atfork_parent` and `GC_atfork_child` calls.
+ */
 #    define INIT_FORK_SUPPORT GC_set_handle_fork(-1)
 #  endif
 #endif
@@ -170,8 +176,10 @@ static CRITICAL_SECTION incr_cs;
     exit(1);                                               \
   }
 
-/* Call `GC_INIT()` only on platforms on which we think we really need  */
-/* it, so that we can test automatic initialization on the rest.        */
+/*
+ * Call `GC_INIT()` only on platforms on which we think we really need it,
+ * so that we can test automatic initialization on the rest.
+ */
 #if defined(TEST_EXPLICIT_GC_INIT) || defined(AIX) || defined(HOST_ANDROID) \
     || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
 #  define GC_OPT_INIT GC_INIT()
@@ -220,7 +228,7 @@ checkOOM(void *p)
 #endif
 #ifndef AO_HAVE_fetch_and_add1
 #  define AO_fetch_and_add1(p) ((*(p))++)
-/* This is used only to update counters.        */
+/* This is used only to update counters. */
 #endif
 
 /* The allocation statistics.  Synchronization is not strictly necessary. */
@@ -229,8 +237,10 @@ static AO_t collectable_count = 0;
 static AO_t atomic_count = 0;
 static AO_t realloc_count = 0;
 
-/* Amount of space wasted in `cons` nodes; also used in `gcj_cons`,     */
-/* `mktree` and `chktree` (for other purposes).                         */
+/*
+ * Amount of space wasted in `cons` nodes; also used in `gcj_cons`,
+ * `mktree` and `chktree` (for other purposes).
+ */
 static AO_t extra_count = 0;
 
 #if defined(LINT2)
@@ -239,11 +249,12 @@ static AO_t extra_count = 0;
 #  define FAIL ABORT("Test failed")
 #endif
 
-/* `AT_END` may be defined to exercise the interior pointer test    */
-/* if the collector is configured with `ALL_INTERIOR_POINTERS`.     */
-/* As it stands, this test should succeed with either               */
-/* configuration.  In the `FIND_LEAK` configuration, it should      */
-/* find lots of leaks, since we free almost nothing.                */
+/*
+ * `AT_END` may be defined to exercise the interior pointer test if the
+ * collector is configured with `ALL_INTERIOR_POINTERS`.  As it stands,
+ * this test should succeed with either configuration.  In the `FIND_LEAK`
+ * configuration, it should find lots of leaks, since we free almost nothing.
+ */
 
 struct SEXPR {
   struct SEXPR *sexpr_car;
@@ -261,8 +272,10 @@ typedef struct SEXPR *sexpr;
 #define cdr(x) ((x)->sexpr_cdr)
 #define is_nil(x) ((x) == nil)
 
-/* Silly implementation of Lisp "cons".  Intentionally wastes lots of   */
-/* space to test collector.                                             */
+/*
+ * Silly implementation of Lisp "cons".  Intentionally wastes lots of space
+ * to test collector.
+ */
 #ifdef VERY_SMALL_CONFIG
 #  define cons small_cons
 #else
@@ -299,7 +312,7 @@ cons(sexpr x, sexpr y)
 #ifdef GC_GCJ_SUPPORT
 #  include "gc/gc_gcj.h"
 
-/* The following `struct` emulates the "vtable" in `gcj`. */
+/* The following structure emulates the "vtable" in `gcj`. */
 struct fake_vtable {
   /* A class pointer in the real `gcj`. */
   char dummy[GC_GCJ_MARK_DESCR_OFFSET];
@@ -416,10 +429,12 @@ static sexpr
 reverse(sexpr x)
 {
 #ifdef TEST_WITH_SYSTEM_MALLOC
-  /* This causes `gctest` to allocate (and leak) large chunks of memory */
-  /* with the standard system `malloc()`.  This should cause the root   */
-  /* set and collected heap to grow significantly if `malloc`'ed memory */
-  /* is somehow getting traced by the collector.                        */
+  /*
+   * This causes `gctest` to allocate (and leak) large chunks of memory
+   * with the standard system `malloc()`.  This should cause the root
+   * set and collected heap to grow significantly if `malloc`'ed memory
+   * is somehow getting traced by the collector.
+   */
   GC_noop1((GC_word)GC_HIDE_NZ_POINTER(checkOOM(malloc(100000))));
 #endif
   return reverse1(x, nil);
@@ -507,8 +522,10 @@ gcj_ints(int low, int up)
 }
 #endif /* GC_GCJ_SUPPORT */
 
-/* To check uncollectible allocation we build lists with disguised      */
-/* `cdr` pointers, and make sure they do not go away.                   */
+/*
+ * To check uncollectible allocation we build lists with disguised `cdr`
+ * pointers, and make sure they do not go away.
+ */
 static sexpr
 uncollectable_ints(int low, int up)
 {
@@ -603,7 +620,7 @@ check_marks_int_list(sexpr x)
 }
 #endif /* PRINT_AND_CHECK_INT_LIST */
 
-/* A tiny list reversal test to check thread creation.  */
+/* A tiny list reversal test to check thread creation. */
 #ifdef THREADS
 #  ifdef GC_ENABLE_SUSPEND_THREAD
 #    include "gc/javaxfc.h"
@@ -665,7 +682,7 @@ tiny_reverse_test(void *p_resumed)
 {
 #  ifdef TEST_THREAD_SUSPENDED
   if (p_resumed != NULL) {
-    /* Test self-suspend is working.        */
+    /* Test self-suspend is working. */
     GC_suspend_thread(pthread_self());
     AO_store_release((volatile AO_t *)p_resumed, (AO_t)1);
   }
@@ -735,13 +752,13 @@ fork_a_thread(void)
     GC_printf("Running thread should be not suspended\n");
     FAIL;
   }
-  /* Note: might be already self-suspended.       */
+  /* Note: might be already self-suspended. */
   GC_suspend_thread(t);
   if (!GC_is_thread_suspended(t)) {
     GC_printf("Thread expected to be suspended\n");
     FAIL;
   }
-  /* This should be no-op.        */
+  /* This should be no-op. */
   GC_suspend_thread(t);
 
   for (;;) {
@@ -754,7 +771,7 @@ fork_a_thread(void)
     GC_printf("Resumed thread should be not suspended\n");
     FAIL;
   }
-  /* This should be no-op.        */
+  /* This should be no-op. */
   GC_resume_thread(t);
 
   if (NULL == p_resumed)
@@ -789,8 +806,10 @@ fork_a_thread(void)
 #    else
   DWORD thread_id;
 
-  /* Note: the types of the arguments are specified explicitly  */
-  /* to test the prototype.                                     */
+  /*
+   * Note: the types of the arguments are specified explicitly to test
+   * the prototype.
+   */
   h = CreateThread((SECURITY_ATTRIBUTES *)NULL, 0U, tiny_reverse_test, NULL,
                    (DWORD)0, &thread_id);
 #    endif
@@ -861,8 +880,10 @@ volatile struct A_s {
 #define a_set(p) GC_cptr_store_release(&A.aa, (char *)(p))
 #define a_get() (sexpr) GC_cptr_load_acquire(&A.aa)
 
-/* Repeatedly reverse lists built out of very-different-sized cons      */
-/* cells.  Check that we did not lose anything.                         */
+/*
+ * Repeatedly reverse lists built out of very-different-sized `cons` cells.
+ * Check that we did not lose anything.
+ */
 static void *GC_CALLBACK
 reverse_test_inner(void *data)
 {
@@ -894,8 +915,10 @@ reverse_test_inner(void *data)
   /* WinCE only allows 64 KB stacks. */
 #    define BIG 500
 #  elif defined(EMSCRIPTEN) || defined(OSF1)
-  /* Wasm reports "Maximum call stack size exceeded" error otherwise. */
-  /* OSF has limited stack space by default, and large frames. */
+  /*
+   * Wasm reports "Maximum call stack size exceeded" error otherwise.
+   * Tru64 UNIX has limited stack space by default, and large frames.
+   */
 #    define BIG 200
 #  elif defined(__MACH__) && defined(__ppc64__)
 #    define BIG 2500
@@ -936,11 +959,11 @@ reverse_test_inner(void *data)
 #else
   GC_PTR_STORE_AND_DIRTY(h + 1999, ints(1, 200));
 #endif
-  /* Try to force some collections and reuse of small list elements.  */
+  /* Try to force some collections and reuse of small list elements. */
   for (i = 0; i < 10; i++) {
     (void)ints(1, BIG);
   }
-  /* Superficially test interior pointer recognition on stack.        */
+  /* Superficially test the interior pointers recognition on stack. */
   c = (sexpr)((char *)c + sizeof(char *));
   d = (sexpr)((char *)d + sizeof(char *));
 
@@ -973,11 +996,13 @@ reverse_test_inner(void *data)
     GC_noop1((GC_word)(GC_funcptr_uint)(&fork_a_thread));
 #  endif
 #endif
-    /* This maintains the invariant that a always points to a list of   */
-    /* 49 integers.  Thus, this is thread safe without locks, assuming  */
-    /* acquire/release barriers in `a_get`/`a_set` and atomic pointer   */
-    /* assignments (otherwise, e.g., `check_ints()` may see an          */
-    /* uninitialized object returned by `GC_MALLOC`).                   */
+    /*
+     * This maintains the invariant that `a` always points to a list of
+     * 49 integers.  Thus, this is thread safe without locks, assuming
+     * acquire/release barriers in `a_get`/`a_set` and atomic pointer
+     * assignments (otherwise, e.g., `check_ints()` may see an uninitialized
+     * object returned by `GC_MALLOC`).
+     */
     a_set(reverse(reverse(a_get())));
 #if !defined(AT_END) && !defined(THREADS)
     /* This is not thread safe, since realloc explicitly deallocates. */
@@ -1017,8 +1042,10 @@ reverse_test(void)
   (void)GC_do_blocking(reverse_test_inner, 0);
 }
 
-/* The rest of this builds balanced binary trees, checks that they do   */
-/* not disappear, and tests finalization.                               */
+/*
+ * The rest of this builds balanced binary trees, checks that they do not
+ * disappear, and tests finalization.
+ */
 typedef struct treenode {
   int level;
   struct treenode *lchild;
@@ -1044,7 +1071,7 @@ finalizer(void *obj, void *client_data)
     FAIL;
   }
   finalized_count++;
-  /* Detect duplicate finalization immediately.       */
+  /* Detect duplicate finalization immediately. */
   t->level = -1;
   FINALIZER_UNLOCK();
 }
@@ -1099,7 +1126,7 @@ mktree(int n)
     AO_fetch_and_add1(&collectable_count);
 #endif
     {
-      /* Losing a count here causes erroneous report of failure.    */
+      /* Losing a count here causes erroneous report of failure. */
       FINALIZER_LOCK();
 #ifndef GC_NO_FINALIZATION
       finalizable_count++;
@@ -1135,11 +1162,13 @@ mktree(int n)
         GC_printf("GC_move_disappearing_link(new_link) failed\n");
         FAIL;
       }
-      /* Note: if other thread is performing `fork()` at this moment,   */
-      /* then the stack of the current thread is dropped (together with */
-      /* `new_link` variable) in the child process, and `GC_dl_hashtbl` */
-      /* entry with the `link` field equal to `new_link` will be        */
-      /* removed when a collection occurs (as expected).                */
+      /*
+       * Note: if other thread is performing `fork()` at this moment,
+       * then the stack of the current thread is dropped (together with
+       * `new_link` variable) in the child process, and `GC_dl_hashtbl`
+       * entry with the `link` field equal to `new_link` will be removed
+       * when a collection occurs (as expected).
+       */
       if (GC_unregister_disappearing_link(new_link) == 0) {
         GC_printf("GC_unregister_disappearing_link failed\n");
         FAIL;
@@ -1368,7 +1397,7 @@ const GC_word bm_huge[320 / CPP_WORDSZ] = {
   ((GC_word)((GC_signed_word)-1)) >> 8 /*< highest byte is zero */
 };
 
-/* A very simple test of explicitly typed allocation.   */
+/* A very simple test of explicitly typed allocation. */
 static void
 typed_test(void)
 {
@@ -1667,9 +1696,11 @@ run_one_test(void)
   }
 #  if !defined(IA64) && !defined(POWERPC)
   if (!TEST_FAIL_COUNT(1)) {
-    /* On a PowerPC function pointers refer to a descriptor in the  */
-    /* data segment, so there should have been no failures.         */
-    /* The same applies to IA-64.                                   */
+    /*
+     * On a PowerPC, function pointers refer to a descriptor in the data
+     * segment, so there should have been no failures.  The same applies
+     * to IA-64.
+     */
     GC_printf("GC_is_visible produced wrong failure indication\n");
     FAIL;
   }
@@ -1791,7 +1822,7 @@ run_one_test(void)
 #  endif
   }
 #endif
-  /* Test floating point alignment.   */
+  /* Test floating point alignment. */
   {
     double *dp = GC_NEW(double);
 
@@ -1806,7 +1837,7 @@ run_one_test(void)
     (void)GC_count_set_marks_in_hblk(dp);
 #endif
   }
-  /* Test zero-sized allocation a bit more.   */
+  /* Test zero-sized allocation a bit more. */
   {
     size_t i;
     for (i = 0; i < 10000; ++i) {
@@ -1869,15 +1900,17 @@ run_one_test(void)
     if (print_stats)
       GC_log_printf("Started a child process, pid= %ld\n", (long)child_pid);
 #  ifdef PARALLEL_MARK
-    /* No parallel markers.     */
+    /* No parallel markers. */
     GC_gcollect();
 #  endif
     GC_start_mark_threads();
     GC_gcollect();
 #  ifdef THREADS
-    /* Skip "Premature finalization" check in the child process because */
-    /* there could be a chance that some other thread of the parent was */
-    /* executing `mktree()` at the moment of process fork.              */
+    /*
+     * Skip "Premature finalization" check in the child process because
+     * there could be a chance that some other thread of the parent process
+     * was executing `mktree()` at the moment of process fork.
+     */
     dropped_something = 1;
 #  endif
     tree_test();
@@ -1952,8 +1985,10 @@ run_one_test(void)
                   (unsigned)time_diff, (void *)&start_time);
   }
 #endif
-  /* `GC_allocate_ml` and `GC_need_to_lock` are no longer exported, and */
-  /* `AO_fetch_and_add1()` may be unavailable to update a counter.      */
+  /*
+   * `GC_allocate_ml` and `GC_need_to_lock` are not exported, and
+   * `AO_fetch_and_add1()` may be unavailable to update a counter.
+   */
   (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
 
   /* Dummy checking of API functions while the allocator lock is held. */
@@ -1974,7 +2009,7 @@ run_single_threaded_test(void)
 {
   GC_disable();
   GC_FREE(checkOOM(GC_MALLOC(100)));
-  /* Add a block to heap.     */
+  /* Add a block to heap. */
   GC_expand_hp(0);
   GC_enable();
 }
@@ -2054,11 +2089,12 @@ check_heap_stats(void)
     FAIL;
   }
 
-  /* The upper bounds are a guess, which has been empirically */
-  /* adjusted.  On low-end uniprocessors with incremental GC  */
-  /* these may be particularly dubious, since empirically the */
-  /* heap tends to grow largely as a result of the GC not     */
-  /* getting enough cycles.                                   */
+  /*
+   * The upper bounds are a guess, which has been empirically adjusted.
+   * On low-end uniprocessors with the incremental collection these may be
+   * particularly dubious, since empirically the heap tends to grow largely
+   * as a result of the GC not getting enough cycles.
+   */
 #if CPP_PTRSZ == 64
   max_heap_sz = 26000000;
 #else
@@ -2086,13 +2122,15 @@ check_heap_stats(void)
 #if defined(USE_MMAP) || defined(MSWIN32)
   max_heap_sz = NUMBER_ROUND_UP(max_heap_sz, 4 * 1024 * 1024);
 #endif
-  /* Add 1% for recycled blocks.      */
+  /* Add 1% for recycled blocks. */
   init_heap_sz += init_heap_sz / 100;
   if (max_heap_sz < init_heap_sz)
     max_heap_sz = init_heap_sz;
 
-  /* Do garbage collection repeatedly so that all inaccessible objects  */
-  /* can be finalized.  Should work even if the collection is disabled. */
+  /*
+   * Do garbage collection repeatedly so that all inaccessible objects
+   * can be finalized.  Should work even if the collection is disabled.
+   */
   while (GC_collect_a_little()) {
     /* Empty. */
   }
@@ -2220,7 +2258,7 @@ check_heap_stats(void)
   GC_printf("Final number of reachable objects is %u\n", obj_count);
 
 #ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
-  /* Get global counters (just to check the functions work).  */
+  /* Get global counters (just to check the functions work). */
   GC_get_heap_usage_safe(NULL, NULL, NULL, NULL, NULL);
   {
     struct GC_prof_stats_s stats;
@@ -2312,7 +2350,7 @@ enable_incremental_mode(void)
                       : "");
         break;
       default:
-        /* Nothing for others.        */
+        /* Nothing for others. */
         break;
       }
     }
@@ -2333,8 +2371,10 @@ enable_incremental_mode(void)
 #if !defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
 #  if defined(_DEBUG) && (_MSC_VER >= 1900 /* VS 2015+ */)
-/* Ensure that there is no system-malloc-allocated objects at normal  */
-/* exit (i.e. no such memory leaked).                                 */
+/*
+ * Ensure that there is no system-malloc-allocated objects at normal exit
+ * (i.e. no such memory leaked).
+ */
 #    define CRTMEM_CHECK_INIT() \
       (void)_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF)
 #    define CRTMEM_DUMP_LEAKS()                                 \
@@ -2541,7 +2581,7 @@ main(void)
 #  endif
 #  if defined(GC_DLL) && !defined(GC_NO_THREADS_DISCOVERY) \
       && !defined(MSWINCE) && !defined(THREAD_LOCAL_ALLOC)
-  /* Test with implicit thread registration if possible.      */
+  /* Test with implicit thread registration if possible. */
   GC_use_threads_discovery();
   GC_printf("Using DllMain to track threads\n");
 #  endif
@@ -2646,13 +2686,17 @@ main(void)
   int err;
 
 #  ifdef IRIX5
-  /* Force a larger stack to be preallocated.  Since the initial  */
-  /* one cannot always grow later.  Require 1 MB.                 */
+  /*
+   * Force a larger stack to be preallocated.  Since the initial one cannot
+   * always grow later.  Require 1 MB.
+   */
   *((volatile char *)&err - 1024 * 1024) = 0;
 #  endif
 #  ifdef HPUX
-  /* Default stack size is too small, especially with the 64-bit ABI.   */
-  /* Increase the stack size.                                           */
+  /*
+   * Default stack size is too small, especially with the 64-bit ABI.
+   * Increase the stack size.
+   */
   if (pthread_default_stacksize_np(1024 * 1024, 0) != 0) {
     GC_printf("pthread_default_stacksize_np failed\n");
   }
@@ -2713,7 +2757,7 @@ main(void)
 #  endif
   set_print_procs();
 
-  /* Minimal testing of some API functions.   */
+  /* Minimal testing of some API functions. */
   GC_exclude_static_roots(&atomic_count,
                           (char *)&atomic_count + sizeof(atomic_count));
   GC_register_has_static_roots_callback(has_static_roots);
@@ -2728,7 +2772,7 @@ main(void)
     if (err != 0) {
       GC_printf("Thread #%d creation failed, errno= %d\n", i, err);
       if (i > 0 && EAGAIN == err) {
-        /* Resource is temporarily unavailable.     */
+        /* Resource is temporarily unavailable. */
         break;
       }
       FAIL;

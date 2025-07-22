@@ -47,7 +47,7 @@ EXTERN_C_BEGIN
 #if defined(LARGE_CONFIG) || !defined(SMALL_CONFIG)
 #  define LOG_BOTTOM_SZ 10
 #else
-/* Keep top index size reasonable with smaller blocks.                */
+/* Keep top index size reasonable with smaller blocks. */
 #  define LOG_BOTTOM_SZ 11
 #endif
 #define BOTTOM_SZ (1 << LOG_BOTTOM_SZ)
@@ -87,12 +87,14 @@ typedef struct hce {
 #define HCE_HDR(h) ((hce)->hce_hdr)
 
 #ifdef PRINT_BLACK_LIST
-/* Handle a header cache miss.  Returns a pointer to the header         */
-/* corresponding to `p`, if the latter can possibly be a valid object   */
-/* pointer, and `NULL` otherwise.  Guaranteed to return `NULL` for      */
-/* a pointer past the first page of an object unless both               */
-/* `GC_all_interior_pointers` is set and `p` is in fact a valid object  */
-/* pointer.  Never returns a pointer to a free `hblk`.                  */
+/*
+ * Handle a header cache miss.  Returns a pointer to the header
+ * corresponding to `p`, if the latter can possibly be a valid object
+ * pointer, and `NULL` otherwise.  Guaranteed to return `NULL` for
+ * a pointer past the first page of an object unless both
+ * `GC_all_interior_pointers` is set and `p` is in fact a valid object
+ * pointer.  Never returns a pointer to a free `hblk`.
+ */
 GC_INNER hdr *GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce,
                                    ptr_t source);
 
@@ -103,11 +105,13 @@ GC_INNER hdr *GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce);
 #  define HEADER_CACHE_MISS(p, hce, source) GC_header_cache_miss(p, hce)
 #endif
 
-/* Set `hhdr` to the header for `p`.  Analogous to `GET_HDR()` below,   */
-/* except that in the case of large objects, it gets the header for the */
-/* object beginning if `GC_all_interior_pointers` is true.  Sets `hhdr` */
-/* to `NULL` if `p` points to somewhere other than the first page of an */
-/* object, and it is not a valid pointer to the object.                 */
+/*
+ * Set `hhdr` to the header for `p`.  Analogous to `GET_HDR()` below,
+ * except that in the case of large objects, it gets the header for the
+ * object beginning if `GC_all_interior_pointers` is true.  Sets `hhdr`
+ * to `NULL` if `p` points to somewhere other than the first page of an
+ * object, and it is not a valid pointer to the object.
+ */
 #define HC_GET_HDR(p, hhdr, source)                \
   { /*< cannot use `do ... while (0)` here */      \
     hdr_cache_entry *hce = HCE(p);                 \
@@ -122,17 +126,21 @@ GC_INNER hdr *GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce);
   }
 
 typedef struct bi {
-  /* The bottom level index contains one of three kinds of values:    */
-  /* - 0 means we are not responsible for this block, or this is      */
-  /*   a block other than the first one in a free block;              */
-  /* - 1 < (long)`x` <= `MAX_JUMP` means the block starts at least    */
-  /*   `x * HBLKSIZE` bytes before the current address;               */
-  /* - a valid pointer points to a `hdr` structure (the above cannot  */
-  /*   be valid pointers due to the `GET_MEM()` return convention).   */
+  /*
+   * The bottom-level index contains one of three kinds of values:
+   *   - 0 means we are not responsible for this block, or this is
+   *     a block other than the first one in a free block;
+   *   - 1 < (long)`x` <= `MAX_JUMP` means the block starts at least
+   *     `x * HBLKSIZE` bytes before the current address;
+   *   - a valid pointer points to a `hdr` structure (the above cannot
+   *     be valid pointers due to the `GET_MEM()` return convention).
+   */
   hdr *index[BOTTOM_SZ];
 
-  /* All indices are linked in the ascending and descending orders,   */
-  /* respectively.                                                    */
+  /*
+   * All indices are linked in the ascending and descending orders,
+   * respectively.
+   */
   struct bi *asc_link;
   struct bi *desc_link;
 
@@ -159,7 +167,7 @@ typedef struct bi {
 #  define SET_HDR(p, hhdr) (void)(HDR_INNER(p) = (hhdr))
 #  define GET_HDR_ADDR(p, ha) (void)((ha) = &HDR_INNER(p))
 #else
-/* A hash function for the tree top level.    */
+/* A hash function for the tree top level. */
 #  define TL_HASH(hi) ((hi) & (TOP_SZ - 1))
 /* Set `bottom_indx` to point to the bottom index for address `p`. */
 #  define GET_BI(p, bottom_indx)                                    \
@@ -192,14 +200,18 @@ typedef struct bi {
 #  define HDR(p) GC_find_header(p)
 #endif
 
-/* Is the result a forwarding address to someplace closer to the        */
-/* beginning of the block or `NULL`?                                    */
+/*
+ * Is the result a forwarding address to someplace closer to the
+ * beginning of the block or `NULL`?
+ */
 #define IS_FORWARDING_ADDR_OR_NIL(hhdr) ((size_t)ADDR(hhdr) <= MAX_JUMP)
 
-/* Get an `HBLKSIZE`-aligned address closer to the beginning of the     */
-/* block `h`.  Assumes that `hhdr` is equal to `HDR(h)`,                */
-/* `IS_FORWARDING_ADDR(hhdr)` is true and `hhdr` is not `NULL`.         */
-/* `HDR(result)` is expected to be non-`NULL`.                          */
+/*
+ * Get an `HBLKSIZE`-aligned address closer to the beginning of the
+ * block `h`.  Assumes that `hhdr` is equal to `HDR(h)`,
+ * `IS_FORWARDING_ADDR(hhdr)` is true and `hhdr` is not `NULL`.
+ * `HDR(result)` is expected to be non-`NULL`.
+ */
 #define FORWARDED_ADDR(h, hhdr) \
   ((struct hblk *)(h) - (size_t)(GC_uintptr_t)(hhdr))
 

@@ -21,8 +21,10 @@ struct treenode {
 
 struct treenode *root[10] = { NULL };
 
-/* Same as `root` variable but initialized to some non-zero value (to   */
-/* be placed to `.data` section instead of `.bss`).                     */
+/*
+ * Same as `root` variable but initialized to some nonzero value (to be
+ * placed to `.data` section instead of `.bss`).
+ */
 struct treenode *root_nz[10] = { (struct treenode *)(GC_uintptr_t)1 };
 
 /* Note: this is `static` intentionally. */
@@ -37,9 +39,11 @@ GC_TEST_IMPORT_API struct treenode **libsrl_getpelem2(int i, int j);
 static void
 init_staticroot(void)
 {
-  /* Intentionally put `staticroot` initialization in a function other  */
-  /* than `main` to prevent CSA warning (that `staticroot` variable can */
-  /* be changed to be a local one).                                     */
+  /*
+   * Intentionally put `staticroot` initialization in a function other than
+   * `main` to prevent CSA warning (that `staticroot` variable can be changed
+   * to be a local one).
+   */
   staticroot = (char *)libsrl_init();
 }
 

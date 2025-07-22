@@ -15,11 +15,13 @@
  * modified is included with the above copyright notice.
  */
 
-/* This header is private to the collector.  It is almost always        */
-/* included from `gc_priv.h` file.  However it is possible to include   */
-/* it by itself if just the configuration macros are needed.  In that   */
-/* case, a few declarations relying on types declared in `gc_priv.h`    */
-/* file will be omitted.                                                */
+/*
+ * This header is private to the collector.  It is almost always
+ * included from `gc_priv.h` file.  However it is possible to include
+ * it by itself if just the configuration macros are needed.  In that
+ * case, a few declarations relying on types declared in `gc_priv.h`
+ * file will be omitted.
+ */
 
 #ifndef GCCONFIG_H
 #define GCCONFIG_H
@@ -49,9 +51,11 @@ typedef char *ptr_t;
 #  include <stddef.h> /*< for `size_t`, etc. */
 #endif
 
-/* Note: Only wrap our own declarations, and not the included headers.  */
-/* In this case, wrap our entire file, but temporarily unwrap/rewrap    */
-/* around `#include` entities.  Macros do not need such wrapping.       */
+/*
+ * Note: only wrap our own declarations, and not the included headers;
+ * in this case, wrap our entire file, but temporarily unwrap/rewrap
+ * around `#include` entities; macros do not need such wrapping.
+ */
 #ifdef __cplusplus
 #  define EXTERN_C_BEGIN extern "C" {
 #  define EXTERN_C_END } /* extern "C" */
@@ -62,7 +66,7 @@ typedef char *ptr_t;
 
 EXTERN_C_BEGIN
 
-/* Convenient internal macro to test version of Clang.  */
+/* Convenient internal macro to test version of Clang. */
 #if defined(__clang__) && defined(__clang_major__)
 #  define GC_CLANG_PREREQ(major, minor) \
     ((__clang_major__ << 8) + __clang_minor__ >= ((major) << 8) + (minor))
@@ -75,8 +79,10 @@ EXTERN_C_BEGIN
 #  define GC_CLANG_PREREQ_FULL(major, minor, patchlevel) 0
 #endif
 
-/* Machine dependent parameters.  Some tuning parameters can be found   */
-/* near the top of `gc_priv.h` file.                                    */
+/*
+ * Machine-dependent parameters.  Some tuning parameters can be found
+ * near the top of `gc_priv.h` file.
+ */
 
 /* Machine-specific parts contributed by various people.  See `README` file. */
 
@@ -86,7 +92,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(TIZEN) && !defined(HOST_TIZEN)
-/* A Linux-based OS.    */
+/* A Linux-based OS. */
 #  define HOST_TIZEN 1
 #endif
 
@@ -97,24 +103,24 @@ EXTERN_C_BEGIN
 #  endif
 #endif
 
-/* First a unified test for Linux: */
+/* First a unified test for Linux. */
 #if (defined(linux) || defined(__linux__) || defined(HOST_ANDROID) \
      || defined(HOST_TIZEN))                                       \
     && !defined(LINUX) && !defined(__native_client__)
 #  define LINUX
 #endif
 
-/* And one for NetBSD: */
+/* And one for NetBSD. */
 #if defined(__NetBSD__)
 #  define NETBSD
 #endif
 
-/* And one for OpenBSD: */
+/* And one for OpenBSD. */
 #if defined(__OpenBSD__)
 #  define OPENBSD
 #endif
 
-/* And one for FreeBSD: */
+/* And one for FreeBSD. */
 #if (defined(__FreeBSD__) || defined(__DragonFly__) \
      || defined(__FreeBSD_kernel__))                \
     && !defined(FREEBSD)                            \
@@ -146,7 +152,7 @@ EXTERN_C_BEGIN
 #  define SERENITY
 #endif
 
-/* And one for Darwin: */
+/* And one for Darwin. */
 #if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
 #  define DARWIN
 EXTERN_C_END
@@ -154,7 +160,7 @@ EXTERN_C_END
 EXTERN_C_BEGIN
 #endif
 
-/* Determine the machine type: */
+/* Determine the machine type. */
 #if defined(__native_client__)
 #  define NACL
 #  if !defined(__portable_native_client__) && !defined(__arm__)
@@ -300,7 +306,7 @@ EXTERN_C_BEGIN
 #if defined(__alpha) || defined(__alpha__)
 #  define ALPHA
 #  if !defined(ANY_BSD) && !defined(LINUX)
-#    define OSF1 /*< a.k.a Digital Unix */
+#    define OSF1 /*< Compaq Tru64 UNIX (Digital UNIX) */
 #  endif
 #  define mach_type_known
 #endif
@@ -340,8 +346,10 @@ EXTERN_C_BEGIN
 #  define mach_type_known
 #endif
 #if defined(_WIN32_WCE) || defined(__CEGCC__) || defined(__MINGW32CE__)
-/* `SH3`, `SH4`, `MIPS` macros are already defined for the          */
-/* corresponding architectures.                                     */
+/*
+ * `SH3`, `SH4`, `MIPS` macros are already defined for the corresponding
+ * architectures.
+ */
 #  if defined(SH3) || defined(SH4)
 #    define SH
 #  endif
@@ -381,15 +389,17 @@ EXTERN_C_BEGIN
 #  endif
 #  if defined(_MSC_VER) && defined(_M_IA64)
 #    define IA64
-/* Really Win64, but we do not treat 64-bit variants as   */
-/* a different platform.                                  */
+/*
+ * Really Win64, but we do not treat 64-bit variants as a different
+ * platform.
+ */
 #    define MSWIN32
 #  endif
 #endif /* !_WIN32_WCE && !__CEGCC__ && !__MINGW32CE__ */
 #if defined(__DJGPP__)
 #  define I386
 #  ifndef DJGPP
-/* MSDOS running the DJGPP port of GCC.   */
+/* MSDOS running the DJGPP port of gcc. */
 #    define DJGPP
 #  endif
 #  define mach_type_known
@@ -432,7 +442,7 @@ EXTERN_C_BEGIN
 #  define mach_type_known
 #endif /* __WATCOMC__ && __386__ */
 #if defined(__GNU__) && defined(__i386__)
-/* The Debian Hurd running on generic PC.   */
+/* The Debian Hurd running on generic PC. */
 #  define HURD
 #  define I386
 #  define mach_type_known
@@ -443,7 +453,7 @@ EXTERN_C_BEGIN
 #  define mach_type_known
 #endif
 #if defined(__TANDEM)
-/* Nonstop S-series */
+/* Nonstop S-series. */
 /* FIXME: Should recognize Integrity series? */
 #  define MIPS
 #  define NONSTOP
@@ -456,7 +466,7 @@ EXTERN_C_BEGIN
 #    define TILEPRO
 #  endif
 #  define mach_type_known
-#endif /* __tile__ */
+#endif
 #if defined(NN_BUILD_TARGET_PLATFORM_NX)
 #  define AARCH64
 #  define NINTENDO_SWITCH
@@ -565,11 +575,13 @@ EXTERN_C_BEGIN
 #  define mach_type_known
 #endif
 
-/* Feel free to add more clauses here.  Or manually define the machine  */
-/* type here.  A machine type is characterized by the architecture.     */
-/* Some machine types are further subdivided by OS.  Macros such as     */
-/* `LINUX`, `FREEBSD`, etc. distinguish them.  The distinction in these */
-/* cases is usually the stack starting address.                         */
+/*
+ * Feel free to add more clauses here.  Or manually define the machine
+ * type here.  A machine type is characterized by the architecture.
+ * Some machine types are further subdivided by OS.  Macros such as
+ * `LINUX`, `FREEBSD`, etc. distinguish them.  The distinction in these
+ * cases is usually the stack starting address.
+ */
 
 #if !defined(mach_type_known) && !defined(CPPCHECK)
 #  error The collector has not been ported to this machine/OS combination
@@ -663,7 +675,7 @@ EXTERN_C_BEGIN
  * `DATAEND`, if not `end`, where `end` is defined as `extern int end[]`.
  * RTH suggests gaining access to linker script synth'd values with
  * this idiom instead of `&end`, where `end` is defined as `extern int end`.
- * Otherwise, "GCC will assume these are in .sdata/.sbss" and it will, e.g.,
+ * Otherwise, "gcc will assume these are in .sdata/.sbss" and it will, e.g.,
  * cause failures on `alpha*-*-*` with `-msmall-data` or `-fpic` or
  * `mips-*-*` without any special options.
  *
@@ -735,7 +747,7 @@ EXTERN_C_BEGIN
  * implements `GC_register_dynamic_libraries()` for the architecture.
  *
  * An architecture may define `PREFETCH(x)` to preload the cache with `*x`.
- * This defaults to GCC built-in operation (or a no-op for other compilers).
+ * This defaults to gcc built-in operation (or a no-op for other compilers).
  *
  * `GC_PREFETCH_FOR_WRITE(x)` is used if `*x` is about to be written.
  *
@@ -762,13 +774,15 @@ EXTERN_C_BEGIN
 #  define GC_GLIBC_PREREQ(major, minor) 0 /*< `FALSE` */
 #endif
 
-/* Align a `ptr_t` pointer down/up to a given boundary.  The latter */
-/* should be a power of two.                                        */
+/*
+ * Align a `ptr_t` pointer down/up to a given boundary.  The latter should
+ * be a power of two.
+ */
 #if GC_CLANG_PREREQ(11, 0)
 #  define PTR_ALIGN_DOWN(p, b) __builtin_align_down(p, b)
 #  if defined(DARWIN) && defined(GC_SINGLE_OBJ_BUILD) && GC_CLANG_PREREQ(17, 0)
-/* Workaround a crash in Apple clang-17.                            */
-/* TODO: Disable for later clang versions when the bug is fixed.    */
+/* Workaround a crash in Apple clang-17. */
+/* TODO: Disable for later clang versions when the bug is fixed. */
 #    define PTR_ALIGN_UP(p, b) \
       ((ptr_t)__builtin_align_up((GC_uintptr_t)(p), b))
 #  else
@@ -782,8 +796,10 @@ EXTERN_C_BEGIN
              & ~((GC_uintptr_t)(b) - (GC_uintptr_t)1)))
 #endif
 
-/* If available, we can use `__builtin_unwind_init()` to push the   */
-/* relevant registers onto the stack.                               */
+/*
+ * If available, we can use `__builtin_unwind_init()` to push the relevant
+ * registers onto the stack.
+ */
 #if GC_GNUC_PREREQ(2, 8)                                                   \
     && !GC_GNUC_PREREQ(11, 0) /*< broken at least in 11.2.0 on cygwin64 */ \
     && !defined(__INTEL_COMPILER) && !defined(__PATHCC__)                  \
@@ -806,8 +822,10 @@ EXTERN_C_BEGIN
 #  define NO_UNDERSCORE_SETJMP
 #endif
 
-/* The common OS-specific definitions.  Should be applicable to */
-/* all (or most, at least) supported architectures.             */
+/*
+ * The common OS-specific definitions.  Should be applicable to all
+ * (or most, at least) supported architectures.
+ */
 
 #ifdef CYGWIN32
 #  define OS_TYPE "CYGWIN32"
@@ -839,23 +857,24 @@ extern int _end[];
 #  if !defined(GC_THREADS) || defined(NO_HANDLE_FORK) \
       || defined(GC_NO_CAN_CALL_ATFORK)
 #    define MPROTECT_VDB
-/* FIXME: otherwise `gctest` crashes in child process */
+/* FIXME: Otherwise `gctest` crashes in child process. */
 #  endif
-/* FIXME: a deadlock occurs in markers, thus disabled for now */
+/* FIXME: A deadlock occurs in markers, thus disabled for now. */
 #  undef PARALLEL_MARK
 #endif /* COSMO */
 
 #ifdef DARWIN
 #  define OS_TYPE "DARWIN"
 #  define DYNAMIC_LOADING
-/* TODO: see `get_end(3)`, `get_etext` and `get_end` should not be      */
-/* used.  These are not used when `dyld` support is enabled (it is by   */
-/* default).                                                            */
+/*
+ * TODO: See `get_end(3)`, `get_etext` and `get_end` should not be used.
+ * These are not used when `dyld` support is enabled (it is the default).
+ */
 #  define DATASTART ((ptr_t)get_etext())
 #  define DATAEND ((ptr_t)get_end())
 #  define USE_MMAP_ANON
-/* There seems to be some issues with try-lock hanging on Darwin.   */
-/* TODO: This should be looked into some more.                      */
+/* There seems to be some issues with try-lock hanging on Darwin. */
+/* TODO: This should be looked into some more. */
 #  define NO_PTHREAD_TRYLOCK
 #  ifndef TARGET_OS_XR
 #    define TARGET_OS_XR 0
@@ -870,9 +889,11 @@ extern int _end[];
 extern int _modules_data_start[], _apps_bss_end[];
 #  define DATASTART ((ptr_t)_modules_data_start)
 #  define DATAEND ((ptr_t)_apps_bss_end)
-/* Note: the designated area might be quite large (several  */
-/* dozens of MBs) as it includes data and bss of all apps   */
-/* and modules of the built binary image.                   */
+/*
+ * Note: the designated area might be quite large (several dozens of MBs)
+ * as it includes `.data` and `.bss` of all apps and modules of the built
+ * binary image.
+ */
 #endif /* EMBOX */
 
 #ifdef FREEBSD
@@ -907,17 +928,20 @@ extern int etext[];
 #    define USE_GET_STACKBASE_FOR_MAIN
 #  endif
 #  define USE_MMAP_ANON
-/* On Haiku R1, at least, `pthreads` locks never spin but always call   */
-/* into the kernel if the lock cannot be acquired with a simple atomic  */
-/* operation.  (Up to 5x overall performance improvement of the         */
-/* collector is observed by forcing use of spin locks.)                 */
+/*
+ * On Haiku R1, at least, `pthreads` locks never spin but always call
+ * into the kernel if the lock cannot be acquired with a simple atomic
+ * operation.  (Up to 5x overall performance improvement of the
+ * collector is observed by forcing use of spin locks.)
+ */
 #  ifndef USE_SPIN_LOCK
 #    define USE_SPIN_LOCK
 #  endif
-/* TODO: `MPROTECT_VDB` is not working correctly on anything other than */
-/* recent nightly Haiku OS builds (as of Nov 2024), and also it is      */
-/* considerably slower than regular collecting, so do not enable it     */
-/* for now.                                                             */
+/*
+ * TODO: `MPROTECT_VDB` is not working correctly on anything other than
+ * recent nightly Haiku OS builds (as of Nov 2024), and also it is
+ * considerably slower than regular collecting, so do not enable it for now.
+ */
 EXTERN_C_END
 #  include <OS.h>
 EXTERN_C_BEGIN
@@ -970,13 +994,15 @@ extern int _end[];
 /* Requires Linux 2.3.47 or later. */
 #    define MPROTECT_VDB
 #  else
-/* We seem to get random errors in the incremental mode, possibly       */
-/* because the Linux threads implementation itself is a `malloc` client */
-/* and cannot deal with the signals.  `fread` uses `malloc` too.        */
-/* In case of e2k, unless `-fsemi-spec-ld` (or `-O0`) option is passed  */
-/* to gcc (both when compiling the collector library and the client),   */
-/* a semi-speculative optimization may lead to `SIGILL` (with           */
-/* `ILL_ILLOPN` `si_code`) instead of `SIGSEGV`.                        */
+/*
+ * We seem to get random errors in the incremental mode, possibly because
+ * the Linux threads implementation itself is a `malloc` client and cannot
+ * deal with the signals.  `fread()` uses `malloc()` too.
+ * In case of e2k, unless `-fsemi-spec-ld` (or `-O0`) option is passed
+ * to gcc (both when compiling the collector library and the client),
+ * a semi-speculative optimization may lead to `SIGILL` (with `ILL_ILLOPN`
+ * `si_code`) instead of `SIGSEGV`.
+ */
 #  endif
 #endif /* LINUX */
 
@@ -1022,7 +1048,7 @@ extern int _end[];
 #  define HEURISTIC1
 #  define NO_PTHREAD_GETATTR_NP
 #  define USE_MMAP_ANON
-/* FIXME: Not real page size */
+/* FIXME: Not real page size. */
 #  define GETPAGESIZE() 65536
 #  define MAX_NACL_GC_THREADS 1024
 #endif /* NACL */
@@ -1085,7 +1111,7 @@ extern int etext[], _end[];
 #  define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
 #  define DATAEND ((ptr_t)_end)
 #  define DYNAMIC_LOADING
-/* TODO: enable `mprotect`-based VDB */
+/* TODO: Enable `mprotect`-based VDB. */
 #  define USE_MMAP_ANON
 #endif /* SERENITY */
 
@@ -1095,10 +1121,12 @@ extern int _end[];
 #  define DATAEND ((ptr_t)_end)
 #  if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #    define USE_MMAP 1
-/* Otherwise we now use `calloc`.  `mmap()` may result in the heap  */
-/* interleaved with thread stacks, which can result in excessive    */
-/* blacklisting.  `sbrk` is unusable since it does not interact     */
-/* correctly with the system `malloc`.                              */
+/*
+ * Otherwise we now use `calloc()`.  `mmap()` may result in the heap
+ * interleaved with thread stacks, which can result in excessive
+ * black-listing.  `sbrk()` is unusable since it does not interact
+ * correctly with the system `malloc()`.
+ */
 #  endif
 #  ifdef USE_MMAP
 #    define HEAP_START ((word)0x40000000)
@@ -1109,14 +1137,15 @@ extern int _end[];
 #    define MPROTECT_VDB
 #  endif
 #  define DYNAMIC_LOADING
-/* Define `STACKBOTTOM` as `(ptr_t)_start` worked through 2.7, but      */
-/* reportedly breaks under 2.8.  It appears that the stack base is      */
-/* a property of the executable, so this should not break old           */
-/* executables.  `HEURISTIC1` reportedly no longer works under          */
-/* Solaris 2.7.  `HEURISTIC2` probably works, but this appears to be    */
-/* preferable.  Apparently `USRSTACK` is defined to be `USERLIMIT`, but */
-/* in some installations that is undefined.  We work around this with   */
-/* a gross hack.                                                        */
+/*
+ * Define `STACKBOTTOM` as `(ptr_t)_start` worked through 2.7, but
+ * reportedly breaks under 2.8.  It appears that the stack base is
+ * a property of the executable, so this should not break old executables.
+ * `HEURISTIC1` reportedly no longer works under Solaris 2.7.
+ * `HEURISTIC2` probably works, but this appears to be preferable.
+ * Apparently `USRSTACK` is defined to be `USERLIMIT`, but in some
+ * installations that is undefined.  We work around this with a gross hack.
+ */
 EXTERN_C_END
 #  include <sys/vmparam.h>
 EXTERN_C_BEGIN
@@ -1138,8 +1167,10 @@ EXTERN_C_BEGIN
 #  endif
 #endif /* SYMBIAN */
 
-/* Below are the definitions specific to each supported architecture    */
-/* and OS, grouped by the former.                                       */
+/*
+ * Below are the definitions specific to each supported architecture
+ * and OS, grouped by the former.
+ */
 
 #ifdef M68K
 #  define MACH_TYPE "M68K"
@@ -1156,11 +1187,13 @@ EXTERN_C_BEGIN
 #      if GC_GLIBC_PREREQ(2, 0)
 #        define SEARCH_FOR_DATA_START
 #      else
-/* Hideous kludge: `__environ` is the first word in platform "crt0.o"   */
-/* file, and delimits the start of the data segment, no matter which    */
-/* `ld` options were passed through.  We could use `_etext` instead,    */
-/* but that would include `.rodata`, which may contain large read-only  */
-/* data tables that we would rather not scan.                           */
+/*
+ * Hideous kludge: `__environ` is the first word in platform `crt0.o` file,
+ * and delimits the start of the data segment, no matter which `ld` options
+ * were passed through.  We could use `_etext` instead, but that would
+ * include `.rodata`, which may contain large read-only data tables that
+ * we would rather not scan.
+ */
 extern char **__environ;
 #        define DATASTART ((ptr_t)(&__environ))
 #      endif
@@ -1185,11 +1218,15 @@ extern int etext[];
 #    else
 #      define CPP_WORDSZ 32
 #    endif
-/* `HEURISTIC1` has been reliably reported to fail for a 32-bit     */
-/* executable on a 64-bit kernel.                                   */
+/*
+ * `HEURISTIC1` has been reliably reported to fail for a 32-bit executable
+ * on a 64-bit kernel.
+ */
 #    if defined(__bg__)
-/* The Linux Compute Node Kernel (used on BlueGene systems) does not    */
-/* support `SPECIFIC_MAIN_STACKBOTTOM` way.                             */
+/*
+ * The Linux Compute Node Kernel (used on BlueGene systems) does not
+ * support the `SPECIFIC_MAIN_STACKBOTTOM` way.
+ */
 #      define HEURISTIC2
 #      define NO_PTHREAD_GETATTR_NP
 #    else
@@ -1251,16 +1288,20 @@ extern int _end[], __bss_start;
 #    define STACKBOTTOM ((ptr_t)ps3_get_stack_bottom())
 void *ps3_get_mem(size_t lb);
 #    define GET_MEM(lb) ps3_get_mem(lb)
-/* The current `LOCK()` implementation for PS3 explicitly uses      */
-/* `pthread_mutex_lock()` for some reason.                          */
+/*
+ * The current `LOCK()` implementation for PS3 explicitly uses
+ * `pthread_mutex_lock()` for some reason.
+ */
 #    define NO_PTHREAD_TRYLOCK
 #  endif
 #  ifdef AIX
 #    define OS_TYPE "AIX"
 #    undef ALIGNMENT /*< in case it is defined */
 #    undef IA64
-/* DOB: some AIX installs stupidly define `IA64` in platform        */
-/* `sys/systemcfg.h` file.                                          */
+/*
+ * DOB: some AIX installs stupidly define `IA64` in platform
+ * `sys/systemcfg.h` file.
+ */
 #    ifdef __64BIT__
 #      define CPP_WORDSZ 64
 #      define STACKBOTTOM MAKE_CPTR(0x1000000000000000)
@@ -1270,19 +1311,23 @@ extern int errno;
 #      define STACKBOTTOM ((ptr_t)(&errno))
 #    endif
 #    define USE_MMAP_ANON
-/* From AIX linker man page:                                            */
-/* `_text` specifies the first location of the program;                 */
-/* `_etext` specifies the first location after the program;             */
-/* `_data` specifies the first location of the data;                    */
-/* `_edata` specifies the first location after the initialized data;    */
-/* `_end` (or `end`) specifies the first location after all data.       */
+/*
+ * From AIX linker man page:
+ *   - `_text` specifies the first location of the program;
+ *   - `_etext` specifies the first location after the program;
+ *   - `_data` specifies the first location of the data;
+ *   - `_edata` specifies the first location after the initialized data;
+ *   - `_end` (or `end`) specifies the first location after all data.
+ */
 extern int _data[], _end[];
 #    define DATASTART ((ptr_t)_data)
 #    define DATAEND ((ptr_t)_end)
 #    define MPROTECT_VDB
 #    define DYNAMIC_LOADING
-/* Note: for really old versions of AIX, `DYNAMIC_LOADING` may have to  */
-/* be removed.                                                          */
+/*
+ * Note: for really old versions of AIX, `DYNAMIC_LOADING` may have to
+ * be removed.
+ */
 #  endif
 #  ifdef NOSYS
 #    define OS_TYPE "NOSYS"
@@ -1290,7 +1335,7 @@ extern int _data[], _end[];
 extern void __end[], __dso_handle[];
 #    define DATASTART ((ptr_t)__dso_handle) /*< OK, that is ugly */
 #    define DATAEND ((ptr_t)__end)
-/* Note: stack starts at 0xE0000000 for the simulator.    */
+/* Note: stack starts at 0xE0000000 for the simulator. */
 #    define STACKBOTTOM PTR_ALIGN_UP(GC_approx_sp(), 0x10000000)
 #  endif
 #endif /* POWERPC */
@@ -1326,8 +1371,10 @@ extern char etext[];
 extern int _etext[];
 #    define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #    define PROC_VDB
-/* `getpagesize()` appeared to be missing from at least */
-/* one Solaris 5.4 installation.  Weird.                */
+/*
+ * `getpagesize()` appeared to be missing from at least one Solaris 5.4
+ * installation.  Weird.
+ */
 #    define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #  endif
 #  ifdef DRSNX
@@ -1370,13 +1417,15 @@ extern char edata[], end[];
 #    error This should be handled as X86_64
 #  endif
 #  define CPP_WORDSZ 32
-/* The 4-byte alignment appears to hold for all 32-bit compilers    */
-/* except Borland and Watcom.  If using the Borland (bcc32) or      */
-/* Watcom (wcc386) compiler, `-a4` or `-zp4` option, respectively,  */
-/* should be passed to the compiler, both for building the library  */
-/* and client code.  (The alternate solution is to define           */
-/* `FORCE_ALIGNMENT_ONE` macro but this would have significant      */
-/* negative performance implications.)                              */
+/*
+ * The 4-byte alignment appears to hold for all 32-bit compilers
+ * except Borland and Watcom.  If using the Borland (bcc32) or
+ * Watcom (wcc386) compiler, `-a4` or `-zp4` option, respectively,
+ * should be passed to the compiler, both for building the library
+ * and client code.  (The alternate solution is to define
+ * `FORCE_ALIGNMENT_ONE` macro but this would have significant
+ * negative performance implications.)
+ */
 #  if defined(FORCE_ALIGNMENT_ONE) \
       && (defined(__BORLANDC__) || defined(__WATCOMC__))
 #    define ALIGNMENT 1
@@ -1440,14 +1489,16 @@ extern int _etext, _end;
 #    define HEAP_START ((word)0x40000000)
 #  endif /* DGUX */
 #  ifdef LINUX
-/* This encourages `mmap()` to give us low addresses, thus allowing the */
-/* heap to grow to ~3 GB.                                               */
+/*
+ * This encourages `mmap()` to give us low addresses, thus allowing the
+ * heap to grow to ~3 GB.
+ */
 #    define HEAP_START ((word)0x1000)
 #    ifdef __ELF__
 #      if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
 #        define SEARCH_FOR_DATA_START
 #      else
-/* See the comment of the Linux/m68k case.  */
+/* See the comment of the Linux/m68k case. */
 extern char **__environ;
 #        define DATASTART ((ptr_t)(&__environ))
 #      endif
@@ -1456,10 +1507,12 @@ extern char **__environ;
               || (defined(HOST_ANDROID)                              \
                   && !(GC_GNUC_PREREQ(4, 8) || GC_CLANG_PREREQ(3, 2) \
                        || __ANDROID_API__ >= 18)))
-/* Older Android NDK releases lack `sigsetjmp` in x86 `libc`    */
-/* (`setjmp` is used instead to find `data_start`).  The bug    */
-/* is fixed in Android NDK r8e (so, OK to use `sigsetjmp`       */
-/* if gcc4.8+, clang3.2+ or Android API level 18+).             */
+/*
+ * Older Android NDK releases lack `sigsetjmp` in x86 `libc` (`setjmp` is
+ * used instead to find `data_start`).  The bug is fixed in Android NDK r8e
+ * (so, it is OK to use `sigsetjmp` if gcc-4.8+, clang-3.2+ or Android
+ * API level 18+).
+ */
 #        define GC_NO_SIGSETJMP 1
 #      endif
 #    else
@@ -1467,15 +1520,19 @@ extern int etext[];
 #      define DATASTART PTR_ALIGN_UP((ptr_t)etext, 0x1000)
 #    endif
 #    ifdef USE_I686_PREFETCH
-/* Empirically prefetcht0 is much more effective at reducing  */
-/* cache miss stalls for the targeted load instructions.  But */
-/* it seems to interfere enough with other cache traffic that */
-/* the net result is worse than prefetchnta.                  */
+/*
+ * Empirically `prefetcht0` is much more effective at reducing cache miss
+ * stalls for the targeted load instructions.  But it seems to interfere
+ * enough with other cache traffic that the net result is worse than
+ * `prefetchnta`.
+ */
 #      define PREFETCH(x) \
         __asm__ __volatile__("prefetchnta %0" : : "m"(*(char *)(x)))
 #      ifdef FORCE_WRITE_PREFETCH
-/* Using prefetches for write seems to have a slight        */
-/* negative impact on performance, at least for a PIII/500. */
+/*
+ * Using prefetches for write seems to have a slight negative impact on
+ * performance, at least for a PIII/500.
+ */
 #        define GC_PREFETCH_FOR_WRITE(x) \
           __asm__ __volatile__("prefetcht0 %0" : : "m"(*(char *)(x)))
 #      else
@@ -1522,8 +1579,10 @@ extern int _data_start__[], _bss_end__[];
 #  endif
 #  ifdef OS2
 #    define OS_TYPE "OS2"
-/* `STACKBOTTOM` and `DATASTART` are handled specially in `os_dep.c`    */
-/* file.  OS/2 actually has the right system call!                      */
+/*
+ * `STACKBOTTOM` and `DATASTART` are handled specially in `os_dep.c`
+ * file.  OS/2 actually has the right system call!
+ */
 #    define DATAEND /*< not needed */
 #    undef USE_MUNMAP
 #    define GETPAGESIZE() os2_getpagesize()
@@ -1532,8 +1591,10 @@ extern int _data_start__[], _bss_end__[];
 #    define WOW64_THREAD_CONTEXT_WORKAROUND
 #    define RETRY_GET_THREAD_CONTEXT
 #    if defined(__BORLANDC__)
-/* TODO: VDB based on `VirtualProtect` and `SetUnhandledExceptionFilter`  */
-/* does not work correctly.                                               */
+/*
+ * TODO: VDB based on `VirtualProtect` and `SetUnhandledExceptionFilter`
+ * does not work correctly.
+ */
 #    else
 #      define MPROTECT_VDB
 #    endif
@@ -1595,9 +1656,11 @@ void *rtems_get_stack_bottom(void);
 extern long __nullarea;
 extern char _end;
 extern char *_STACKTOP;
-/* Depending on calling conventions Watcom C either precedes      */
-/* or does not precede with underscore names of C-variables.      */
-/* Make sure startup code variables always have the same names.   */
+/*
+ * Depending on calling conventions Watcom C either precedes or does not
+ * precede the names of the C variables with an underscore.
+ * Make sure the startup code variables always have the same name.
+ */
 #    pragma aux __nullarea "*";
 #    pragma aux _end "*";
 #    define STACKBOTTOM ((ptr_t)_STACKTOP) /*< confused? me too */
@@ -1678,8 +1741,10 @@ extern int end[];
 #    define OS_TYPE "ULTRIX"
 #    define CPP_WORDSZ 32
 #    define HEURISTIC2
-/* Note: the actual beginning of the data segment could probably  */
-/* be slightly higher since startup code allocates lots of stuff. */
+/*
+ * Note: the actual beginning of the data segment could probably be
+ * slightly higher since startup code allocates lots of stuff.
+ */
 #    define DATASTART MAKE_CPTR(0x10000000)
 #  endif
 #  ifdef IRIX5
@@ -1692,9 +1757,11 @@ extern int end[];
 #    define HEURISTIC2
 extern int _fdata[];
 #    define DATASTART ((ptr_t)_fdata)
-/* Lowest plausible heap address.  In the `USE_MMAP` case, we map   */
-/* there.  In either case it is used to identify heap sections so   */
-/* they are not considered as roots.                                */
+/*
+ * Lowest plausible heap address.  In the `USE_MMAP` case, we map there.
+ * In either case it is used to identify heap sections so they are not
+ * considered as roots.
+ */
 #    ifdef USE_MMAP
 #      define HEAP_START ((word)0x30000000)
 #    else
@@ -1767,24 +1834,25 @@ extern int __data_start[];
 #      define MPROTECT_VDB
 #    endif
 #    ifdef USE_HPUX_FIXED_STACKBOTTOM
-/* The following appears to work for 7xx systems running HP/UX  */
-/* 9.xx.  Furthermore, it might result in much faster           */
-/* collections than `HEURISTIC2`, which may involve scanning    */
-/* segments that directly precede the stack.  It is not the     */
-/* default, since it may not work on older machine/OS           */
-/* combinations. (Thanks to Raymond X.T. Nijssen for uncovering */
-/* this.)                                                       */
-/* This technique also does not work with HP/UX 11.xx.  The     */
-/* stack size is settable using the kernel `maxssiz` variable,  */
-/* and in 11.23 and later, the size can be set dynamically.     */
-/* It also does not handle `SHMEM_MAGIC` binaries which have    */
-/* stack and data in the first quadrant.                        */
-/* This is from platform `/etc/conf/h/param.h` file.            */
+/*
+ * The following appears to work for 7xx systems running HP/UX 9.xx.
+ * Furthermore, it might result in much faster collections than `HEURISTIC2`,
+ * which may involve scanning segments that directly precede the stack.
+ * It is not the default, since it may not work on older machine/OS
+ * combinations. (Thanks to Raymond X.T. Nijssen for uncovering this.)
+ * This technique also does not work with HP/UX 11.xx.  The stack size is
+ * settable using the kernel `maxssiz` variable, and the size can be set
+ * dynamically in HP/UX 11.23 and later.  It also does not handle
+ * `SHMEM_MAGIC` binaries that have stack and data in the first quadrant.
+ * This is from platform `/etc/conf/h/param.h` file.
+ */
 #      define STACKBOTTOM MAKE_CPTR(0x7b033000)
 #    elif defined(USE_ENVIRON_POINTER)
-/* Gustavo Rodriguez-Rivera suggested changing `HEURISTIC2` to this.    */
-/* Note that the collector must be initialized before the first         */
-/* `putenv()` call.  Unfortunately, some clients do not obey.           */
+/*
+ * Gustavo Rodriguez-Rivera suggested changing `HEURISTIC2` to this.
+ * Note that the collector must be initialized before the first `putenv()`
+ * call.  Unfortunately, some clients do not obey.
+ */
 extern char **environ;
 #      define STACKBOTTOM ((ptr_t)environ)
 #    elif !defined(HEURISTIC2)
@@ -1823,8 +1891,10 @@ extern char etext[];
 #    define DATASTART ((ptr_t)(&etext))
 #    define DATAEND ((ptr_t)GC_find_limit(DATASTART, TRUE))
 #    define DATAEND_IS_FUNC
-/* Handle unmapped hole which `alpha*-*-freebsd[45]*` puts between  */
-/* `etext` and `edata`.                                             */
+/*
+ * Handle unmapped hole which `alpha*-*-freebsd[45]*` puts between
+ * `etext` and `edata`.
+ */
 #    define GC_HAVE_DATAREGION2
 extern char edata[], end[];
 #    define DATASTART2 ((ptr_t)(&edata))
@@ -1837,13 +1907,17 @@ extern char edata[], end[];
 extern int _end[];
 #    define DATAEND ((ptr_t)(&_end))
 extern char **environ;
-/* Round up from the value of `environ` to the nearest page boundary.   */
-/* Probably this is broken if `putenv()` is called before the collector */
-/* initialization.                                                      */
+/*
+ * Round up from the value of `environ` to the nearest page boundary.
+ * Probably this is broken if `putenv()` is called before the collector
+ * initialization.
+ */
 #    define STACKBOTTOM PTR_ALIGN_UP((ptr_t)environ, getpagesize())
-/* Normally `HEURISTIC2` is too conservative, since the text segment    */
-/* immediately follows the stack.  Hence we give an upper bound.        */
-/* This is currently unused, since `HEURISTIC2` is not defined.         */
+/*
+ * Normally `HEURISTIC2` is too conservative, since the text segment
+ * immediately follows the stack.  Hence we give an upper bound.
+ * This is currently unused, since `HEURISTIC2` is not defined.
+ */
 extern int __start[];
 #    define HEURISTIC2_LIMIT PTR_ALIGN_DOWN((ptr_t)__start, getpagesize())
 #    ifndef GC_THREADS
@@ -1878,29 +1952,37 @@ extern int _end[];
 /* Note: requires 16-byte alignment (granularity) for `malloc()`. */
 #      define ALIGNMENT 8
 #    endif
-/* Note that the collector must be initialized before the 1st `putenv` call. */
+/*
+ * Note that the collector must be initialized before the 1st `putenv`
+ * call.
+ */
 extern char **environ;
 #    define STACKBOTTOM ((ptr_t)environ)
-/* The following was empirically determined, and is probably not very   */
-/* robust.  Note that the backing store base seems to be at a nice      */
-/* address minus one page.                                              */
+/*
+ * The following was empirically determined, and is probably not very
+ * robust.  Note that the backing store base seems to be at a nice address
+ * minus one page.
+ */
 #    define BACKING_STORE_DISPLACEMENT 0x1000000
 #    define BACKING_STORE_ALIGNMENT 0x1000
-/* Known to be wrong for recent HP/UX versions!!!       */
+/* Known to be wrong for recent HP/UX versions!!! */
 #  endif
 #  ifdef LINUX
 #    define CPP_WORDSZ 64
-/* The following works on NUE and older kernels:                        */
-/* `define STACKBOTTOM MAKE_CPTR(0xa000000000000000l)`.                 */
-/* TODO: `SPECIFIC_MAIN_STACKBOTTOM` does not work on NUE.              */
-/* We also need the base address of the register stack backing store.   */
+/*
+ * The following works on NUE and older kernels:
+ * `define STACKBOTTOM MAKE_CPTR(0xa000000000000000l)`.
+ */
+/* TODO: `SPECIFIC_MAIN_STACKBOTTOM` does not work on NUE. */
+/* We also need the base address of the register stack backing store. */
 #    define SEARCH_FOR_DATA_START
 #    ifdef __GNUC__
 #      define DYNAMIC_LOADING
 #    else
-/* In the Intel compiler environment, we seem to end up with  */
-/* statically linked executables and an undefined reference   */
-/* to `_DYNAMIC`.                                             */
+/*
+ * In the Intel compiler environment, we seem to end up with statically
+ * linked executables and an undefined reference to `_DYNAMIC`.
+ */
 #    endif
 #    ifdef __GNUC__
 #      ifndef __INTEL_COMPILER
@@ -1920,7 +2002,7 @@ EXTERN_C_BEGIN
 #    endif
 #  endif
 #  ifdef MSWIN32
-/* FIXME: This is a very partial guess.  There is no port, yet.   */
+/* FIXME: This is a very partial guess.  There is no port, yet. */
 #    if defined(_WIN64)
 #      define CPP_WORDSZ 64
 #    else
@@ -1966,8 +2048,10 @@ extern int etext[];
 #endif /* M88K */
 
 #ifdef S370
-/* If this still works, and if anyone cares, this should probably   */
-/* be moved to the `S390` category.                                 */
+/*
+ * If this still works, and if anyone cares, this should probably be moved
+ * to the `S390` category.
+ */
 #  define MACH_TYPE "S370"
 #  define CPP_WORDSZ 32
 #  define ALIGNMENT 4 /*< required by hardware */
@@ -2029,9 +2113,10 @@ extern int __data_start[] __attribute__((__weak__));
 #    define DARWIN_DONT_PARSE_STACK 1
 #    define STACKBOTTOM MAKE_CPTR(0x16fdfffff)
 #    if (TARGET_OS_IPHONE || TARGET_OS_XR || TARGET_OS_VISION)
-/* `MPROTECT_VDB` causes use of non-public API like `exc_server`,   */
-/* this could be a reason for blocking the client application in    */
-/* the store.                                                       */
+/*
+ * `MPROTECT_VDB` causes use of non-public API like `exc_server`, this
+ * could be a reason for blocking the client application in the store.
+ */
 #    elif TARGET_OS_OSX
 #      define MPROTECT_VDB
 #    endif
@@ -2089,7 +2174,7 @@ extern void *__stack_base__;
 #    if GC_GLIBC_PREREQ(2, 0) || defined(HOST_ANDROID)
 #      define SEARCH_FOR_DATA_START
 #    else
-/* See the comment of the Linux/m68k case.  */
+/* See the comment of the Linux/m68k case. */
 extern char **__environ;
 #      define DATASTART ((ptr_t)(&__environ))
 #    endif
@@ -2143,7 +2228,7 @@ void *n3ds_get_stack_bottom(void);
 #  endif
 #  ifdef NOSYS
 #    define OS_TYPE "NOSYS"
-/* `__data_start` is usually defined in the target linker script.  */
+/* `__data_start` is usually defined in the target linker script. */
 extern int __data_start[];
 #    define DATASTART ((ptr_t)__data_start)
 /* `__stack_base__` is set in platform `newlib/libc/sys/arm/crt0.S` file. */
@@ -2233,15 +2318,19 @@ void *platform_get_mem(size_t lb);
 #  ifdef LINUX
 #    define SEARCH_FOR_DATA_START
 #    if defined(__GLIBC__) && !defined(__UCLIBC__)
-/* A workaround for GCF (Google Cloud Function) which does not support  */
-/* `mmap()` for `/dev/zero` pseudo-file.  Should not cause any harm to  */
-/* other targets.                                                       */
+/*
+ * A workaround for GCF (Google Cloud Function) which does not support
+ * `mmap()` for `/dev/zero` pseudo-file.  Should not cause any harm to
+ * other targets.
+ */
 #      define USE_MMAP_ANON
 #    endif
 #    if defined(__GLIBC__) && !defined(__UCLIBC__) \
         && !defined(GETCONTEXT_FPU_BUG_FIXED)
-/* At present, there is a bug in `glibc` `getcontext()` on Linux/x86_64     */
-/* (it clears FPU exception mask).  We define this macro to workaround it.  */
+/*
+ * At present, there is a bug in `glibc` `getcontext()` on Linux/x86_64
+ * (it clears FPU exception mask).  We define this macro to workaround it.
+ */
 /* TODO: This seems to be fixed in `glibc` 2.14. */
 #      define GETCONTEXT_FPU_EXCMASK_BUG
 #    endif
@@ -2271,8 +2360,10 @@ extern int _end[];
 #      define DATAEND ((ptr_t)_end)
 #    endif
 #    if defined(__DragonFly__)
-/* DragonFly BSD still has `vm.max_proc_mmap`, according to its         */
-/* `mmap(2)` man page.                                                  */
+/*
+ * DragonFly BSD still has `vm.max_proc_mmap`, according to its
+ * `mmap(2)` man page.
+ */
 #      define COUNT_UNMAPPED_REGIONS
 #    endif
 #  endif
@@ -2303,9 +2394,10 @@ extern int _etext[];
 #  ifdef CYGWIN32
 #    ifndef USE_WINALLOC
 #      if defined(THREAD_LOCAL_ALLOC)
-/* TODO: For an unknown reason, thread-local allocations    */
-/* lead to spurious process exit after the fault handler is */
-/* once invoked.                                            */
+/*
+ * TODO: For an unknown reason, thread-local allocations lead to spurious
+ * process exit after the fault handler is once invoked.
+ */
 #      else
 #        define MPROTECT_VDB
 #      endif
@@ -2335,8 +2427,10 @@ LONG64 durango_get_stack_bottom(void);
 #    define RETRY_GET_THREAD_CONTEXT
 #    if !defined(__GNUC__) || defined(__INTEL_COMPILER) \
         || (GC_GNUC_PREREQ(4, 7) && !defined(__MINGW64__))
-/* Older GCC and Mingw-w64 (both GCC and Clang) do not support      */
-/* `SetUnhandledExceptionFilter()` properly on x64.                 */
+/*
+ * Older gcc and Mingw-w64 (both gcc and clang) do not support
+ * `SetUnhandledExceptionFilter()` properly on x86_64.
+ */
 #      define MPROTECT_VDB
 #    endif
 #  endif
@@ -2412,7 +2506,7 @@ extern char etext[];
 /* FIXME: `STACKBOTTOM` is wrong! */
 extern char **environ;
 #    define STACKBOTTOM ((ptr_t)environ)
-/* TODO: support 64K page size */
+/* TODO: Support 64K page size. */
 #    define GETPAGESIZE() 4096
 #  endif
 #endif /* RISCV */
@@ -2423,9 +2517,11 @@ extern char **environ;
 #    error 64-bit WebAssembly is not yet supported
 #  endif
 #  define CPP_WORDSZ 32
-/* Emscripten does emulate `mmap` and `munmap`, but those should not be */
-/* used in the collector, since WebAssembly lacks the native support of */
-/* memory mapping.  Use `sbrk()` instead (by default).                  */
+/*
+ * Emscripten does emulate `mmap` and `munmap`, but those should not be
+ * used in the collector, since WebAssembly lacks the native support of
+ * memory mapping.  Use `sbrk()` instead (by default).
+ */
 #  undef USE_MMAP
 #  undef USE_MUNMAP
 #  ifdef EMSCRIPTEN_TINY
@@ -2437,7 +2533,7 @@ void *emmalloc_memalign(size_t align, size_t lb);
 #    define DATASTART ((ptr_t)ALIGNMENT)
 #    define DATAEND ((ptr_t)ALIGNMENT)
 #    if defined(GC_THREADS) && !defined(CPPCHECK)
-#      error No threads support yet
+#      error No thread support yet
 #    endif
 #  endif
 #  ifdef WASI
@@ -2453,13 +2549,13 @@ extern char __global_base, __heap_base;
 #      define NO_CLOCK 1 /*< no support of `clock()` */
 #    endif
 #    if defined(GC_THREADS) && !defined(CPPCHECK)
-#      error No threads support yet
+#      error No thread support yet
 #    endif
 #  endif
 #endif /* WEBASSEMBLY */
 
 #if defined(CYGWIN32) || defined(MSWIN32) || defined(MSWINCE)
-/* Note: it does not include Xbox One.  */
+/* Note: it does not include Xbox One. */
 #  define ANY_MSWIN
 #endif
 
@@ -2485,8 +2581,10 @@ extern char __global_base, __heap_base;
 
 #if defined(LINUX) && defined(SPECIFIC_MAIN_STACKBOTTOM) \
     && defined(NO_PROC_STAT) && !defined(USE_LIBC_PRIVATES)
-/* This combination will fail, since we have no way to get  */
-/* the stack bottom.  Use `HEURISTIC2` instead.             */
+/*
+ * This combination will fail, since we have no way to get the stack bottom.
+ * Use `HEURISTIC2` instead.
+ */
 #  undef SPECIFIC_MAIN_STACKBOTTOM
 #  define HEURISTIC2
 /* This may still fail on some architectures like `IA64`.  We tried... */
@@ -2495,20 +2593,24 @@ extern char __global_base, __heap_base;
 #if defined(USE_MMAP_ANON) && !defined(USE_MMAP)
 #  define USE_MMAP 1
 #elif (defined(LINUX) || defined(OPENBSD)) && defined(USE_MMAP)
-/* The kernel may do a somewhat better job merging mappings with        */
-/* anonymous mappings.                                                  */
+/*
+ * The OS kernel may do a somewhat better job merging mappings with
+ * anonymous mappings.
+ */
 #  define USE_MMAP_ANON
 #endif
 
 #if defined(CHERI_PURECAP) && defined(USE_MMAP)
-/* TODO: currently turned off to avoid downgrading permissions on CHERI */
+/* TODO: Currently turned off to avoid downgrading permissions on CHERI. */
 #  undef USE_MUNMAP
 #endif
 
 #if (defined(E2K) && defined(USE_PTR_HWTAG) || defined(CHERI_PURECAP)) \
     && !defined(NO_BLACK_LISTING)
-/* Misinterpreting of an integer is not possible on the platforms with  */
-/* H/W-tagged pointers, thus the black-listing mechanism is redundant.  */
+/*
+ * Misinterpreting of an integer is not possible on the platforms with
+ * H/W-tagged pointers, thus the black-listing mechanism is redundant.
+ */
 #  define NO_BLACK_LISTING
 #endif
 
@@ -2520,25 +2622,28 @@ extern char __global_base, __heap_base;
 
 #if defined(REDIR_MALLOC_AND_LINUXTHREADS) && !defined(NO_PROC_FOR_LIBRARIES) \
     && !defined(USE_PROC_FOR_LIBRARIES)
-/* NPTL allocates thread stacks with `mmap`, which is fine.  But it     */
-/* keeps a cache of thread stacks.  Each thread stack contains a thread */
-/* control block (TCB).  The latter, in turn, contains a pointer to     */
-/* (`sizeof(void*)` from the beginning of) the `dtv` for thread-local   */
-/* storage, which is `calloc`-allocated.  If we do not scan the cached  */
-/* thread stacks, we appear to lose the `dtv`.  This tends to result in */
-/* something that looks like a bogus `dtv` count, which tends to result */
-/* in a `memset()` call on a block that is way too large.  Sometimes    */
-/* we are lucky and the process just dies...  There seems to be         */
-/* a similar issue with some other memory allocated by the dynamic      */
-/* loader.  This should be avoidable by either:                         */
-/* - Defining `USE_PROC_FOR_LIBRARIES` here (that performs very poorly, */
-/*   precisely because we end up scanning cached stacks);               */
-/* - Have `calloc()` look at its callers (in spite of the fact that it  */
-/*   is gross and disgusting).                                          */
-/* In fact, neither seems to suffice, probably in part because even     */
-/* with `USE_PROC_FOR_LIBRARIES`, we do not scan parts of stack         */
-/* segments that appear to be out of bounds.  Thus we actually do both, */
-/* which seems to yield the best results.                               */
+/*
+ * NPTL allocates thread stacks with `mmap`, which is fine.  But it
+ * keeps a cache of thread stacks.  Each thread stack contains a thread
+ * control block (TCB).  The latter, in turn, contains a pointer to
+ * (`sizeof(void*)` from the beginning of) the `dtv` for thread-local
+ * storage, which is `calloc`-allocated.  If we do not scan the cached
+ * thread stacks, we appear to lose the `dtv`.  This tends to result in
+ * something that looks like a bogus `dtv` count, which tends to result
+ * in a `memset()` call on a block that is way too large.  Sometimes
+ * we are lucky and the process just dies...  There seems to be
+ * a similar issue with some other memory allocated by the dynamic
+ * loader.  This should be avoidable by either:
+ *   - Defining `USE_PROC_FOR_LIBRARIES` here (that performs very poorly,
+ *     precisely because we end up scanning cached stacks);
+ *   - Have `calloc()` look at its callers (in spite of the fact that it
+ *     is gross and disgusting).
+ *
+ * In fact, neither seems to suffice, probably in part because even
+ * with `USE_PROC_FOR_LIBRARIES`, we do not scan parts of stack
+ * segments that appear to be out of bounds.  Thus we actually do both,
+ * which seems to yield the best results.
+ */
 #  define USE_PROC_FOR_LIBRARIES
 #endif
 
@@ -2555,9 +2660,11 @@ extern int end[];
 #  define DATAEND ((ptr_t)end)
 #endif
 
-/* Workaround for Android NDK clang 3.5+ (as of NDK r10e) which does    */
-/* not provide correct `_end` symbol.  Unfortunately, alternate         */
-/* `__end__` symbol is provided only by NDK `bfd` linker.               */
+/*
+ * Workaround for Android NDK clang-3.5+ (as of NDK r10e) which does
+ * not provide correct `_end` symbol.  Unfortunately, alternate `__end__`
+ * symbol is provided only by NDK `bfd` linker.
+ */
 #if defined(HOST_ANDROID) && defined(__clang__) && !defined(BROKEN_UUENDUU_SYM)
 #  undef DATAEND
 #  pragma weak __end__
@@ -2606,8 +2713,10 @@ EXTERN_C_BEGIN
 #if defined(HOST_ANDROID) && !(__ANDROID_API__ >= 23)           \
     && ((defined(MIPS) && (CPP_WORDSZ == 32)) || defined(ARM32) \
         || defined(I386) /* but not x32 */)
-/* `tkill()` exists only on arm32/mips(32)/x86.                     */
-/* NDK r11+ deprecates `tkill()` but keeps it for Mono clients.     */
+/*
+ * `tkill()` exists only on arm32/mips(32)/x86.
+ * NDK r11+ deprecates `tkill()` but keeps it for Mono clients.
+ */
 #  define USE_TKILL_ON_ANDROID
 #endif
 
@@ -2618,7 +2727,7 @@ EXTERN_C_BEGIN
 #if defined(SOLARIS) || defined(DRSNX)
 /* OS has Solaris-style semi-undocumented interface to dynamic loader. */
 #  define SOLARISDL
-/* OS has Solaris-style signal handlers.      */
+/* OS has Solaris-style signal handlers. */
 #  define SUNOS5SIGS
 #endif
 
@@ -2653,8 +2762,10 @@ EXTERN_C_BEGIN
 #  undef GC_PTHREADS_PARAMARK /*< just in case it is defined by client */
 #elif defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK) \
     && !defined(__MINGW32__)
-/* Use `pthreads`-based parallel mark implementation.  Except for       */
-/* MinGW 32/64 to workaround a deadlock in winpthreads-3.0b internals.  */
+/*
+ * Use `pthreads`-based parallel mark implementation.  Except for
+ * MinGW 32/64 to workaround a deadlock in winpthreads-3.0b internals.
+ */
 #  define GC_PTHREADS_PARAMARK
 #endif
 
@@ -2662,16 +2773,20 @@ EXTERN_C_BEGIN
     && (defined(NACL) || defined(GC_WIN32_PTHREADS)                     \
         || (defined(GC_PTHREADS_PARAMARK) && defined(GC_WIN32_THREADS)) \
         || defined(GC_NO_PTHREAD_SIGMASK))
-/* Either there is no `pthread_sigmask()`, or the GC marker thread      */
-/* cannot steal and drop user signal calls.                             */
+/*
+ * Either there is no `pthread_sigmask()`, or the GC marker thread cannot
+ * steal and drop user signal calls.
+ */
 #  define NO_MARKER_SPECIAL_SIGMASK
 #endif
 
 #if defined(NETBSD) && defined(THREADS)
 #  define SIGRTMIN 33
 #  define SIGRTMAX 63
-/* It seems to be necessary to wait until threads have restarted.     */
-/* But it is unclear why that is the case.                            */
+/*
+ * It seems to be necessary to wait until threads have restarted.
+ * But it is unclear why that is the case.
+ */
 #  define GC_NETBSD_THREADS_WORKAROUND
 #endif
 
@@ -2724,7 +2839,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(SMALL_CONFIG) && !defined(GC_DISABLE_INCREMENTAL)
-/* Presumably not worth the space it takes.   */
+/* Presumably not worth the space it takes. */
 #  define GC_DISABLE_INCREMENTAL
 #endif
 
@@ -2748,10 +2863,12 @@ EXTERN_C_BEGIN
 #  define MMAP_SUPPORTED
 #endif
 
-/* Xbox One (DURANGO) may not need to be this aggressive, but the       */
-/* default is likely too lax under heavy allocation pressure.           */
-/* The platform does not have a virtual paging system, so it does not   */
-/* have a large virtual address space that a standard x64 platform has. */
+/*
+ * Xbox One (DURANGO) may not need to be this aggressive, but the
+ * default is likely too lax under heavy allocation pressure.
+ * The platform does not have a virtual paging system, so it does not
+ * have a large virtual address space that a standard x86_64 platform has.
+ */
 #if defined(USE_MUNMAP) && !defined(MUNMAP_THRESHOLD)     \
     && (defined(SN_TARGET_PS3) || defined(SN_TARGET_PSP2) \
         || defined(MSWIN_XBOX1))
@@ -2782,7 +2899,7 @@ EXTERN_C_END
 #  include <linux/version.h> /*< for `LINUX_VERSION`, `LINUX_VERSION_CODE` */
 EXTERN_C_BEGIN
 #  if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-/* Not reliable in kernels prior to v3.18.  */
+/* Not reliable in Linux kernels prior to v3.18. */
 #    undef SOFT_VDB
 #  endif
 #endif /* SOFT_VDB */
@@ -2792,8 +2909,10 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(BASE_ATOMIC_OPS_EMULATED)
-/* `GC_write_fault_handler()` cannot use lock-based atomic primitives   */
-/* as this could lead to a deadlock.                                    */
+/*
+ * `GC_write_fault_handler()` cannot use lock-based atomic primitives
+ * as this could lead to a deadlock.
+ */
 #  undef MPROTECT_VDB
 #endif
 
@@ -2809,9 +2928,9 @@ EXTERN_C_BEGIN
 #endif
 
 #ifdef PROC_VDB
-/* Mutually exclusive VDB implementations (for now).  */
+/* Mutually exclusive VDB implementations (for now). */
 #  undef MPROTECT_VDB
-/* For a test purpose only.   */
+/* For a test purpose only. */
 #  undef SOFT_VDB
 #endif
 
@@ -2857,7 +2976,7 @@ EXTERN_C_BEGIN
 
 #if !defined(PROC_VDB) && !defined(SOFT_VDB) \
     && !defined(NO_VDB_FOR_STATIC_ROOTS)
-/* Cannot determine whether a static root page is dirty?      */
+/* Cannot determine whether a static root page is dirty. */
 #  define NO_VDB_FOR_STATIC_ROOTS
 #endif
 
@@ -2869,12 +2988,14 @@ EXTERN_C_BEGIN
 
 #if (defined(COUNT_PROTECTED_REGIONS) || defined(COUNT_UNMAPPED_REGIONS)) \
     && !defined(GC_UNMAPPED_REGIONS_SOFT_LIMIT)
-/* The default limit of `vm.max_map_count` on Linux is ~65530.      */
-/* There is approximately one mapped region to every protected or   */
-/* unmapped region.  Therefore if we aim to use up to half of       */
-/* `vm.max_map_count` for the collector (leaving half for the rest  */
-/* of the process), then the number of such regions should be one   */
-/* quarter of `vm.max_map_count`.                                   */
+/*
+ * The default limit of `vm.max_map_count` on Linux is ~65530.
+ * There is approximately one mapped region to every protected or
+ * unmapped region.  Therefore if we aim to use up to half of
+ * `vm.max_map_count` for the collector (leaving half for the rest
+ * of the process), then the number of such regions should be one
+ * quarter of `vm.max_map_count`.
+ */
 #  if defined(__DragonFly__)
 #    define GC_UNMAPPED_REGIONS_SOFT_LIMIT (1000000 / 4)
 #  else
@@ -2895,9 +3016,11 @@ EXTERN_C_BEGIN
 
 #if defined(MSWIN32) && !defined(CONSOLE_LOG) && defined(_MSC_VER) \
     && defined(_DEBUG) && !defined(NO_CRT)
-/* This should be included before the platform `intrin.h` file to       */
-/* workaround some bug in Windows Kit (as of 10.0.17763) headers        */
-/* causing redefinition of `_malloca` macro.                            */
+/*
+ * This should be included before the platform `intrin.h` file to
+ * workaround some bug in Windows Kit (as of 10.0.17763) headers
+ * causing redefinition of `_malloca` macro.
+ */
 EXTERN_C_END
 #  include <crtdbg.h> /*< for `_CrtDbgReport` */
 EXTERN_C_BEGIN
@@ -2920,8 +3043,10 @@ EXTERN_C_BEGIN
 #endif /* !PREFETCH */
 
 #ifndef GC_PREFETCH_FOR_WRITE
-/* The default `GC_PREFETCH_FOR_WRITE(x)` is defined in `gc_inline.h`   */
-/* file, the latter one is included from `gc_priv.h` file.              */
+/*
+ * The default `GC_PREFETCH_FOR_WRITE(x)` is defined in `gc_inline.h` file,
+ * the latter one is included from `gc_priv.h` file.
+ */
 #endif
 
 #ifndef CACHE_LINE_SIZE
@@ -2936,8 +3061,10 @@ EXTERN_C_BEGIN
 #  endif
 #endif
 
-/* Do we need the `GC_find_limit` machinery to find the end of  */
-/* a data segment (or the backing store base)?                  */
+/*
+ * Do we need the `GC_find_limit` machinery to find the end of
+ * a data segment (or the backing store base)?
+ */
 #if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START) || defined(IA64)    \
     || defined(DGUX) || defined(FREEBSD) || defined(OPENBSD) || defined(SVR4) \
     || (defined(HPUX) && defined(SPECIFIC_MAIN_STACKBOTTOM))                  \
@@ -2955,11 +3082,13 @@ EXTERN_C_BEGIN
 
 #if defined(LINUX) || defined(HURD) || defined(__GLIBC__)
 #  define REGISTER_LIBRARIES_EARLY
-/* We sometimes use `dl_iterate_phdr`, which may acquire an internal    */
-/* lock.  This is not safe after the world has stopped.  So we must     */
-/* call `GC_register_dynamic_libraries` before stopping the world.      */
-/* For performance reasons, this may be beneficial on other platforms   */
-/* as well, though it should be avoided on Windows.                     */
+/*
+ * We sometimes use `dl_iterate_phdr`, which may acquire an internal lock.
+ * This is not safe after the world has stopped.  So we must call
+ * `GC_register_dynamic_libraries` before stopping the world.
+ * For performance reasons, this may be beneficial on other platforms
+ * as well, though it should be avoided on Windows.
+ */
 #endif /* LINUX */
 
 #if defined(SEARCH_FOR_DATA_START)
@@ -2976,12 +3105,14 @@ extern ptr_t GC_data_start;
     (void)(((ptr_t *)(x))[0] = NULL, ((ptr_t *)(x))[1] = NULL)
 #endif
 
-/* Some `libc` implementations like `bionic`, `musl` and `glibc` 2.34   */
-/* do not have `libpthread.so` file because the `pthreads`-related code */
-/* is located in `libc.so` file, thus potential `calloc` calls from     */
-/* such code are forwarded to real (`libc`) `calloc` without any        */
-/* special handling on the collector side.  Checking `glibc` version at */
-/* compile time for the purpose seems to be fine.                       */
+/*
+ * Some `libc` implementations like `bionic`, `musl` and `glibc` 2.34+
+ * do not have `libpthread.so` file because the `pthreads`-related code
+ * is located in `libc.so` file, thus potential `calloc()` calls from
+ * such code are forwarded to real (`libc`) `calloc()` without any
+ * special handling on the collector side.  Checking `glibc` version at
+ * compile time for the purpose seems to be fine.
+ */
 #if defined(REDIR_MALLOC_AND_LINUXTHREADS) && !defined(HAVE_LIBPTHREAD_SO) \
     && defined(__GLIBC__) && !GC_GLIBC_PREREQ(2, 34)
 #  define HAVE_LIBPTHREAD_SO
@@ -2989,8 +3120,10 @@ extern ptr_t GC_data_start;
 
 #if defined(REDIR_MALLOC_AND_LINUXTHREADS) \
     && !defined(INCLUDE_LINUX_THREAD_DESCR)
-/* Will not work, since libc and the dynamic loader use thread        */
-/* locals, sometimes as the only reference.                           */
+/*
+ * Will not work, since `libc` and the dynamic loader use thread locals,
+ * sometimes as the only reference.
+ */
 #  define INCLUDE_LINUX_THREAD_DESCR
 #endif
 
@@ -3035,8 +3168,11 @@ extern ptr_t GC_data_start;
 #if defined(CYGWIN32) && (defined(MPROTECT_VDB) || defined(USE_MUNMAP)) \
     || (!defined(ANY_MSWIN) && !defined(WASI) && !defined(USE_MMAP)     \
         && (defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)))
-/* Cygwin: use the allocation granularity instead.  Other than WASI and */
-/* Windows: use `HBLKSIZE` instead (unless `mmap()` is used).           */
+/*
+ * Cygwin: use the allocation granularity instead.
+ * Other than WASI and Windows: use `HBLKSIZE` instead (unless `mmap()`
+ * is used).
+ */
 #  define ALT_PAGESIZE_USED
 #  ifndef GC_NO_VALLOC
 /* Nonetheless, we need the real page size is some extra functions. */
@@ -3062,10 +3198,12 @@ extern ptr_t GC_data_start;
 #if (defined(MSWIN32) || defined(MSWINCE)                      \
      || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))) \
     && !defined(NO_CRT) && !defined(NO_WRAP_MARK_SOME)
-/* Under rare conditions, we may end up marking from nonexistent      */
-/* memory.  Hence we need to be prepared to recover by running        */
-/* `GC_mark_some` with a suitable handler in place.                   */
-/* TODO: Should we also define it for Cygwin?                         */
+/*
+ * Under rare conditions, we may end up marking from nonexistent memory.
+ * Hence we need to be prepared to recover by running `GC_mark_some` with
+ * a suitable handler in place.
+ */
+/* TODO: Should we also define it for Cygwin? */
 #  define WRAP_MARK_SOME
 #endif
 
@@ -3087,8 +3225,10 @@ extern ptr_t GC_data_start;
 /* If pointers cannot be located in Xmm registers. */
 #      define PUSHED_REGS_COUNT 15
 #    else
-/* gcc-13 may store pointers into SIMD registers when     */
-/* certain compiler optimizations are enabled.            */
+/*
+ * gcc-13 may store pointers into SIMD registers when certain compiler
+ * optimizations are enabled.
+ */
 #      define PUSHED_REGS_COUNT (15 + 32)
 #    endif
 #  elif defined(SHx)
@@ -3116,11 +3256,12 @@ extern ptr_t GC_data_start;
 #endif
 
 #if defined(USE_RWLOCK) || defined(GC_DISABLE_SUSPEND_THREAD)
-/* At least in the Linux threads implementation, `rwlock` primitives    */
-/* are not atomic in respect to signals, and suspending externally      */
-/* a thread which is running inside `pthread_rwlock_rdlock()` may lead  */
-/* to a deadlock.                                                       */
-/* TODO: As a workaround `GC_suspend_thread()` API is disabled.         */
+/*
+ * At least in the Linux threads implementation, `rwlock` primitives are
+ * not atomic in respect to signals, and suspending externally a thread
+ * which is running inside `pthread_rwlock_rdlock()` may lead to a deadlock.
+ */
+/* TODO: As a workaround `GC_suspend_thread()` API is disabled. */
 #  undef GC_ENABLE_SUSPEND_THREAD
 #endif
 
@@ -3131,8 +3272,10 @@ extern ptr_t GC_data_start;
 #      define GC_NO_THREADS_DISCOVERY
 #    endif
 #  elif defined(GC_WIN32_THREADS)
-/* `DllMain`-based thread registration is currently incompatible    */
-/* with thread-local allocation, pthreads and WinCE.                */
+/*
+ * `DllMain`-based thread registration is currently incompatible with
+ * thread-local allocation, `pthreads` and WinCE.
+ */
 #    if (!defined(GC_DLL) && !defined(GC_INSIDE_DLL)) || defined(GC_PTHREADS) \
         || defined(MSWINCE) || defined(NO_CRT) || defined(THREAD_LOCAL_ALLOC)
 #      define GC_NO_THREADS_DISCOVERY
@@ -3161,15 +3304,19 @@ extern ptr_t GC_data_start;
 
 #if defined(HOST_ANDROID) && !defined(THREADS) \
     && !defined(USE_GET_STACKBASE_FOR_MAIN)
-/* Always use `pthread_attr_getstack` on Android (`-lpthread` option is */
-/* not needed to be specified manually) since Linux-specific            */
-/* `os_main_stackbottom()` causes application crash if invoked inside   */
-/* Dalvik VM.                                                           */
+/*
+ * Always use `pthread_attr_getstack` on Android (`-lpthread` option
+ * is not needed to be specified manually) since Linux-specific
+ * `os_main_stackbottom()` causes application crash if invoked inside
+ * Dalvik VM.
+ */
 #  define USE_GET_STACKBASE_FOR_MAIN
 #endif
 
-/* Outline `pthreads` primitives to use in `GC_get_stack_base()` and    */
-/* `GC_get_main_stack_base()`.                                          */
+/*
+ * Outline `pthreads` primitives to use in `GC_get_stack_base()` and
+ * `GC_get_main_stack_base()`.
+ */
 #if ((defined(FREEBSD) && defined(__GLIBC__) /* kFreeBSD */)               \
      || defined(COSMO) || defined(HAIKU) || defined(LINUX) || defined(KOS) \
      || defined(NETBSD))                                                   \
@@ -3198,26 +3345,28 @@ extern ptr_t GC_data_start;
 #if defined(GC_PTHREADS) && !defined(E2K) && !defined(IA64)   \
     && (!defined(DARWIN) || defined(DARWIN_DONT_PARSE_STACK)) \
     && !defined(SN_TARGET_PSP2) && !defined(REDIRECT_MALLOC)
-/* Note: unimplemented in case of redirection of `malloc()` because     */
-/* the client-provided function might call some `pthreads` primitive    */
-/* which, in turn, may use `malloc()` internally.                       */
+/*
+ * Note: unimplemented in case of redirection of `malloc()` because
+ * the client-provided function might call some `pthreads` primitive
+ * which, in turn, may use `malloc()` internally.
+ */
 #  define STACKPTR_CORRECTOR_AVAILABLE
 #endif
 
 #if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
     && !defined(HOST_ANDROID)
-/* Make the code cancellation-safe.  This basically means that we     */
-/* ensure that cancellation requests are ignored while we are in      */
-/* the collector.  This applies only to POSIX deferred cancellation;  */
-/* we do not handle POSIX asynchronous cancellation.                  */
-/* Note that this only works if `pthread_setcancelstate` is           */
-/* async-signal-safe, at least in the absence of asynchronous         */
-/* cancellation.  This appears to be true for the `glibc` version,    */
-/* though it is not documented.  Without that assumption, there       */
-/* seems to be no way to safely wait in a signal handler, which       */
-/* we need to do for thread suspension.                               */
-/* Also note that little other code appears to be cancellation-safe.  */
-/* Hence it may make sense to turn this off for performance.          */
+/*
+ * Make the code cancellation-safe.  This basically means that we ensure
+ * that cancellation requests are ignored while we are in the collector.
+ * This applies only to POSIX deferred cancellation; we do not handle POSIX
+ * asynchronous cancellation.  Note that this only works if
+ * `pthread_setcancelstate` is async-signal-safe, at least in the absence of
+ * asynchronous cancellation.  This appears to be true for `glibc`, though it
+ * is not documented.  Without that assumption, there seems to be no way to
+ * safely wait in a signal handler, which we need to do for thread suspension.
+ * Also note that little other code appears to be cancellation-safe.
+ * Hence it may make sense to turn this off for performance.
+ */
 #  define CANCEL_SAFE
 #endif
 
@@ -3230,8 +3379,10 @@ extern ptr_t GC_data_start;
 #if defined(DARWIN) && defined(MPROTECT_VDB)   \
     && !defined(NO_DESC_CATCH_EXCEPTION_RAISE) \
     && !defined(FORCE_DESC_CATCH_EXCEPTION_RAISE) && GC_CLANG_PREREQ(17, 0)
-/* Workaround "REFERENCED_DYNAMICALLY flag on _catch_exception_raise"   */
-/* linker deprecation warnings on macOS 15.4.                           */
+/*
+ * Workaround "REFERENCED_DYNAMICALLY flag on _catch_exception_raise"
+ * linker deprecation warnings on macOS 15.4.
+ */
 #  define NO_DESC_CATCH_EXCEPTION_RAISE
 #endif
 
@@ -3241,13 +3392,17 @@ extern ptr_t GC_data_start;
          && !defined(GC_WIN32_PTHREADS) && !defined(USE_WINALLOC))        \
         || (defined(DARWIN) && defined(MPROTECT_VDB) /* `&& !THREADS` */) \
         || (defined(HANDLE_FORK) && defined(GC_PTHREADS)))
-/* Attempts (where supported and requested) to make `GC_malloc` work in */
-/* a child process fork'ed from a multi-threaded parent.                */
+/*
+ * Attempts (where supported and requested) to make `GC_malloc` work in
+ * a child process forked from a multi-threaded parent process.
+ */
 #  define CAN_HANDLE_FORK
 #endif
 
-/* Workaround "failed to create new win32 semaphore" Cygwin fatal error */
-/* during semaphores fixup-after-fork.                                  */
+/*
+ * Workaround "failed to create new win32 semaphore" Cygwin fatal error
+ * during semaphores fixup-after-fork.
+ */
 #if defined(CYGWIN32) && defined(THREADS) && defined(CAN_HANDLE_FORK) \
     && !defined(CYGWIN_SEM_FIXUP_AFTER_FORK_BUG_FIXED)                \
     && !defined(EMULATE_PTHREAD_SEMAPHORE)
@@ -3268,7 +3423,7 @@ extern ptr_t GC_data_start;
 
 #if !defined(USE_MARK_BITS) && !defined(USE_MARK_BYTES) \
     && defined(PARALLEL_MARK)
-/* Minimize compare-and-swap usage.   */
+/* Minimize compare-and-swap usage. */
 #  define USE_MARK_BYTES
 #endif
 
@@ -3284,8 +3439,10 @@ extern ptr_t GC_data_start;
 #if !defined(MSGBOX_ON_ERROR) && !defined(NO_MSGBOX_ON_ERROR)                \
     && defined(MSWIN32) && !defined(MSWINRT_FLAVOR) && !defined(MSWIN_XBOX1) \
     && !defined(SMALL_CONFIG)
-/* Show a Windows message box with "OK" button on a GC fatal error.   */
-/* Client application is terminated once the user clicks the button.  */
+/*
+ * Show a Windows message box with "OK" button on a GC fatal error.
+ * Client application is terminated once the user clicks the button.
+ */
 #  define MSGBOX_ON_ERROR
 #endif
 
@@ -3323,11 +3480,11 @@ extern ptr_t GC_data_start;
 #  endif
 #else
 #  ifdef __SANITIZE_ADDRESS__
-/* GCC v4.8+ */
+/* gcc v4.8+ */
 #    define ADDRESS_SANITIZER
 #  endif
 #  if defined(__SANITIZE_THREAD__) && defined(THREADS)
-/* GCC v7.1+ */
+/* gcc v7.1+ */
 #    define THREAD_SANITIZER
 #  endif
 #endif /* !__has_feature */
@@ -3337,20 +3494,23 @@ extern ptr_t GC_data_start;
 #  define ASM_CLEAR_CODE
 #endif
 
-/* Can we save call chain in objects for debugging?  Set `NFRAMES`      */
-/* (number of saved frames) and `NARGS` (number of arguments for each   */
-/* frame) to reasonable values for the platform.                        */
-/* Define `SAVE_CALL_CHAIN` if we can.  `SAVE_CALL_COUNT` can be        */
-/* specified at build time, though we feel free to adjust it slightly.  */
-/* Define `NEED_CALLINFO` if we either save the call stack or           */
-/* `GC_ADD_CALLER` is defined.  Note: `GC_CAN_SAVE_CALL_STACKS` is      */
-/* defined (for certain platforms) in `gc_config_macros.h` file.        */
+/*
+ * Can we save call chain in objects for debugging?  Set `NFRAMES`
+ * (number of saved frames) and `NARGS` (number of arguments for each
+ * frame) to reasonable values for the platform.
+ * Define `SAVE_CALL_CHAIN` if we can.  `SAVE_CALL_COUNT` can be
+ * specified at build time, though we feel free to adjust it slightly.
+ * Define `NEED_CALLINFO` if we either save the call stack or
+ * `GC_ADD_CALLER` is defined.  Note: `GC_CAN_SAVE_CALL_STACKS` is
+ * defined (for certain platforms) in `gc_config_macros.h` file.
+ */
 #if defined(SPARC)                         \
     || ((defined(I386) || defined(X86_64)) \
         && (defined(LINUX) || defined(__GLIBC__)))
-/* Linux/x86: `SAVE_CALL_CHAIN` is supported if the code is compiled to */
-/* save frame pointers by default, i.e. no `-fomit-frame-pointer` flag  */
-/* is given.                                                            */
+/*
+ * Linux/x86: `SAVE_CALL_CHAIN` is supported if the code is compiled to save
+ * frame pointers by default, i.e. no `-fomit-frame-pointer` flag is given.
+ */
 #  define CAN_SAVE_CALL_ARGS
 #endif
 
@@ -3360,13 +3520,13 @@ extern ptr_t GC_data_start;
 #endif
 
 #ifdef SAVE_CALL_CHAIN
-/* Number of arguments to save for each call.       */
+/* Number of arguments to save for each call. */
 #  if defined(SAVE_CALL_NARGS) && defined(CAN_SAVE_CALL_ARGS)
 #    define NARGS SAVE_CALL_NARGS
 #  else
 #    define NARGS 0
 #  endif
-/* Number of frames to save.  Even for alignment reasons.         */
+/* Number of frames to save.  Even for alignment reasons. */
 #  if !defined(SAVE_CALL_COUNT) || defined(CPPCHECK)
 #    define NFRAMES 6
 #  else
@@ -3407,8 +3567,10 @@ extern ptr_t GC_data_start;
 #  undef POINTER_SHIFT
 #  define NEED_FIXUP_POINTER
 #elif defined(POINTER_MASK)
-/* Note: extra parentheses around custom-defined `POINTER_MASK` and     */
-/*`POINTER_SHIFT` are intentional.                                      */
+/*
+ * Note: extra parentheses around custom-defined `POINTER_MASK` and
+ *`POINTER_SHIFT` are intentional.
+ */
 #  define FIXUP_POINTER(p) \
     (p = (ptr_t)(((word)(p) & (POINTER_MASK)) << (POINTER_SHIFT)))
 #  define NEED_FIXUP_POINTER
@@ -3417,19 +3579,21 @@ extern ptr_t GC_data_start;
 #endif
 
 #ifdef LINT2
-/* A macro (based on a tricky expression) to prevent false warnings   */
-/* like "Array compared to 0", "Comparison of identical expressions", */
-/* "Untrusted loop bound" output by some static code analysis tools.  */
-/* The argument should not be a literal value.  The result is         */
-/* converted to `word` type.  (Actually, `GC_word` is used instead of */
-/* `word` type as the latter might be undefined at the place of use.) */
+/*
+ * A macro (based on a tricky expression) to prevent false warnings
+ * like "Array compared to 0", "Comparison of identical expressions",
+ * "Untrusted loop bound" output by some static code analysis tools.
+ * The argument should not be a literal value.  The result is
+ * converted to `word` type.  (Actually, `GC_word` is used instead of
+ * `word` type as the latter might be undefined at the place of use.)
+ */
 #  define COVERT_DATAFLOW(w) (~(GC_word)(w) ^ (~(GC_word)0))
 #else
 #  define COVERT_DATAFLOW(w) ((GC_word)(w))
 #endif
 
 #if CPP_PTRSZ > CPP_WORDSZ
-/* TODO: Cannot use tricky operations on a pointer.   */
+/* TODO: Cannot use tricky operations on a pointer. */
 #  define COVERT_DATAFLOW_P(p) ((ptr_t)(p))
 #else
 #  define COVERT_DATAFLOW_P(p) ((ptr_t)COVERT_DATAFLOW(p))
@@ -3437,11 +3601,13 @@ extern ptr_t GC_data_start;
 
 #if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
     && !defined(REDIRECT_MALLOC_IN_HEADER)
-/* May work on other platforms (e.g. Darwin) provided the client        */
-/* ensures all the client threads are registered with the collector,    */
-/* e.g. by using the preprocessor-based interception of the thread      */
-/* primitives (i.e., define `GC_THREADS` and include `gc.h` file from   */
-/* all the client files those are using `pthread_create` and friends).  */
+/*
+ * May work on other platforms (e.g. Darwin) provided the client
+ * ensures all the client threads are registered with the collector,
+ * e.g. by using the preprocessor-based interception of the thread
+ * primitives (i.e., define `GC_THREADS` and include `gc.h` file from
+ * all the client files those are using `pthread_create` and friends).
+ */
 #endif
 
 EXTERN_C_END

@@ -35,10 +35,10 @@
 
 #  include "gc/gc_gcj.h"
 
-/* Object kind for objects with descriptors in "vtable".                */
+/* Object kind for objects with descriptors in "vtable". */
 int GC_gcj_kind = 0;
 
-/* The kind of objects that are always marked with a mark proc call.    */
+/* The kind of objects that are always marked with a mark procedure call. */
 int GC_gcj_debug_kind = 0;
 
 STATIC struct GC_ms_entry *GC_CALLBACK
@@ -78,14 +78,14 @@ GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
     mp = GC_gcj_fake_mark_proc;
   }
 
-  /* Initialize the collector just in case it is not done yet.        */
+  /* Initialize the collector just in case it is not done yet. */
   GC_init();
   if (descr_offset != GC_GCJ_MARK_DESCR_OFFSET)
     ABORT("GC_init_gcj_malloc_mp: bad offset");
 
   LOCK();
   if (GC_gcjobjfreelist != NULL) {
-    /* Already initialized.   */
+    /* Already initialized. */
     UNLOCK();
     return;
   }
@@ -105,8 +105,10 @@ GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
   /* Set up object kind `gcj`-style indirect descriptor. */
   GC_gcjobjfreelist = (ptr_t *)GC_new_free_list_inner();
   if (ignore_gcj_info) {
-    /* Use a simple length-based descriptor, thus forcing a fully   */
-    /* conservative scan.                                           */
+    /*
+     * Use a simple length-based descriptor, thus forcing a fully
+     * conservative scan.
+     */
     GC_gcj_kind = (int)GC_new_kind_inner((void **)GC_gcjobjfreelist,
                                          /* 0 | */ GC_DS_LENGTH, TRUE, TRUE);
     GC_gcj_debug_kind = GC_gcj_kind;
@@ -117,7 +119,7 @@ GC_init_gcj_malloc_mp(unsigned mp_index, GC_mark_proc mp, size_t descr_offset)
                  - GC_INDIR_PER_OBJ_BIAS))
          | GC_DS_PER_OBJECT),
         FALSE, TRUE);
-    /* Set up object kind for objects that require mark proc call.  */
+    /* Set up object kind for objects that require mark procedure call. */
     GC_gcj_debug_kind = (int)GC_new_kind_inner(
         GC_new_free_list_inner(),
         GC_MAKE_PROC(mp_index, 1 /* allocated with debug info */), FALSE,
@@ -147,13 +149,15 @@ GC_core_gcj_malloc(size_t lb, const void *vtable_ptr, unsigned flags)
     GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
     GC_ASSERT(NULL == ((void **)op)[1]);
   } else {
-    /* A mechanism to release the allocator lock and invoke finalizers. */
-    /* We do not really have an opportunity to do this on a rarely      */
-    /* executed path on which the allocator lock is not held.  Thus we  */
-    /* check at a rarely executed point at which it is safe to release  */
-    /* the allocator lock; we do this even where we could just call     */
-    /* `GC_notify_or_invoke_finalizers()`, since it is probably cheaper */
-    /* and certainly more uniform.                                      */
+    /*
+     * A mechanism to release the allocator lock and invoke finalizers.
+     * We do not really have an opportunity to do this on a rarely
+     * executed path on which the allocator lock is not held.  Thus we
+     * check at a rarely executed point at which it is safe to release
+     * the allocator lock; we do this even where we could just call
+     * `GC_notify_or_invoke_finalizers()`, since it is probably cheaper
+     * and certainly more uniform.
+     */
     /* TODO: Consider doing the same elsewhere? */
     if (GC_gc_no != GC_last_finalized_no) {
       UNLOCK();

@@ -12,7 +12,7 @@
  * modified is included with the above copyright notice.
  */
 
-/* This file is kept for a binary compatibility purpose only.   */
+/* This file is kept for a binary compatibility purpose only. */
 
 #ifndef GC_ALLOC_PTRS_H
 #define GC_ALLOC_PTRS_H
@@ -27,8 +27,10 @@ extern "C" {
 #  define GC_API_PRIV GC_API
 #endif
 
-/* Some compilers do not accept `const` together with the `dllimport`   */
-/* attribute, so the symbols below are exported as non-constant ones.   */
+/*
+ * Some compilers do not accept `const` together with the `dllimport`
+ * attribute, so the symbols below are exported as non-constant ones.
+ */
 #ifndef GC_APIVAR_CONST
 #  if defined(GC_BUILD) || !defined(GC_DLL)
 #    define GC_APIVAR_CONST const
@@ -45,11 +47,13 @@ GC_API_PRIV void **GC_APIVAR_CONST GC_uobjfreelist_ptr;
 GC_API_PRIV void **GC_APIVAR_CONST GC_auobjfreelist_ptr;
 #endif
 
-/* Manually update the number of bytes allocated during the current     */
-/* collection cycle and the number of explicitly deallocated bytes of   */
-/* memory since the last collection, respectively.  Both functions are  */
-/* unsynchronized, `GC_call_with_alloc_lock()` should be used to avoid  */
-/* data race.                                                           */
+/*
+ * Manually update the number of bytes allocated during the current
+ * collection cycle and the number of explicitly deallocated bytes of
+ * memory since the last collection, respectively.  Both functions are
+ * unsynchronized, `GC_call_with_alloc_lock()` should be used to avoid
+ * data race.
+ */
 GC_API_PRIV void GC_CALL GC_incr_bytes_allocd(size_t /* `bytes` */);
 GC_API_PRIV void GC_CALL GC_incr_bytes_freed(size_t /* `bytes` */);
 

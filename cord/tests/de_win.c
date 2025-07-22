@@ -11,9 +11,11 @@
  * modified is included with the above copyright notice.
  */
 
-/* The Windows-specific part of `de`.  This started as the generic  */
-/* Windows application template but significant parts did not       */
-/* survive to the final version.                                    */
+/*
+ * The Windows-specific part of `de`.  This has been started as the generic
+ * Windows application template but its significant parts did not survive
+ * to the final version.
+ */
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)                 \
     || (defined(__NT__) && defined(__386__)) || defined(_WIN32) \
@@ -122,7 +124,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR command_line,
   return (int)msg.wParam;
 }
 
-/* Return the argument with all control characters replaced by blanks.  */
+/* Return the argument with all control characters replaced by blanks. */
 static char *
 plain_chars(const char *text, size_t len)
 {
@@ -142,8 +144,10 @@ plain_chars(const char *text, size_t len)
   return result;
 }
 
-/* Return the argument with all non-control-characters replaced by      */
-/* blank, and all control characters `c` replaced by `c + 64`.          */
+/*
+ * Return the argument with all non-control-characters replaced by blank,
+ * and all control characters `c` replaced by `c + 64`.
+ */
 static char *
 control_chars(const char *text, size_t len)
 {
@@ -175,10 +179,10 @@ get_line_rect(int line_arg, int win_width, RECT *rectp)
   rectp->right = win_width;
 }
 
-/* A flag whether the caret is currently visible.   */
+/* A flag whether the caret is currently visible. */
 static int caret_visible = 0;
 
-/* A flag whether the screen has been painted at least once.    */
+/* A flag whether the screen has been painted at least once. */
 static int screen_was_painted = 0;
 
 static void update_cursor(void);
@@ -367,8 +371,10 @@ invalidate_line(int i)
   RECT line_r;
 
   if (!screen_was_painted) {
-    /* Invalidating a rectangle before painting seems result in a   */
-    /* major performance problem.                                   */
+    /*
+     * Invalidating a rectangle before painting seems result in a major
+     * performance problem.
+     */
     return;
   }
   get_line_rect(i, COLS * char_width, &line_r);
@@ -377,8 +383,10 @@ invalidate_line(int i)
 
 #else
 
-/* ANSI C does not allow translation units to be empty.  So we      */
-/* guarantee this one is nonempty.                                  */
+/*
+ * ANSI C does not allow translation units to be empty.
+ * So we guarantee this one is nonempty.
+ */
 extern int GC_quiet;
 
 #endif /* !WIN32 */

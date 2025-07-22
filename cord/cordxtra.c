@@ -11,9 +11,11 @@
  * modified is included with the above copyright notice.
  */
 
-/* These are functions on cords that do not need to understand their    */
-/* implementation.  They also serve as an example client code for       */
-/* the cord basic primitives.                                           */
+/*
+ * These are functions on cords that do not need to understand their
+ * implementation.  They also serve as a sample client code for the cord
+ * basic primitives.
+ */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -34,21 +36,25 @@
 #include "gc/cord.h"
 #include "gc/ec.h"
 
-/* If available, use GCC built-in atomic load-acquire and store-release */
-/* primitives to access the cache lines safely.  Otherwise, fall back   */
-/* to using the allocator lock even during the cache lines reading.     */
-/* Note: for simplicity of `cord` library building, do not rely on      */
-/* `GC_THREADS` macro, `libatomic_ops` package presence and             */
-/* `private/gc_atomic_ops.h` file.                                      */
+/*
+ * If available, use gcc built-in atomic load-acquire and store-release
+ * primitives to access the cache lines safely.  Otherwise, fall back
+ * to using the allocator lock even during the cache lines reading.
+ * Note: for simplicity of `cord` library building, do not rely on
+ * `GC_THREADS` macro, `libatomic_ops` package presence and
+ * `private/gc_atomic_ops.h` file.
+ */
 #if !defined(AO_DISABLE_GCC_ATOMICS)                                  \
-    && ((defined(__clang__) && __clang_major__ >= 8 /* clang 8.0+ */) \
-        || (defined(__GNUC__) /* gcc 5.4+ */                          \
+    && ((defined(__clang__) && __clang_major__ >= 8 /* clang-8.0+ */) \
+        || (defined(__GNUC__) /* gcc-5.4+ */                          \
             && (__GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 4))))
 #  define CORD_USE_GCC_ATOMIC
 #endif
 
-/* The standard says these are in the platform `stdio.h` file, but they */
-/* are not always.                                                      */
+/*
+ * The standard says these are in the platform `stdio.h` file, but they
+ * are not always.
+ */
 #ifndef SEEK_SET
 #  define SEEK_SET 0
 #endif
@@ -139,9 +145,11 @@ CORD_batched_fill_proc(const char *s, void *client_data)
   return 0;
 }
 
-/* Fill `buf` with `len` characters starting at `i`.  Assumes `len` */
-/* characters are available in `buf`.  Return 1 if `buf` is filled  */
-/* up fully (and `len` is non-zero), 0 otherwise.                   */
+/*
+ * Fill `buf` with `len` characters starting at `i`.  Assumes `len`
+ * characters are available in `buf`.  Return 1 if `buf` is filled up
+ * fully (and `len` is nonzero), 0 otherwise.
+ */
 static int
 CORD_fill_buf(CORD x, size_t i, size_t len, char *buf)
 {
@@ -235,7 +243,7 @@ CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
       CORD_next(ypos);
       count++;
     } else {
-      /* Process as many characters as we can.  */
+      /* Process as many characters as we can. */
       int result;
 
       if (avail > yavail)
@@ -405,12 +413,13 @@ CORD_rchr(CORD x, size_t i, int c)
 size_t
 CORD_str(CORD x, size_t start, CORD s)
 {
-  /* This uses an asymptotically poor algorithm, which should       */
-  /* typically perform acceptably.  We compare the first few        */
-  /* characters directly, and call `CORD_ncmp` whenever there is    */
-  /* a partial match.  This has the advantage that we allocate very */
-  /* little, or not at all.  It is very fast if there are few close */
-  /* misses.                                                        */
+  /*
+   * This uses an asymptotically poor algorithm, which should typically
+   * perform acceptably.  We compare the first few characters directly,
+   * and call `CORD_ncmp` whenever there is a partial match.
+   * This has the advantage that we allocate very little, or not at all.
+   * It is very fast if there are few close misses.
+   */
   CORD_pos xpos;
   size_t xlen = CORD_len(x);
   size_t slen;
@@ -515,9 +524,10 @@ CORD_from_file_eager(FILE *f)
     int c = getc(f);
 
     if (c == 0) {
-      /* Append the right number of NUL characters.  Note that any  */
-      /* string of NUL characters is represented in 4 words,        */
-      /* independent of its length.                                 */
+      /*
+       * Append the right number of NUL characters.  Note that any string of
+       * NUL characters is represented in 4 words, independent of its length.
+       */
       size_t count = 1;
 
       CORD_ec_flush_buf(ecord);
@@ -533,18 +543,20 @@ CORD_from_file_eager(FILE *f)
   return CORD_balance(CORD_ec_to_cord(ecord));
 }
 
-/* The state maintained for a lazily read file consists primarily       */
-/* of a large direct-mapped cache of previously read values.            */
-/* We could rely more on `stdio` buffering.  That would have two        */
-/* disadvantages:                                                       */
-/*   1. Empirically, not all `fseek` implementations preserve the       */
-/*      buffer whenever they could;                                     */
-/*   2. It would fail if two different sections of a long cord were     */
-/*      being read alternately.                                         */
-/* We do use the `stdio` buffer for read ahead.                         */
-/* To guarantee thread safety in the presence of atomic pointer         */
-/* writes, cache lines are always replaced, and never modified in       */
-/* place.                                                               */
+/*
+ * The state maintained for a lazily read file consists primarily
+ * of a large direct-mapped cache of previously read values.
+ * We could rely more on `stdio` buffering.  That would have two
+ * disadvantages:
+ *   1. Empirically, not all `fseek` implementations preserve the
+ *      buffer whenever they could;
+ *   2. It would fail if two different sections of a long cord were
+ *      being read alternately.
+ *
+ * We do use the `stdio` buffer for read ahead.
+ * To guarantee thread safety in the presence of atomic pointer writes,
+ * cache lines are always replaced, and never modified in place.
+ */
 
 #define LOG_CACHE_SZ 14
 #define LOG_LINE_SZ 9
@@ -555,8 +567,10 @@ CORD_from_file_eager(FILE *f)
 
 typedef struct {
   size_t tag;
-  /* `data[i % LINE_SZ]` is `i`-th character in file if `tag`       */
-  /* is `i / LINE_SZ`.                                              */
+  /*
+   * `data[i % LINE_SZ]` is `i`-th character in file if `tag` is
+   * `i / LINE_SZ`.
+   */
   char data[LINE_SZ];
 } cache_line;
 
@@ -671,9 +685,11 @@ CORD_from_file_lazy_inner(FILE *f, size_t len)
   if (NULL == state)
     OUT_OF_MEMORY;
   if (len != 0) {
-    /* A dummy read to force buffer allocation.  This greatly increases */
-    /* the probability of avoiding a deadlock if buffer allocation is   */
-    /* redirected to `GC_malloc` and the world is multi-threaded.       */
+    /*
+     * A dummy read to force buffer allocation.  This greatly increases
+     * the probability of avoiding a deadlock if buffer allocation is
+     * redirected to `GC_malloc` and the world is multi-threaded.
+     */
     char buf[1];
 
     if (fread(buf, 1, 1, f) > 1 || fseek(f, 0l, SEEK_SET) != 0) {

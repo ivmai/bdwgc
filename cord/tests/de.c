@@ -79,8 +79,10 @@
   exit(3);                            \
   MACRO_BLKSTMT_END
 
-/* List of line number to position mappings, in descending order. */
-/* There may be holes.                                            */
+/*
+ * List of line number to position mappings, in descending order.
+ * There may be holes.
+ */
 struct LineMapRep {
   int line;
   size_t pos;
@@ -107,8 +109,10 @@ static size_t current_len;
 /* Map of current line number to position. */
 static line_map current_map = NULL;
 
-/* Number of `current_map` entries.  Not always accurate, but reset */
-/* by `prune_map`.                                                  */
+/*
+ * Number of `current_map` entries.  Not always accurate, but reset
+ * by `prune_map`.
+ */
 static size_t current_map_size = 0;
 
 #define MAX_MAP_SIZE 3000
@@ -142,8 +146,10 @@ invalidate_map(int i)
   }
 }
 
-/* Reduce the number of map entries to save space for huge files. */
-/* This also affects maps in histories.                           */
+/*
+ * Reduce the number of map entries to save space for huge files.
+ * This also affects maps in histories.
+ */
 static void
 prune_map(void)
 {
@@ -181,10 +187,12 @@ add_map(int line_arg, size_t pos)
   current_map_size++;
 }
 
-/* Return position of column `*c` of `i`-th line in the current file.   */
-/* Adjust `*c` to be within the line.  A `NULL` pointer is taken as     */
-/* 0 column.  Returns `CORD_NOT_FOUND` if `i` is too big.  Assumes `i`  */
-/* is greater than `dis_line`.                                          */
+/*
+ * Return position of column `*c` of `i`-th line in the current file.
+ * Adjust `*c` to be within the line.  A `NULL` pointer is taken as
+ * column zero.  Returns `CORD_NOT_FOUND` if `i` is too big.
+ * Assumes `i` is greater than `dis_line`.
+ */
 static size_t
 line_pos(int i, int *c)
 {
@@ -249,15 +257,17 @@ del_hist(void)
 static CORD *screen = NULL;
 static int screen_size = 0;
 
-/* Replace a line in the `stdscr` of `curses` package.  All control     */
-/* characters are displayed as upper case characters in standout mode.  */
-/* This is not terribly appropriate for tabs.                           */
+/*
+ * Replace a line in the `stdscr` of `curses` package.  All control
+ * characters are displayed as upper case characters in standout mode.
+ * This is not terribly appropriate for tabs.
+ */
 static void
 replace_line(int i, CORD s)
 {
   size_t len = CORD_len(s);
 
-  if (screen == 0 || LINES > screen_size) {
+  if (NULL == screen || LINES > screen_size) {
     screen_size = LINES;
     screen = (CORD *)GC_MALLOC(screen_size * sizeof(CORD));
     if (NULL == screen)
@@ -298,8 +308,10 @@ replace_line(int i, CORD s)
 #  define replace_line(i, s) invalidate_line(i)
 #endif
 
-/* Return up to `COLS` characters of the line of `s` starting at `pos`, */
-/* returning only characters after the given `column`.                  */
+/*
+ * Return up to `COLS` characters of the line of `s` starting at `pos`,
+ * returning only characters after the given `column`.
+ */
 static CORD
 retrieve_line(CORD s, size_t pos, unsigned column)
 {
@@ -363,8 +375,10 @@ done:
 
 static int dis_granularity;
 
-/* Update `dis_line`, `dis_col` and `dis_pos` to make cursor visible.   */
-/* Assumes `line`, `col`, `dis_line` and `dis_pos` are in bounds.       */
+/*
+ * Update `dis_line`, `dis_col` and `dis_pos` to make cursor visible.
+ * Assumes `line`, `col`, `dis_line` and `dis_pos` are in bounds.
+ */
 static void
 normalize_display(void)
 {
@@ -393,8 +407,10 @@ normalize_display(void)
 #  define move_cursor(x, y) move(y, x)
 #endif
 
-/* Adjust display so that cursor is visible; move cursor into position. */
-/* Update screen if necessary.                                          */
+/*
+ * Adjust display so that cursor is visible; move cursor into position.
+ * Update `screen` if necessary.
+ */
 static void
 fix_cursor(void)
 {
@@ -408,8 +424,11 @@ fix_cursor(void)
 #endif
 }
 
-/* Make sure `line`, `col` and `dis_pos` are somewhere inside file.     */
-/* Recompute `file_pos`.  Assumes `dis_pos` is accurate or past EOF.    */
+/*
+ * Make sure `line`, `col` and `dis_pos` are somewhere inside file.
+ * Recompute `file_pos`.  Assumes `dis_pos` is accurate or past the
+ * end of file.
+ */
 static void
 fix_pos(void)
 {
@@ -433,16 +452,18 @@ fix_pos(void)
 #if defined(WIN32)
 #  define beep() Beep(1000 /* Hz */, 300 /* ms */)
 #else
-/* `beep()` is part of some `curses` packages and not others.  We try   */
-/* to match the type of the built-in one, if any.  Declared in the      */
-/* platform `curses.h` file.                                            */
+/*
+ * `beep()` is part of some `curses` packages and not others.
+ * We try to match the type of the built-in one, if any.
+ * Declared in the platform `curses.h` file.
+ */
 int
 beep(void)
 {
   putc('\007', stderr);
   return 0;
 }
-#endif /* !WIN32 */
+#endif
 
 #define NO_PREFIX -1
 #define BARE_PREFIX -2
@@ -463,7 +484,7 @@ set_position(int c, int l)
   fix_pos();
   move_cursor(col - dis_col, line - dis_line);
 }
-#endif /* WIN32 */
+#endif
 
 void
 do_command(int c)
@@ -651,7 +672,6 @@ generic_init(void)
 }
 
 #ifndef WIN32
-
 int
 main(int argc, char **argv)
 {
@@ -697,5 +717,4 @@ main(int argc, char **argv)
   endwin();
   return 0;
 }
-
-#endif /* !WIN32 */
+#endif

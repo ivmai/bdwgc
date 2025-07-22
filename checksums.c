@@ -15,8 +15,11 @@
 
 #ifdef CHECKSUMS
 
-/* This is debugging code intended to verify the results of dirty bit   */
-/* computations.  Works only in a single threaded environment.          */
+/*
+ * This is debugging code intended to verify the results of dirty bit
+ * computations.  Currently works only in a single-threaded environment.
+ */
+
 #  define NSUMS 10000
 #  define OFFSET 0x10000
 
@@ -25,14 +28,16 @@ typedef struct {
   word old_sum;
   word new_sum;
 
-  /* Block to which this refers plus `OFFSET` to hide it from the   */
-  /* garbage collector.                                             */
+  /*
+   * Block to which this refers plus `OFFSET` to hide it from the
+   * garbage collector.
+   */
   struct hblk *block;
 } page_entry;
 
 page_entry GC_sums[NSUMS];
 
-/* Record of pages on which we saw a write fault.       */
+/* Record of pages on which we saw a write fault. */
 STATIC word GC_faulted[NSUMS] = { 0 };
 
 STATIC size_t GC_n_faulted = 0;
@@ -154,7 +159,7 @@ GC_check_dirty(void)
                   GC_n_dirty_errors, GC_n_faulted_dirty_errors);
   }
   for (i = 0; i < GC_n_faulted; ++i) {
-    /* Do not expose block addresses to the garbage collector.      */
+    /* Do not expose block addresses to the garbage collector. */
     GC_faulted[i] = 0;
   }
   GC_n_faulted = 0;

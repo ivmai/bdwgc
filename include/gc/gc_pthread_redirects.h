@@ -15,24 +15,31 @@
  * modified is included with the above copyright notice.
  */
 
-/* Our `pthreads` support normally needs to intercept a number of       */
-/* thread calls.  We arrange to do that here, if appropriate.           */
+/*
+ * The collector `pthreads` support normally needs to intercept a number
+ * of thread calls.  We arrange to do that here, if appropriate.
+ */
 
 #ifndef GC_PTHREAD_REDIRECTS_H
 #define GC_PTHREAD_REDIRECTS_H
 
-/* Included from `gc.h` file only.  Included only if `GC_PTHREADS`      */
-/* macro is defined.                                                    */
+/*
+ * Included from `gc.h` file only.  Included only if `GC_PTHREADS` macro
+ * is defined.
+ */
 #if defined(GC_H) && defined(GC_PTHREADS)
 
-/* We need to intercept calls to many of the threads' primitives, so    */
-/* that we can locate thread stacks and stop the world.                 */
-/* Note also that the collector cannot always see thread-specific data. */
-/* Such data should generally consist of pointers to uncollectible      */
-/* objects (allocated with `GC_malloc_uncollectable`, not the system    */
-/* `malloc`), which are deallocated using the destructor facility in    */
-/* `pthread_key_create()`.  Alternatively, keep a redundant pointer     */
-/* to thread-specific data on the thread stack.                         */
+/*
+ * We need to intercept calls to many of the threads' primitives, so
+ * that we can locate thread stacks and stop the world.
+ *
+ * Note also that the collector cannot always see thread-specific data.
+ * Such data should generally consist of pointers to uncollectible
+ * objects (allocated with `GC_malloc_uncollectable`, not the system
+ * `malloc`), which are deallocated using the destructor facility in
+ * `pthread_key_create()`.  Alternatively, keep a redundant pointer
+ * to thread-specific data on the thread stack.
+ */
 
 #  ifndef GC_PTHREAD_REDIRECTS_ONLY
 
@@ -98,10 +105,11 @@ GC_API void GC_pthread_exit(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
 #  endif /* !GC_PTHREAD_REDIRECTS_ONLY */
 
 #  if !defined(GC_NO_THREAD_REDIRECTS) && !defined(GC_USE_LD_WRAP)
-/* Unless the compiler supports `#pragma extern_prefix`, the Tru64      */
-/* UNIX platform `pthread.h` file redefines some POSIX thread functions */
-/* to use mangled names.  Anyway, it is safe to `#undef` them before    */
-/* redefining.                                                          */
+/*
+ * Unless the compiler supports `#pragma extern_prefix`, the Tru64 UNIX
+ * platform `pthread.h` file redefines some POSIX thread functions to use
+ * mangled names.  Anyway, it is safe to `#undef` them before redefining.
+ */
 #    undef pthread_create
 #    undef pthread_join
 #    undef pthread_detach

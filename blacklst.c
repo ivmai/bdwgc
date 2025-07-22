@@ -26,24 +26,28 @@
  * block, even though it does not start on the dangerous block.
  */
 
-/* Externally callable routines are:    */
-/* - `GC_add_to_black_list_normal`,     */
-/* - `GC_add_to_black_list_stack`,      */
-/* - `GC_promote_black_lists`.          */
+/*
+ * Externally callable routines are:
+ *   - `GC_add_to_black_list_normal`,
+ *   - `GC_add_to_black_list_stack`,
+ *   - `GC_promote_black_lists`.
+ */
 
-/* Pointers to individual tables.  We replace one table by another by   */
-/* switching these pointers.                                            */
+/*
+ * Pointers to individual tables.  We replace one table by another by
+ * switching these pointers.
+ */
 
-/* Nonstack false references seen at last full collection.      */
+/* Non-stack false references seen at last full collection. */
 STATIC word *GC_old_normal_bl = NULL;
 
-/* Nonstack false references seen since last full collection.   */
+/* Non-stack false references seen since last full collection. */
 STATIC word *GC_incomplete_normal_bl = NULL;
 
 STATIC word *GC_old_stack_bl = NULL;
 STATIC word *GC_incomplete_stack_bl = NULL;
 
-/* Number of bytes on stack blacklist.  */
+/* Number of bytes on stack blacklist. */
 STATIC word GC_total_stack_black_listed = 0;
 
 GC_INNER word GC_black_list_spacing = MINHINCR * HBLKSIZE; /*< initial guess */
@@ -61,9 +65,11 @@ GC_print_blacklisted_ptr(ptr_t p, ptr_t source, const char *kind_str)
                   (void *)p, (void *)source,
                   NULL != source ? "root set" : "register");
   } else {
-    /* FIXME: We cannot call the debug variant of `GC_print_heap_obj`   */
-    /* (with `PRINT_CALL_CHAIN`) here because the allocator lock is     */
-    /* held and the world is stopped.                                   */
+    /*
+     * FIXME: We cannot call the debug variant of `GC_print_heap_obj`
+     * (with `PRINT_CALL_CHAIN`) here because the allocator lock is held
+     * and the world is stopped.
+     */
     GC_err_printf("Black listing (%s) %p referenced from %p in"
                   " object at %p of appr. %lu bytes\n",
                   kind_str, (void *)p, (void *)source, (void *)base,
@@ -148,10 +154,11 @@ GC_promote_black_lists(void)
     GC_black_list_spacing = 3 * HBLKSIZE;
   }
   if (GC_black_list_spacing > MAXHINCR * HBLKSIZE) {
-    /* Make it easier to allocate really huge blocks, which         */
-    /* otherwise may have problems with nonuniform blacklist        */
-    /* distributions.  This way we should always succeed            */
-    /* immediately after growing the heap.                          */
+    /*
+     * Make it easier to allocate really huge blocks, which otherwise may
+     * have problems with nonuniform blacklist distributions.
+     * This way we should always succeed immediately after growing the heap.
+     */
     GC_black_list_spacing = MAXHINCR * HBLKSIZE;
   }
 }
@@ -169,9 +176,10 @@ GC_unpromote_black_lists(void)
 #    define backlist_set_pht_entry_from_index(db, index) \
       set_pht_entry_from_index_concurrent(db, index)
 #  else
-/* It is safe to set a bit in a blacklist even without        */
-/* synchronization, the only drawback is that we might have   */
-/* to redo blacklisting sometimes.                            */
+/*
+ * It is safe to set a bit in a blacklist even without synchronization,
+ * the only drawback is that we might have to redo black-listing sometimes.
+ */
 #    define backlist_set_pht_entry_from_index(bl, index) \
       set_pht_entry_from_index(bl, index)
 #  endif
@@ -198,8 +206,10 @@ GC_add_to_black_list_normal(ptr_t p)
 #  endif
       backlist_set_pht_entry_from_index(GC_incomplete_normal_bl, index);
     } else {
-      /* This is probably just an interior pointer to an allocated      */
-      /* object, and is not worth black listing.                        */
+      /*
+       * This is probably just an interior pointer to an allocated object,
+       * and is not worth black listing.
+       */
     }
   }
 }
@@ -267,9 +277,10 @@ GC_is_black_listed(struct GC_hblk_s *h, size_t len)
 }
 
 #ifndef NO_BLACK_LISTING
-/* Return the number of blacklisted blocks in a given range.  Used only */
-/* for statistical purposes.  Looks only at the                         */
-/* `GC_incomplete_stack_bl`.                                            */
+/*
+ * Return the number of black-listed blocks in a given range.  Used only
+ * for statistical purposes.  Looks only at the `GC_incomplete_stack_bl`.
+ */
 STATIC word
 GC_number_stack_black_listed(struct hblk *start, struct hblk *endp1)
 {

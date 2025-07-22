@@ -11,15 +11,17 @@
  * modified is included with the above copyright notice.
  */
 
-/* Check whether `setjmp` actually saves registers in `jmp_buf`.  If it */
-/* does not, the generic code in `GC_with_callee_saves_pushed` will not */
-/* work.  Compilers vary as to whether they will put `x` in             */
-/* a (callee-save) register without `-O` flag.  The code is contrived   */
-/* such that any decent compiler should put `x` in a callee-save        */
-/* register with `-O` flag.  Thus it is recommended that this be run    */
-/* optimized.  (If the machine has no callee-save registers, then the   */
-/* generic code is safe, but this will not be noticed by this piece of  */
-/* code.)  This test appears to be far from perfect.                    */
+/*
+ * Check whether `setjmp` actually saves registers in `jmp_buf`.
+ * If it does not, the generic code in `GC_with_callee_saves_pushed`
+ * will not work.  Compilers vary as to whether they will put `x` in
+ * a (callee-save) register without `-O` flag.  The code is contrived
+ * such that any decent compiler should put `x` in a callee-save register
+ * with `-O` flag.  Thus it is recommended that this be run optimized.
+ * (If the machine has no callee-save registers, then the generic code
+ * is safe, but this will not be noticed by this piece of code.)
+ * This test appears to be far from perfect.
+ */
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
@@ -32,8 +34,10 @@
 #  define INCL_DOSMISC
 #  include <os2.h>
 
-/* Similar to that in `os_dep.c` file but use `fprintf` to report       */
-/* a failure.  `GETPAGESIZE()` macro is defined to `os2_getpagesize()`. */
+/*
+ * Similar to that in `os_dep.c` file but use `fprintf` to report a failure.
+ * `GETPAGESIZE()` macro is defined to `os2_getpagesize()`.
+ */
 static int
 os2_getpagesize(void)
 {

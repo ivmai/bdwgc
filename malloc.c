@@ -35,14 +35,16 @@ GC_alloc_reclaim_list(struct obj_kind *ok)
   return TRUE;
 }
 
-/* Allocate a large block of size `lb_adjusted` bytes with the          */
-/* requested alignment (`align_m1 + 1`).  The block is not cleared.     */
-/* We assume that the size is non-zero and a multiple of                */
-/* `GC_GRANULE_BYTES`, and that it already includes `EXTRA_BYTES`       */
-/* value.  The `flags` argument should be `IGNORE_OFF_PAGE` or 0.       */
-/* Calls `GC_allochblk()` to do the actual allocation, but also         */
-/* triggers collection and/or heap expansion as appropriate.  Updates   */
-/* value of `GC_bytes_allocd`; does also other accounting.              */
+/*
+ * Allocate a large block of size `lb_adjusted` bytes with the requested
+ * alignment (`align_m1 + 1`).  The block is not cleared.  We assume that
+ * the size is nonzero and a multiple of `GC_GRANULE_BYTES`, and that
+ * it already includes `EXTRA_BYTES` value.  The `flags` argument should
+ * be `IGNORE_OFF_PAGE` or 0.  Calls `GC_allochblk()` to do the actual
+ * allocation, but also triggers collection and/or heap expansion
+ * as appropriate.  Updates value of `GC_bytes_allocd`; does also other
+ * accounting.
+ */
 STATIC ptr_t
 GC_alloc_large(size_t lb_adjusted, int kind, unsigned flags, size_t align_m1)
 {
@@ -60,7 +62,7 @@ GC_alloc_large(size_t lb_adjusted, int kind, unsigned flags, size_t align_m1)
     GC_init();
     LOCK();
   }
-  /* Do our share of marking work.    */
+  /* Do our share of marking work. */
   if (GC_incremental && !GC_dont_gc) {
     GC_collect_a_little_inner(n_blocks);
   }
@@ -72,8 +74,10 @@ GC_alloc_large(size_t lb_adjusted, int kind, unsigned flags, size_t align_m1)
   }
 #endif
   for (retry_cnt = 0; NULL == h; retry_cnt++) {
-    /* Only a few iterations are expected at most, otherwise    */
-    /* something is wrong in one of the functions called below. */
+    /*
+     * Only a few iterations are expected at most, otherwise something
+     * is wrong in one of the functions called below.
+     */
     if (retry_cnt > MAX_ALLOCLARGE_RETRIES)
       ABORT("Too many retries in GC_alloc_large");
     if (EXPECT(!GC_collect_or_expand(n_blocks, flags, retry_cnt > 0), FALSE))
@@ -93,10 +97,12 @@ GC_alloc_large(size_t lb_adjusted, int kind, unsigned flags, size_t align_m1)
   return result;
 }
 
-/* Allocate a large block of given size in bytes, clear it if       */
-/* appropriate.  We assume that the size is non-zero and            */
-/* a multiple of `GC_GRANULE_BYTES`, and that it already includes   */
-/* `EXTRA_BYTES` value.  Update value of `GC_bytes_allocd`.         */
+/*
+ * Allocate a large block of given size in bytes, clear it if appropriate.
+ * We assume that the size is nonzero and a multiple of `GC_GRANULE_BYTES`,
+ * and that it already includes `EXTRA_BYTES` value.  Update value of
+ * `GC_bytes_allocd`.
+ */
 STATIC ptr_t
 GC_alloc_large_and_clear(size_t lb_adjusted, int kind, unsigned flags)
 {
@@ -112,19 +118,23 @@ GC_alloc_large_and_clear(size_t lb_adjusted, int kind, unsigned flags)
   return result;
 }
 
-/* Fill in additional entries in `GC_size_map`, including the `i`-th    */
-/* one.  Note that a filled in section of the array ending at `n`       */
-/* always has the length of at least `n / 4`.                           */
+/*
+ * Fill in additional entries in `GC_size_map`, including the `i`-th one.
+ * Note that a filled in section of the array ending at `n` always has
+ * the length of at least `n / 4`.
+ */
 STATIC void
 GC_extend_size_map(size_t i)
 {
   size_t original_lg = ALLOC_REQUEST_GRANS(i);
   size_t lg;
-  /* The size we try to preserve.  Close to `i`, unless this would  */
-  /* introduce too many distinct sizes.                             */
+  /*
+   * The size we try to preserve.  Close to `i`, unless this would
+   * introduce too many distinct sizes.
+   */
   size_t byte_sz = GRANULES_TO_BYTES(original_lg);
   size_t smaller_than_i = byte_sz - (byte_sz >> 3);
-  /* The lowest indexed entry we initialize.    */
+  /* The lowest indexed entry we initialize. */
   size_t low_limit;
   size_t number_of_objs;
 
@@ -146,9 +156,11 @@ GC_extend_size_map(size_t i)
       lg = original_lg;
   }
 
-  /* For these larger sizes, we use an even number of granules.         */
-  /* This makes it easier to, e.g., construct a 16-byte-aligned         */
-  /* allocator even if `GC_GRANULE_BYTES` is 8.                         */
+  /*
+   * For these larger sizes, we use an even number of granules.
+   * This makes it easier to, e.g., construct a 16-byte-aligned
+   * allocator even if `GC_GRANULE_BYTES` is 8.
+   */
   lg = (lg + 1) & ~(size_t)1;
   if (lg > MAXOBJGRANULES)
     lg = MAXOBJGRANULES;
@@ -159,8 +171,10 @@ GC_extend_size_map(size_t i)
   GC_ASSERT(number_of_objs != 0);
   lg = (HBLK_GRANULES / number_of_objs) & ~(size_t)1;
 
-  /* We may need one extra byte; do not always fill in  */
-  /* `GC_size_map[byte_sz]`.                            */
+  /*
+   * We may need one extra byte; do not always fill in
+   * `GC_size_map[byte_sz]`.
+   */
   byte_sz = GRANULES_TO_BYTES(lg) - EXTRA_BYTES;
 
   for (; low_limit <= byte_sz; low_limit++)
@@ -298,8 +312,10 @@ GC_generic_malloc_aligned(size_t lb, int kind, unsigned flags, size_t align_m1)
       } else {
 #ifdef THREADS
         GC_ASSERT(GRANULES_TO_PTRS(lg) >= 2);
-        /* Clear any memory that might be used for GC descriptors */
-        /* before we release the allocator lock.                  */
+        /*
+         * Clear any memory that might be used for the GC descriptors
+         * before we release the allocator lock.
+         */
         ((ptr_t *)result)[0] = NULL;
         ((ptr_t *)result)[1] = NULL;
         ((ptr_t *)result)[GRANULES_TO_PTRS(lg) - 1] = NULL;
@@ -318,7 +334,7 @@ GC_generic_malloc_aligned(size_t lb, int kind, unsigned flags, size_t align_m1)
   }
   if (EXPECT(NULL == result, FALSE)) {
     result = (*GC_get_oom_fn())(lb);
-    /* Note: result might be misaligned.      */
+    /* Note: result might be misaligned. */
   }
   return result;
 }
@@ -371,8 +387,10 @@ GC_malloc_kind_aligned_global(size_t lb, int kind, size_t align_m1)
     UNLOCK();
   }
 
-  /* We make the `GC_clear_stack()` call a tail one, hoping to get more */
-  /* of the stack.                                                      */
+  /*
+   * We make the `GC_clear_stack()` call a tail one, hoping to get more
+   * of the stack.
+   */
   return GC_clear_stack(
       GC_generic_malloc_aligned(lb, kind, 0 /* `flags` */, align_m1));
 }
@@ -407,8 +425,10 @@ GC_generic_malloc_uncollectable(size_t lb, int kind)
 
   GC_ASSERT(kind < MAXOBJKINDS);
   if (EXTRA_BYTES != 0 && EXPECT(lb != 0, TRUE)) {
-    /* We do not need the extra byte, since this will not be          */
-    /* collected anyway.                                              */
+    /*
+     * We do not need the extra byte, since this will not be collected
+     * anyway.
+     */
     lb--;
   }
 
@@ -428,9 +448,11 @@ GC_generic_malloc_uncollectable(size_t lb, int kind)
       *opp = obj_link(op);
       obj_link(op) = 0;
       GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
-      /* Mark bit was already set on free list.  It will be       */
-      /* cleared only temporarily during a collection, as a       */
-      /* result of the normal free-list mark bit clearing.        */
+      /*
+       * Mark bit was already set on free list.  It will be cleared only
+       * temporarily during a collection, as a result of the normal
+       * free-list mark bit clearing.
+       */
       GC_non_gc_bytes += GRANULES_TO_BYTES((word)lg);
     } else {
       op = GC_generic_malloc_inner_small(lb, kind);
@@ -451,14 +473,18 @@ GC_generic_malloc_uncollectable(size_t lb, int kind)
 
       GC_ASSERT(HBLKDISPL(op) == 0); /*< large block */
 
-      /* We do not need to acquire the allocator lock before `HDR(op)`, */
-      /* since we have an undisguised pointer, but we need it while we  */
-      /* adjust the mark bits.                                          */
+      /*
+       * We do not need to acquire the allocator lock before `HDR(op)`,
+       * since we have an undisguised pointer, but we need it while we
+       * adjust the mark bits.
+       */
       LOCK();
       set_mark_bit_from_hdr(hhdr, 0); /*< the only object */
 #ifndef THREADS
-      /* This is not guaranteed in the multi-threaded case because  */
-      /* the counter could be updated before locking.               */
+      /*
+       * This is not guaranteed in the multi-threaded case because the
+       * counter could be updated before locking.
+       */
       GC_ASSERT(hhdr->hb_n_marks == 0);
 #endif
       hhdr->hb_n_marks = 1;
@@ -489,10 +515,11 @@ GC_malloc_atomic_uncollectable(size_t lb)
 #    include <errno.h>
 #  endif
 
-/* Avoid unnecessary nested procedure calls here, by `#define` some     */
-/* `malloc` replacements.  Otherwise we end up saving a meaningless     */
-/* return address in the object.  It also speeds things up, but it is   */
-/* admittedly quite ugly.                                               */
+/*
+ * Avoid unnecessary nested procedure calls here, by `#define` some `malloc`
+ * replacements.  Otherwise we end up saving a meaningless return address in
+ * the object.  It also speeds things up, but it is admittedly quite ugly.
+ */
 #  define GC_debug_malloc_replacement(lb) GC_debug_malloc(lb, GC_DBG_EXTRAS)
 
 #  if defined(CPPCHECK)
@@ -504,14 +531,17 @@ GC_malloc_atomic_uncollectable(size_t lb)
 void *
 malloc(size_t lb)
 {
-  /* It might help to manually inline the `GC_malloc` call here.        */
-  /* But any decent compiler should reduce the extra procedure call     */
-  /* to at most a jump instruction in this case.                        */
+  /*
+   * It might help to manually inline the `GC_malloc` call here.
+   * But any decent compiler should reduce the extra procedure call
+   * to at most a jump instruction in this case.
+   */
 #  if defined(SOLARIS) && defined(THREADS) && defined(I386)
-  /* Thread initialization can call `malloc` before we are ready for.   */
-  /* It is not clear that this is enough to help matters.               */
-  /* The thread implementation may well call `malloc` at other          */
-  /* inopportune times.                                                 */
+  /*
+   * Thread initialization can call `malloc` before we are ready for.
+   * It is not clear that this is enough to help matters.  The thread
+   * implementation may well call `malloc` at other inopportune times.
+   */
   if (!EXPECT(GC_is_initialized, TRUE))
     return sbrk(lb);
 #  endif
@@ -532,8 +562,10 @@ GC_init_lib_bounds(void)
 {
   IF_CANCEL(int cancel_state;)
 
-  /* This test does not need to ensure memory visibility, since     */
-  /* the bounds will be set when/if we create another thread.       */
+  /*
+   * This test does not need to ensure memory visibility, since the bounds
+   * will be set when/if we create another thread.
+   */
   if (EXPECT(lib_bounds_set, TRUE))
     return;
 
@@ -547,8 +579,10 @@ GC_init_lib_bounds(void)
   if (!GC_text_mapping("libpthread-", &GC_libpthread_start,
                        &GC_libpthread_end)) {
     WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
-    /* This might still work with some versions of `libpthread`,    */
-    /* so we do not `abort`.                                        */
+    /*
+     * This might still work with some versions of `libpthread`,
+     * so we do not `abort`.
+     */
   }
 #    endif
   if (!GC_text_mapping("ld-", &GC_libld_start, &GC_libld_end)) {
@@ -569,16 +603,20 @@ calloc(size_t n, size_t lb)
       && lb && n > GC_SIZE_MAX / lb)
     return (*GC_get_oom_fn())(GC_SIZE_MAX); /*< `n * lb` overflow */
 #  ifdef REDIR_MALLOC_AND_LINUXTHREADS
-  /* The linker may allocate some memory that is only pointed to by */
-  /* mmapped thread stacks.  Make sure it is not collectible.       */
+  /*
+   * The linker may allocate some memory that is only pointed to by
+   * memory-mapped thread stacks.  Make sure it is not collectible.
+   */
   {
     ptr_t caller = (ptr_t)__builtin_return_address(0);
 
     GC_init_lib_bounds();
     if (ADDR_INSIDE(caller, GC_libld_start, GC_libld_end)
 #    ifdef HAVE_LIBPTHREAD_SO
-        /* Note: the two ranges are actually usually adjacent, so */
-        /* there may be a way to speed this up.                   */
+        /*
+         * Note: the two ranges are actually usually adjacent, so there
+         * may be a way to speed this up.
+         */
         || ADDR_INSIDE(caller, GC_libpthread_start, GC_libpthread_end)
 #    endif
     ) {
@@ -604,9 +642,11 @@ strdup(const char *s)
   return result;
 }
 #  else
-/* If `strdup` is macro defined, we assume that it actually calls   */
-/* `malloc`, and thus the right thing will happen even without      */
-/* overriding it.  This seems to be true on most Linux systems.     */
+/*
+ * If `strdup` is macro defined, we assume that it actually calls `malloc`,
+ * and thus the right thing will happen even without overriding it.
+ * This seems to be true on most Linux systems.
+ */
 #  endif /* strdup */
 
 #  ifndef strndup
@@ -649,9 +689,11 @@ free_internal(void *p, const hdr *hhdr)
     struct obj_kind *ok = &GC_obj_kinds[kind];
     void **flh;
 
-    /* It is unnecessary to clear the mark bit.  If the object is       */
-    /* reallocated, it does not matter.  Otherwise, the collector will  */
-    /* do it, since it is on a free list.                               */
+    /*
+     * It is unnecessary to clear the mark bit.  If the object is
+     * reallocated, it does not matter.  Otherwise, the collector will
+     * do it, since it is on a free list.
+     */
     if (ok->ok_init && EXPECT(lb > sizeof(ptr_t), TRUE)) {
       BZERO((ptr_t *)p + 1, lb - sizeof(ptr_t));
     }
@@ -688,11 +730,12 @@ GC_free(void *p)
     && ((defined(NEED_CALLINFO) && defined(GC_HAVE_BUILTIN_BACKTRACE)) \
         || defined(REDIR_MALLOC_AND_LINUXTHREADS)                      \
         || (defined(SOLARIS) && defined(THREADS)) || defined(MSWIN32))
-  /* This might be called indirectly by `GC_print_callers` to free  */
-  /* the result of `backtrace_symbols()`.                           */
-  /* For Solaris, we have to redirect `malloc` calls during         */
-  /* initialization.  For the others, this seems to happen          */
-  /* implicitly.  Do not try to deallocate that memory.             */
+  /*
+   * This might be called indirectly by `GC_print_callers` to free the
+   * result of `backtrace_symbols()`.  For Solaris, we have to redirect
+   * `malloc` calls during initialization.  For the others, this seems
+   * to happen implicitly.  Do not try to deallocate that memory.
+   */
   if (EXPECT(NULL == hhdr, FALSE))
     return;
 #endif
@@ -732,13 +775,17 @@ free(void *p)
 #  else
 #    if defined(REDIR_MALLOC_AND_LINUXTHREADS) \
         && !defined(USE_PROC_FOR_LIBRARIES)
-  /* Do not bother with initialization checks.  If nothing has been     */
-  /* initialized, then the check fails, and that is safe, since we have */
-  /* not allocated uncollectible objects neither.                       */
+  /*
+   * Do not bother with initialization checks.  If nothing has been
+   * initialized, then the check fails, and that is safe, since we have
+   * not allocated uncollectible objects neither.
+   */
   ptr_t caller = (ptr_t)__builtin_return_address(0);
 
-  /* This test does not need to ensure memory visibility, since   */
-  /* the bounds will be set when/if we create another thread.     */
+  /*
+   * This test does not need to ensure memory visibility, since the bounds
+   * will be set when/if we create another thread.
+   */
   if (ADDR_INSIDE(caller, GC_libld_start, GC_libld_end)
 #      ifdef HAVE_LIBPTHREAD_SO
       || ADDR_INSIDE(caller, GC_libpthread_start, GC_libpthread_end)

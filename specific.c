@@ -11,14 +11,18 @@
  * modified is included with the above copyright notice.
  */
 
-/* To determine type of `tsd` implementation; includes              */
-/* `private/specific.h` file if needed.                             */
+/*
+ * To determine type of `tsd` implementation; includes `private/specific.h`
+ * file if needed.
+ */
 #include "private/thread_local_alloc.h"
 
 #if defined(USE_CUSTOM_SPECIFIC)
 
-/* A thread-specific data entry which will never appear valid to a      */
-/* reader.  Used to fill in empty cache entries to avoid a check for 0. */
+/*
+ * A thread-specific data entry which will never appear valid to a reader.
+ * Used to fill in empty cache entries to avoid a check for 0.
+ */
 static const tse invalid_tse = { INVALID_QTID, 0, 0, INVALID_THREADID };
 
 GC_INNER int
@@ -29,7 +33,7 @@ GC_key_create_inner(tsd **key_ptr)
   tsd *result;
 
   GC_ASSERT(I_HOLD_LOCK());
-  /* A quick alignment check, since we need atomic stores.    */
+  /* A quick alignment check, since we need atomic stores. */
   GC_ASSERT(ADDR(&invalid_tse.next) % ALIGNMENT == 0);
   result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
   if (NULL == result)
@@ -72,7 +76,7 @@ GC_setspecific(tsd *key, void *value)
   {
     tse *p;
 
-    /* Ensure no existing entry.    */
+    /* Ensure no existing entry. */
     for (p = entry->next; p != NULL; p = p->next) {
       GC_ASSERT(!THREAD_EQUAL(p->thread, self));
     }
@@ -81,8 +85,10 @@ GC_setspecific(tsd *key, void *value)
   entry->thread = self;
   entry->value = TS_HIDE_VALUE(value);
   GC_ASSERT(entry->qtid == INVALID_QTID);
-  /* There can only be one writer at a time, but this needs to be     */
-  /* atomic with respect to concurrent readers.                       */
+  /*
+   * There can only be one writer at a time, but this needs to be atomic
+   * with respect to concurrent readers.
+   */
   GC_cptr_store_release((volatile ptr_t *)&key->hash[hash_val],
                         (ptr_t)CAST_AWAY_VOLATILE_PVOID(entry));
   GC_dirty(CAST_AWAY_VOLATILE_PVOID(entry));
@@ -100,9 +106,11 @@ GC_remove_specific_after_fork(tsd *key, pthread_t t)
   tse *prev = NULL;
 
 #  ifdef CAN_HANDLE_FORK
-  /* Both `GC_setspecific` and `GC_remove_specific` should be called    */
-  /* with the allocator lock held to ensure the consistency of the hash */
-  /* table in the forked child.                                         */
+  /*
+   * Both `GC_setspecific` and `GC_remove_specific` should be called with
+   * the allocator lock held to ensure the consistency of the hash table
+   * in the forked child process.
+   */
   GC_ASSERT(I_HOLD_LOCK());
 #  endif
   pthread_mutex_lock(&key->lock);
@@ -110,8 +118,10 @@ GC_remove_specific_after_fork(tsd *key, pthread_t t)
        entry != NULL && !THREAD_EQUAL(entry->thread, t); entry = entry->next) {
     prev = entry;
   }
-  /* Invalidate `qtid` field, since `qtid` values may be reused, and    */
-  /* a later cache lookup could otherwise find this `entry`.            */
+  /*
+   * Invalidate `qtid` field, since `qtid` values may be reused, and
+   * a later cache lookup could otherwise find this `entry`.
+   */
   if (entry != NULL) {
     entry->qtid = INVALID_QTID;
     if (NULL == prev) {
@@ -121,24 +131,30 @@ GC_remove_specific_after_fork(tsd *key, pthread_t t)
       prev->next = entry->next;
       GC_dirty(prev);
     }
-    /* Atomic! Concurrent accesses still work.  They must, since        */
-    /* readers do not lock.  We should not need a `volatile` access     */
-    /* here, since both this and the preceding write should become      */
-    /* visible no later than the `pthread_mutex_unlock()` call.         */
+    /*
+     * Atomic! Concurrent accesses still work.  They must, since readers
+     * do not lock.  We should not need a `volatile` access here, since
+     * both this and the preceding write should become visible no later
+     * than the `pthread_mutex_unlock()` call.
+     */
   }
-  /* If we wanted to deallocate the entry, we would first have to clear */
-  /* any cache entries pointing to it.  That probably requires          */
-  /* additional synchronization, since we cannot prevent a concurrent   */
-  /* cache lookup, which should still be examining deallocated memory.  */
-  /* This can only happen if the concurrent access is from another      */
-  /* thread, and hence has missed the cache, but still...               */
+  /*
+   * If we wanted to deallocate the entry, we would first have to clear
+   * any cache entries pointing to it.  That probably requires additional
+   * synchronization, since we cannot prevent a concurrent cache lookup,
+   * which should still be examining deallocated memory.  This can only
+   * happen if the concurrent access is from another thread, and hence
+   * has missed the cache, but still...
+   */
 #  ifdef LINT2
   GC_noop1_ptr(entry);
 #  endif
 
-  /* With GC, we are done, since the pointers from the cache will be    */
-  /* overwritten, all local pointers to the entries will be dropped,    */
-  /* and the entry will then be reclaimed.                              */
+  /*
+   * With GC, we are done, since the pointers from the cache will be
+   * overwritten, all local pointers to the entries will be dropped,
+   * and the entry will then be reclaimed.
+   */
   if (pthread_mutex_unlock(&key->lock) != 0)
     ABORT("pthread_mutex_unlock failed (remove_specific after fork)");
 }
@@ -182,9 +198,11 @@ GC_slow_getspecific(tsd *key, size_t qtid, tse *volatile *cache_ptr)
   }
   if (entry == NULL)
     return NULL;
-  /* Set the cache `entry`.  It is safe to do this asynchronously.      */
-  /* Either value is safe, though may produce spurious misses.          */
-  /* We are replacing one `qtid` with another one for the same thread.  */
+  /*
+   * Set the cache `entry`.  It is safe to do this asynchronously.
+   * Either value is safe, though may produce spurious misses.
+   * We are replacing one `qtid` with another one for the same thread.
+   */
   AO_store(&entry->qtid, qtid);
 
   GC_cptr_store((volatile ptr_t *)cache_ptr, (ptr_t)entry);
@@ -192,8 +210,10 @@ GC_slow_getspecific(tsd *key, size_t qtid, tse *volatile *cache_ptr)
 }
 
 #  ifdef GC_ASSERTIONS
-/* Check that that all elements of the data structure associated with   */
-/* `key` are marked.                                                    */
+/*
+ * Check that that all elements of the data structure associated with
+ * `key` are marked.
+ */
 void
 GC_check_tsd_marks(tsd *key)
 {

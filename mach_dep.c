@@ -47,8 +47,10 @@ GC_with_callee_saves_pushed(GC_with_callee_saves_func fn, ptr_t arg)
       || !defined(NO_UNDERSCORE_SETJMP)
 #    define volatile_arg arg
 #  else
-  /* Note: `volatile` to avoid "arg might be clobbered by setjmp"   */
-  /* warning produced by some compilers.                            */
+  /*
+   * Note: `volatile` to avoid "arg might be clobbered by setjmp" warning
+   * produced by some compilers.
+   */
   volatile ptr_t volatile_arg = arg;
 #  endif
 
@@ -56,18 +58,24 @@ GC_with_callee_saves_pushed(GC_with_callee_saves_func fn, ptr_t arg)
   /* No-op, "registers" are pushed in `GC_push_other_roots()`. */
 #  else
 #    if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
-  /* Older versions of Darwin seem to lack `getcontext()`.  Linux on    */
-  /* ARM and MIPS often does not support a real `getcontext()`.         */
+  /*
+   * Older versions of Darwin seem to lack `getcontext()`.
+   * Linux on ARM and MIPS often does not provide a real `getcontext()`.
+   */
 
   /* The variable is set to -1 (means broken) or 1 (means it works). */
   static signed char getcontext_works = 0;
   ucontext_t ctxt;
 #      ifdef GETCONTEXT_FPU_EXCMASK_BUG
-  /* Workaround a bug (clearing the FPU exception mask) in        */
-  /* `getcontext` on Linux/x86_64.                                */
+  /*
+   * Workaround a bug (clearing the FPU exception mask) in `getcontext`
+   * on Linux/x86_64.
+   */
 #        ifdef X86_64
-  /* We manipulate FPU control word here just not to force the  */
-  /* client application to use `-lm` linker option.             */
+  /*
+   * We manipulate FPU control word here just not to force the client
+   * application to use `-lm` linker option.
+   */
   unsigned short old_fcw;
 
 #          if defined(CPPCHECK)
@@ -84,8 +92,10 @@ GC_with_callee_saves_pushed(GC_with_callee_saves_func fn, ptr_t arg)
       WARN("getcontext failed:"
            " using another register retrieval method...\n",
            0);
-      /* `getcontext()` is broken, do not try again.                */
-      /* E.g., to workaround a bug in Docker `ubuntu_32bit`.        */
+      /*
+       * `getcontext()` is broken, do not try again.
+       * E.g., to workaround a bug in Docker `ubuntu_32bit`.
+       */
     } else {
       context = (ptr_t)&ctxt;
     }
@@ -108,9 +118,11 @@ GC_with_callee_saves_pushed(GC_with_callee_saves_func fn, ptr_t arg)
 #        endif
 #      endif /* GETCONTEXT_FPU_EXCMASK_BUG */
 #      if defined(IA64) || defined(SPARC)
-  /* On a register-window machine, we need to save register         */
-  /* contents on the stack for this to work.  This may already be   */
-  /* subsumed by the `getcontext()` call.                           */
+  /*
+   * On a register-window machine, we need to save register contents on
+   * the stack for this to work.  This may already be subsumed by the
+   * `getcontext()` call.
+   */
 #        if defined(IA64) && !defined(THREADS)
   GC_save_regs_ret_val =
 #        endif
@@ -120,8 +132,10 @@ GC_with_callee_saves_pushed(GC_with_callee_saves_func fn, ptr_t arg)
 #    endif /* !NO_GETCONTEXT */
   {
 #    if defined(HAVE_BUILTIN_UNWIND_INIT)
-    /* This was suggested as the way to force callee-save registers and */
-    /* register windows onto the stack.                                 */
+    /*
+     * This was suggested as the way to force callee-save registers and
+     * register windows onto the stack.
+     */
     __builtin_unwind_init();
 #    elif defined(NO_CRT) && defined(MSWIN32)
     CONTEXT ctx;
@@ -131,28 +145,36 @@ GC_with_callee_saves_pushed(GC_with_callee_saves_func fn, ptr_t arg)
     /* Generic code. */
     jmp_buf regs;
 
-    /* `setjmp` does not always clear all of the buffer.  That tends to */
-    /* preserve garbage.  Clear it.                                     */
+    /*
+     * `setjmp()` does not always clear all of the buffer.
+     * That tends to preserve garbage.  Clear it.
+     */
     BZERO(regs, sizeof(regs));
 #      ifdef NO_UNDERSCORE_SETJMP
     (void)setjmp(regs);
 #      else
-    /* We do not want to mess with signals.  According to the SUSv3     */
-    /* (Single Unix Specification v3), `setjmp` may or may not save     */
-    /* signal mask.  `_setjmp` will not, but is less portable.          */
+    /*
+     * We do not want to mess with signals.  According to the SUSv3
+     * (Single UNIX Specification v3), `setjmp` may or may not save
+     * signal mask.  `_setjmp` will not, but is less portable.
+     */
     (void)_setjmp(regs);
 #      endif
 #    endif
   }
 #  endif
-  /* TODO: context here is sometimes just zero.  At the moment, the     */
-  /* callees do not really need it.                                     */
-  /* Cast `fn` to a `volatile` type to prevent call inlining.           */
+  /*
+   * TODO: `context` here is sometimes just zero.  At the moment, the
+   * callees do not really need it.  Cast `fn` to a `volatile` type
+   * to prevent call inlining.
+   */
   (*(GC_with_callee_saves_func volatile *)&fn)(
       volatile_arg, CAST_AWAY_VOLATILE_PVOID(context));
-  /* Strongly discourage the compiler from treating the above   */
-  /* as a tail-call, since that would pop the register          */
-  /* contents before we get a chance to look at them.           */
+  /*
+   * Strongly discourage the compiler from treating the above as a tail-call,
+   * since that would pop the register contents before we get a chance to
+   * look at them.
+   */
   GC_noop1(COVERT_DATAFLOW(ADDR(&dummy)));
 #  undef volatile_arg
 }

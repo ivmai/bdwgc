@@ -35,16 +35,18 @@ GC_finalized_disclaim(void *obj)
 #  endif
 
   if ((ADDR(fc_p) & FINALIZER_CLOSURE_FLAG) != 0) {
-    /* The disclaim function may be passed fragments from the       */
-    /* free-list, on which it should not run finalization.          */
-    /* To recognize this case, we use the fact that the value of    */
-    /* the first pointer of such fragments is always, at least,     */
-    /* multiple of a pointer size (a link to the next fragment, or  */
-    /* `NULL`).  If it is desirable to have a finalizer which does  */
-    /* not use the first pointer for storing the finalization       */
-    /* information, `GC_disclaim_and_reclaim()` must be extended to */
-    /* clear fragments so that the assumption holds for the         */
-    /* selected pointer location.                                   */
+    /*
+     * The disclaim function may be passed fragments from the free-list,
+     * on which it should not run finalization.  To recognize this case,
+     * we use the fact that the value of the first pointer of such
+     * fragments is always, at least, multiple of a pointer size (a link
+     * to the next fragment, or `NULL`).
+     *
+     * Note: if it is desirable to have a finalizer which does not use
+     * the first pointer for storing the finalization information,
+     * `GC_disclaim_and_reclaim()` must be extended to clear fragments
+     * so that the assumption holds for the selected pointer location.
+     */
     const struct GC_finalizer_closure *fc
         = (struct GC_finalizer_closure *)CPTR_CLEAR_FLAGS(
             fc_p, FINALIZER_CLOSURE_FLAG);
@@ -70,7 +72,7 @@ GC_register_disclaim_proc_inner(unsigned kind, GC_disclaim_proc proc,
 GC_API void GC_CALL
 GC_init_finalized_malloc(void)
 {
-  /* Initialize the collector just in case it is not done yet.        */
+  /* Initialize the collector just in case it is not done yet. */
   GC_init();
 
   LOCK();
@@ -79,15 +81,19 @@ GC_init_finalized_malloc(void)
     return;
   }
 
-  /* The finalizer closure is placed in the first pointer of the        */
-  /* object in order to use the lower bits to distinguish live          */
-  /* objects from objects on the free list.  The downside of this is    */
-  /* that we need one-pointer offset interior pointers, and that        */
-  /* `GC_base()` does not return the start of the user region.          */
+  /*
+   * The finalizer closure is placed in the first pointer of the
+   * object in order to use the lower bits to distinguish live
+   * objects from objects on the free list.  The downside of this is
+   * that we need one-pointer offset interior pointers, and that
+   * `GC_base()` does not return the start of the user region.
+   */
   GC_register_displacement_inner(sizeof(ptr_t));
 
-  /* And, the pointer to the finalizer closure object itself is       */
-  /* displaced due to baking in this indicator.                       */
+  /*
+   * And, the pointer to the finalizer closure object itself is displaced
+   * due to baking in this indicator.
+   */
   GC_register_displacement_inner(FINALIZER_CLOSURE_FLAG);
   GC_register_displacement_inner(sizeof(oh) | FINALIZER_CLOSURE_FLAG);
 
@@ -126,8 +132,10 @@ GC_finalized_malloc(size_t lb, const struct GC_finalizer_closure *fclos)
   if (EXPECT(NULL == op, FALSE))
     return NULL;
 
-  /* Set the flag (w/o conversion to a numeric type) and store    */
-  /* the finalizer closure.                                       */
+  /*
+   * Set the flag (w/o conversion to a numeric type) and store
+   * the finalizer closure.
+   */
   fc_p = CPTR_SET_FLAGS(GC_CAST_AWAY_CONST_PVOID(fclos),
                         FINALIZER_CLOSURE_FLAG);
 #  ifdef AO_HAVE_store

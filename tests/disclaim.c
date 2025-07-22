@@ -11,9 +11,11 @@
  * modified is included with the above copyright notice.
  */
 
-/* Test that objects reachable from an object allocated with            */
-/* `GC_malloc_with_finalizer` is not reclaimable before the finalizer   */
-/* is called.                                                           */
+/*
+ * Test that objects reachable from an object allocated with
+ * `GC_malloc_with_finalizer` is not reclaimable before the finalizer
+ * is called.
+ */
 
 #ifdef HAVE_CONFIG_H
 /* For `GC_THREADS` (and `GC_PTHREADS`). */
@@ -28,13 +30,15 @@
 
 #include <string.h>
 
-/* Redefine the standard `rand()` with a trivial (yet sufficient for    */
-/* the test purpose) implementation to avoid crashes inside `rand()`    */
-/* on some hosts (e.g. FreeBSD 13.0) when used concurrently.            */
-/* The standard specifies `rand()` as not a thread-safe API function.   */
-/* On other hosts (e.g. OpenBSD 7.3), use of the standard `rand()`      */
-/* causes "rand() may return deterministic values" warning.             */
-/* Note: concurrent update of seed does not hurt the test.              */
+/*
+ * Redefine the standard `rand()` with a trivial (yet sufficient for
+ * the test purpose) implementation to avoid crashes inside `rand()`
+ * on some hosts (e.g. FreeBSD 13.0) when used concurrently.
+ * The standard specifies `rand()` as not a thread-safe API function.
+ * On other hosts (e.g. OpenBSD 7.3), use of the standard `rand()`
+ * causes "rand() may return deterministic values" warning.
+ * Note: concurrent update of seed does not hurt the test.
+ */
 #undef rand
 static GC_RAND_STATE_T seed;
 #define rand() GC_RAND_NEXT(&seed)
@@ -197,7 +201,7 @@ pair_check_rec(pair_t p)
 
 #ifdef GC_PTHREADS
 #  ifndef NTHREADS
-/* Note: this excludes the main thread, which also runs a test.     */
+/* Note: this excludes the main thread, which also runs a test. */
 #    define NTHREADS 5
 #  endif
 #  include <errno.h> /*< for `EAGAIN` */
@@ -255,7 +259,7 @@ main(void)
   GC_set_thr_restart_signal(GC_get_suspend_signal());
 #endif
 
-  /* Make the test stricter.  */
+  /* Make the test stricter. */
   GC_set_all_interior_pointers(0);
 
 #ifdef TEST_MANUAL_VDB

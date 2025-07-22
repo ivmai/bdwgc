@@ -16,9 +16,11 @@
 #include "private/gc_priv.h"
 
 #ifndef SMALL_CONFIG
-/* Build a free list for two-pointer cleared objects inside the given   */
-/* block.  Set the last link to be `ofl`.  Return a pointer to the      */
-/* first free-list entry.                                               */
+/*
+ * Build a free list for two-pointer cleared objects inside the given block.
+ * Set the last link to be `ofl`.  Return a pointer to the first free-list
+ * entry.
+ */
 STATIC ptr_t
 GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
 {
@@ -38,7 +40,7 @@ GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
   return (ptr_t)(p - 2);
 }
 
-/* The same as above but uncleared objects.   */
+/* The same as above but uncleared objects. */
 STATIC ptr_t
 GC_build_fl2(struct hblk *h, ptr_t ofl)
 {
@@ -54,7 +56,7 @@ GC_build_fl2(struct hblk *h, ptr_t ofl)
   return (ptr_t)(p - 2);
 }
 
-/* The same as above but for four-pointer cleared objects.        */
+/* The same as above but for four-pointer cleared objects. */
 STATIC ptr_t
 GC_build_fl_clear4(struct hblk *h, ptr_t ofl)
 {
@@ -83,7 +85,7 @@ GC_build_fl4(struct hblk *h, ptr_t ofl)
 
   p[0] = ofl;
   p[4] = (ptr_t)p;
-  /* Unroll the loop by 2.    */
+  /* Unroll the loop by 2. */
   for (p += 8; ADDR_LT((ptr_t)p, plim); p += 8) {
     GC_PREFETCH_FOR_WRITE((ptr_t)(p + 64));
     p[0] = (ptr_t)(p - 4);
@@ -100,17 +102,20 @@ GC_build_fl(struct hblk *h, ptr_t list, size_t lg, GC_bool clear)
   ptr_t plim; /*< points to last object in new `hblk` entity */
   size_t lpw = GRANULES_TO_PTRS(lg);
 
-  /* Do a few prefetches here, just because it is cheap.        */
-  /* If we were more serious about it, these should go inside   */
-  /* the loops.  But write prefetches usually do not seem to    */
-  /* matter much.                                               */
+  /*
+   * Do a few prefetches here, just because it is cheap.
+   * If we were more serious about it, these should go inside the loops.
+   * But write prefetches usually do not seem to matter much.
+   */
   GC_PREFETCH_FOR_WRITE((ptr_t)h);
   GC_PREFETCH_FOR_WRITE((ptr_t)h + 128);
   GC_PREFETCH_FOR_WRITE((ptr_t)h + 256);
   GC_PREFETCH_FOR_WRITE((ptr_t)h + 378);
 #ifndef SMALL_CONFIG
-  /* Handle small objects sizes more efficiently.  For larger objects */
-  /* the difference is less significant.                              */
+  /*
+   * Handle small objects sizes more efficiently.  For larger objects
+   * the difference is less significant.
+   */
   switch (lpw) {
   case 2:
     if (clear) {
@@ -134,9 +139,9 @@ GC_build_fl(struct hblk *h, ptr_t list, size_t lg, GC_bool clear)
     BZERO(h, HBLKSIZE);
 
   /* Add objects to free list. */
-  prev = (ptr_t *)h->hb_body; /* one object behind `p` */
+  prev = (ptr_t *)h->hb_body; /*< one object behind `p` */
 
-  /* The last place for the last object to start.       */
+  /* The last place for the last object to start. */
   plim = (ptr_t)h + HBLKSIZE - lpw * sizeof(ptr_t);
 
   /* Make a list of all objects in `*h` with head as last object. */
@@ -148,8 +153,10 @@ GC_build_fl(struct hblk *h, ptr_t list, size_t lg, GC_bool clear)
   p -= lpw;
   /* `p` now points to the last object. */
 
-  /* Put `p` (which is now head of list of objects in `*h`) as first    */
-  /* pointer in the appropriate free list for this size.                */
+  /*
+   * Put `p` (which is now head of list of objects in `*h`) as first pointer
+   * in the appropriate free list for this size.
+   */
   *(ptr_t *)h = list;
   return (ptr_t)p;
 }
@@ -165,7 +172,7 @@ GC_new_hblk(size_t lg, int kind)
   /* Allocate a new heap block. */
   h = GC_allochblk(lb_adjusted, kind, 0 /* `flags` */, 0 /* `align_m1` */);
   if (EXPECT(NULL == h, FALSE)) {
-    /* Out of memory.   */
+    /* Out of memory. */
     return;
   }
 
@@ -173,7 +180,7 @@ GC_new_hblk(size_t lg, int kind)
   if (IS_UNCOLLECTABLE(kind))
     GC_set_hdr_marks(HDR(h));
 
-  /* Build the free list.       */
+  /* Build the free list. */
   GC_obj_kinds[kind].ok_freelist[lg]
       = GC_build_fl(h, (ptr_t)GC_obj_kinds[kind].ok_freelist[lg], lg,
                     GC_debugging_started || GC_obj_kinds[kind].ok_init);
@@ -214,9 +221,11 @@ GC_add_map_entry(size_t lg)
   hb_map_entry_t *new_map;
 
   GC_ASSERT(I_HOLD_LOCK());
-  /* Ensure `displ % lg` fits into `hb_map_entry_t` type.  Note: the    */
-  /* maximum value is computed in this way to avoid compiler complains  */
-  /* about constant truncation or expression overflow.                  */
+  /*
+   * Ensure `displ % lg` fits into `hb_map_entry_t` type.
+   * Note: the maximum value is computed in this way to avoid compiler
+   * complains about constant truncation or expression overflow.
+   */
   GC_STATIC_ASSERT(
       MAXOBJGRANULES - 1
       <= (~(size_t)0 >> ((sizeof(size_t) - sizeof(hb_map_entry_t)) * 8)));
@@ -235,7 +244,7 @@ GC_add_map_entry(size_t lg)
                      (unsigned)lg, (unsigned)GRANULES_TO_BYTES(lg));
   if (0 == lg) {
     for (displ = 0; displ < OBJ_MAP_LEN; displ++) {
-      /* Set to a nonzero to get us out of the marker fast path.  */
+      /* Set to a nonzero to get us out of the marker fast path. */
       new_map[displ] = 1;
     }
   } else {

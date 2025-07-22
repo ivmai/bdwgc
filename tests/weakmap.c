@@ -11,8 +11,10 @@
  * modified is included with the above copyright notice.
  */
 
-/* This tests a case where disclaim notifiers sometimes return non-zero */
-/* in order to protect objects from collection.                         */
+/*
+ * This one tests a case where disclaim notifiers sometimes return a nonzero
+ * value in order to protect objects from collection.
+ */
 
 #ifdef HAVE_CONFIG_H
 /* For `GC_THREADS` and `GC_PTHREADS` macros. */
@@ -43,7 +45,7 @@ static GC_RAND_STATE_T seed;
 
 #ifdef GC_PTHREADS
 #  ifndef NTHREADS
-/* This excludes the main thread, which also runs a test.   */
+/* This excludes the main thread, which also runs a test. */
 #    define NTHREADS 5
 #  endif
 #  include "private/gc_atomic_ops.h" /*< for `AO_t`, `AO_fetch_and_add1` */
@@ -92,7 +94,7 @@ static GC_RAND_STATE_T seed;
   } while (0)
 
 #ifndef AO_HAVE_fetch_and_add1
-/* This is used only to update counters.      */
+/* This is used only to update counters. */
 #  define AO_fetch_and_add1(p) ((*(p))++)
 #endif
 
@@ -133,8 +135,7 @@ struct weakmap {
   size_t obj_size;
   size_t capacity;
   unsigned weakobj_kind;
-  /* Note: if `links` field is `NULL`, then this `weakmap` instance */
-  /* is destroyed.                                                  */
+  /* Note: `NULL` mean this `weakmap` instance is destroyed. */
   struct weakmap_link **links;
 };
 
@@ -198,7 +199,7 @@ weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
   size_t key_size = wm->key_size;
 
   my_assert(!IS_FLAG_SET(wm, FINALIZER_CLOSURE_FLAG));
-  /* Lock and look for an existing entry.       */
+  /* Lock and look for an existing entry. */
   my_assert(key_size <= obj_size);
   h = memhash(obj, key_size);
   first = &wm->links[h % wm->capacity];
@@ -210,9 +211,11 @@ weakmap_add(struct weakmap *wm, void *obj, size_t obj_size)
 
     if (memcmp(old_obj, obj, key_size) == 0) {
       GC_call_with_alloc_lock(set_mark_bit, (void **)old_obj - 1);
-      /* Pointers in the key part may have been freed and reused,   */
-      /* changing the keys without `memcmp` noticing.  This is OK   */
-      /* as long as we update the mapped value.                     */
+      /*
+       * Pointers in the key part may have been freed and reused, changing
+       * the keys without `memcmp` noticing.  This is OK as long as we update
+       * the mapped value.
+       */
       if (memcmp((char *)old_obj + key_size, (char *)obj + key_size,
                  wm->obj_size - key_size)
           != 0) {
@@ -266,10 +269,10 @@ weakmap_disclaim(void *obj_base)
   void *obj;
   unsigned h;
 
-  /* Decode header word.    */
+  /* Decode header word. */
   header = *(void **)obj_base;
   if (!IS_FLAG_SET(header, FINALIZER_CLOSURE_FLAG)) {
-    /* On the collector free list, ignore it.      */
+    /* On the collector free list, ignore it. */
     return 0;
   }
 
@@ -281,7 +284,7 @@ weakmap_disclaim(void *obj_base)
   }
   obj = (void **)obj_base + 1;
 
-  /* Lock and check for mark.   */
+  /* Lock and check for mark. */
   h = memhash(obj, wm->key_size);
 #ifdef GC_PTHREADS
   if (weakmap_trylock(wm, h) != 0) {
@@ -392,7 +395,7 @@ pair_new(struct pair *car, struct pair *cdr)
 {
   struct pair tmpl;
 
-  /* This is to clear the paddings (to avoid a compiler warning).   */
+  /* This is to clear the paddings (to avoid a compiler warning). */
   memset(&tmpl, 0, sizeof(tmpl));
 
   tmpl.car = car;
@@ -472,14 +475,14 @@ main(void)
   pthread_t th[NTHREADS];
 #endif
 
-  /* Make the test stricter.  */
+  /* Make the test stricter. */
   GC_set_all_interior_pointers(0);
 
 #ifdef TEST_MANUAL_VDB
   GC_set_manual_vdb_allowed(1);
 #endif
   GC_INIT();
-  /* Register the displacements.        */
+  /* Register the displacements. */
   GC_init_finalized_malloc();
 
 #ifndef NO_INCREMENTAL

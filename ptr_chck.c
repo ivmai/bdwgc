@@ -13,8 +13,10 @@
 
 #include "private/gc_pmark.h"
 
-/* These are checking routines calls to which could be inserted by      */
-/* a preprocessor to validate C pointer arithmetic.                     */
+/*
+ * These are checking routines calls to which could be inserted by
+ * a preprocessor to validate C pointer arithmetic.
+ */
 
 STATIC void GC_CALLBACK
 GC_default_same_obj_print_proc(void *p, void *q)
@@ -42,8 +44,10 @@ GC_same_obj(void *p, void *q)
     }
     return p;
   }
-  /* If it is a pointer to the middle of a large object, move it    */
-  /* to the beginning.                                              */
+  /*
+   * If it is a pointer to the middle of a large object, move it to
+   * the beginning.
+   */
   if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
     struct hblk *h = GC_find_starting_hblk(HBLKPTR(p), &hhdr);
 
@@ -66,8 +70,10 @@ GC_same_obj(void *p, void *q)
     size_t offset;
 
     if (HBLKPTR(p) != HBLKPTR(q)) {
-      /* Without this check, we might miss an error if `q` points to    */
-      /* the first object on a page, and points just before the page.   */
+      /*
+       * Without this check, we might miss an error if `q` points to
+       * the first object on a page, and points just before the page.
+       */
       GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
       return p;
     }
@@ -75,9 +81,11 @@ GC_same_obj(void *p, void *q)
     base = (ptr_t)p - offset;
     limit = base + sz;
   }
-  /* [`base`,`limit`) delimits the object containing `p`, if any.   */
-  /* If `p` is not inside a valid object, then either `q` is also   */
-  /* outside any valid object, or it is outside [`base`,`limit`).   */
+  /*
+   * [`base`,`limit`) delimits the object containing `p`, if any.
+   * If `p` is not inside a valid object, then either `q` is also
+   * outside any valid object, or it is outside [`base`,`limit`).
+   */
   if (!ADDR_INSIDE((ptr_t)q, base, limit)) {
     GC_same_obj_print_proc((ptr_t)p, (ptr_t)q);
   }
@@ -206,7 +214,7 @@ GC_is_visible(void *p)
   } else {
     /* `p` points to the heap. */
     word descr;
-    /* TODO: should `GC_base` be manually inlined? */
+    /* TODO: Should `GC_base` be manually inlined? */
     ptr_t base = (ptr_t)GC_base(p);
 
     if (NULL == base)
@@ -231,8 +239,7 @@ GC_is_visible(void *p)
         goto fail;
       break;
     case GC_DS_PROC:
-      /* We could try to decipher this partially.         */
-      /* For now we just punt.                            */
+      /* We could try to decipher this partially.  For now we just punt. */
       break;
     case GC_DS_PER_OBJECT:
       if (!(descr & SIGNB)) {

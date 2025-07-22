@@ -19,7 +19,7 @@ static GC_RAND_STATE_T seed;
 
 #define N_TESTS 32000
 
-/* Typical page size.   */
+/* Typical page size. */
 #define ALLOC_SZ 4096
 
 #define CHECK_OUT_OF_MEMORY(p)            \

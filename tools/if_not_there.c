@@ -1,7 +1,9 @@
-/* A build-time utility used by `Makefile.direct` file.  Conditionally  */
-/* execute the command `argv[2]` if the file `argv[1]` does not exist.  */
-/* If the command is omitted (and the file does not exist), then just   */
-/* exit with a non-zero code.                                           */
+/*
+ * A build-time utility used by `Makefile.direct` file.  Conditionally
+ * execute the command `argv[2]` if the file `argv[1]` does not exist.
+ * If the command is omitted (and the file does not exist), then just
+ * exit with a nonzero code.
+ */
 
 #define NOT_GCBUILD
 #include "private/gc_priv.h"
@@ -25,7 +27,7 @@ main(int argc, char **argv)
   FILE *f;
 #ifdef __DJGPP__
   DIR *d;
-#endif /* __DJGPP__ */
+#endif
   const char *fname;
 
   if (argc < 2 || argc > 3)
@@ -51,7 +53,7 @@ main(int argc, char **argv)
   printf("^^^^Starting command^^^^\n");
   fflush(stdout);
   if (argc == 2) {
-    /* The file is missing, but no command is given.        */
+    /* The file is missing, but no command is given. */
     return 2;
   }
 

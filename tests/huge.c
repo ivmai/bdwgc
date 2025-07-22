@@ -4,34 +4,39 @@
 #include <stdlib.h>
 
 #ifndef GC_IGNORE_WARN
-/* Ignore misleading "Out of Memory!" warning (which is printed on      */
-/* every `GC_MALLOC` call below) by defining this macro before include  */
-/* `gc.h` file.                                                         */
+/*
+ * Ignore misleading "Out of Memory!" warning (which is printed on every
+ * `GC_MALLOC` call below) by defining this macro before include `gc.h` file.
+ */
 #  define GC_IGNORE_WARN
 #endif
 
 #ifndef GC_MAXIMUM_HEAP_SIZE
 #  define GC_MAXIMUM_HEAP_SIZE (100 * 1024 * 1024)
 #  define GC_INITIAL_HEAP_SIZE (GC_MAXIMUM_HEAP_SIZE / 20)
-/* Otherwise heap expansion aborts when deallocating large block.   */
-/* That is OK.  We test this corner case mostly to make sure that   */
-/* it fails predictably.                                            */
+/*
+ * Otherwise heap expansion aborts when deallocating large block.
+ * That is OK.  We test this corner case mostly to make sure that
+ * it fails predictably.
+ */
 #endif
 
 #ifndef GC_ATTR_ALLOC_SIZE
-/* Omit `alloc_size` attribute to avoid compiler warnings about         */
-/* exceeding maximum object size when values close to `GC_SWORD_MAX`    */
-/* are passed to `GC_MALLOC()`.                                         */
+/*
+ * Omit `alloc_size` attribute to avoid compiler warnings about exceeding
+ * maximum object size when values close to `GC_SWORD_MAX` are passed
+ * to `GC_MALLOC()`.
+ */
 #  define GC_ATTR_ALLOC_SIZE(argnum) /*< empty */
 #endif
 
 #include "gc.h"
 
-/* Check that very large allocation requests fail.  "Success" would     */
-/* usually indicate that the size was somehow converted to a negative   */
-/* number.  Clients should not do this, but we should fail in the       */
-/* expected manner.                                                     */
-
+/*
+ * Check that very large allocation requests fail.  "Success" would usually
+ * indicate that the size was somehow converted to a negative number.
+ * Clients should not do this, but we should fail in the expected manner.
+ */
 #define CHECK_ALLOC_FAILED(r, sz_str)                                         \
   do {                                                                        \
     if (NULL != (r)) {                                                        \

@@ -11,8 +11,10 @@
  * modified is included with the above copyright notice.
  */
 
-/* Make sure `GC_INIT()` can be called from threads other than the  */
-/* initial thread.                                                  */
+/*
+ * Make sure `GC_INIT()` can be called from threads other than the
+ * initial thread.
+ */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -22,7 +24,7 @@
 #  define GC_THREADS
 #endif
 
-/* Do not redirect thread creation and join calls.      */
+/* Do not redirect thread creation and join calls. */
 #define GC_NO_THREAD_REDIRECTS 1
 
 #include "gc.h"
@@ -97,7 +99,7 @@ main(void)
   GC_INIT();
 #endif
 
-  /* Linking fails if no threads support.       */
+  /* Linking fails if no thread support. */
   (void)GC_get_suspend_signal();
 
   if (GC_get_find_leak())

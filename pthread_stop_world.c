@@ -37,8 +37,10 @@ GC_INLINE void
 GC_usleep(unsigned us)
 {
 #  if defined(LINT2) || defined(THREAD_SANITIZER)
-  /* Workaround "waiting while holding a lock" static analyzer warning. */
-  /* Workaround a rare hang in `usleep()` trying to acquire TSan Lock.  */
+  /*
+   * Workaround "waiting while holding a lock" static analyzer warning.
+   * Workaround a rare hang in `usleep()` trying to acquire TSan Lock.
+   */
   while (us-- > 0) {
     /* Sleep for a moment, pretending it takes 1us. */
     sched_yield();
@@ -110,8 +112,10 @@ GC_print_sig_mask(void)
 }
 #    endif /* DEBUG_THREADS */
 
-/* Remove the signals that we want to allow in thread stopping  */
-/* handler from a set.                                          */
+/*
+ * Remove the signals that we want to allow in thread stopping handler
+ * from a set.
+ */
 STATIC void
 GC_remove_allowed_signals(sigset_t *set)
 {
@@ -121,8 +125,10 @@ GC_remove_allowed_signals(sigset_t *set)
   }
 
 #    ifdef MPROTECT_VDB
-  /* Handlers write to the thread structure, which is in the heap,  */
-  /* and hence can trigger a protection fault.                      */
+  /*
+   * The handlers write to the thread structure, which is in the heap,
+   * and hence can trigger a protection fault.
+   */
   if (sigdelset(set, SIGSEGV) != 0
 #      ifdef HAVE_SIGBUS
       || sigdelset(set, SIGBUS) != 0
@@ -137,13 +143,15 @@ static sigset_t suspend_handler_mask;
 
 #    define THREAD_RESTARTED 0x1
 
-/* Incremented (to the nearest even value) at the beginning of          */
-/* `GC_stop_world()` (or when a thread is requested to be suspended by  */
-/* `GC_suspend_thread`) and once more (to an odd value) at the          */
-/* beginning of `GC_start_world`.  The lowest bit is `THREAD_RESTARTED` */
-/* one which, if set, means it is safe for threads to restart, i.e.     */
-/* they will see another suspend signal before they are expected to     */
-/* stop (unless they have stopped voluntarily).                         */
+/*
+ * Incremented (to the nearest even value) at the beginning of
+ * `GC_stop_world()` (or when a thread is requested to be suspended by
+ * `GC_suspend_thread`) and once more (to an odd value) at the
+ * beginning of `GC_start_world`.  The lowest bit is `THREAD_RESTARTED`
+ * one which, if set, means it is safe for threads to restart, i.e.
+ * they will see another suspend signal before they are expected to
+ * stop (unless they have stopped voluntarily).
+ */
 STATIC volatile AO_t GC_stop_count;
 
 STATIC GC_bool GC_retry_signals = FALSE;
@@ -182,11 +190,13 @@ STATIC GC_bool GC_retry_signals = FALSE;
 
 #    define SIGNAL_UNSET (-1)
 
-/* Since `SIG_SUSPEND` and/or `SIG_THR_RESTART` could represent         */
-/* a non-constant expression (e.g., in case of `SIGRTMIN`), actual      */
-/* signal numbers are determined by `GC_stop_init()` unless manually    */
-/* set (before the collector initialization).  Might be set to the same */
-/* signal number.                                                       */
+/*
+ * Since `SIG_SUSPEND` and/or `SIG_THR_RESTART` could represent
+ * a non-constant expression (e.g., in case of `SIGRTMIN`), actual
+ * signal numbers are determined by `GC_stop_init()` unless manually
+ * set (before the collector initialization).  Might be set to the
+ * same signal number.
+ */
 STATIC int GC_sig_suspend = SIGNAL_UNSET;
 STATIC int GC_sig_thr_restart = SIGNAL_UNSET;
 
@@ -222,10 +232,12 @@ GC_get_thr_restart_signal(void)
 }
 
 #    ifdef BASE_ATOMIC_OPS_EMULATED
-/* The AO primitives emulated with locks cannot be used inside signal */
-/* handlers as this could cause a deadlock or a double lock.          */
-/* The following "async" macro definitions are correct only for       */
-/* an uniprocessor case and are provided for a test purpose.          */
+/*
+ * The AO primitives emulated with locks cannot be used inside signal
+ * handlers as this could cause a deadlock or a double lock.
+ * The following "async" macro definitions are correct only for
+ * an uniprocessor case and are provided for a test purpose.
+ */
 #      define ao_load_acquire_async(p) (*(p))
 #      define ao_load_async(p) ao_load_acquire_async(p)
 #      define ao_store_release_async(p, v) (void)(*(p) = (v))
@@ -237,7 +249,7 @@ GC_get_thr_restart_signal(void)
 #      define ao_cptr_store_async(p, v) GC_cptr_store(p, v)
 #    endif /* !BASE_ATOMIC_OPS_EMULATED */
 
-/* Note: this is also used to acknowledge restart.      */
+/* Note: this is also used to acknowledge restart. */
 STATIC sem_t GC_suspend_ack_sem;
 
 STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
@@ -254,7 +266,7 @@ GC_suspend_sigaction(int sig, siginfo_t *info, void *context)
 
   if (sig != GC_sig_suspend) {
 #    ifdef FREEBSD
-    /* Workaround "deferred signal handling" bug in FreeBSD 9.2.      */
+    /* Workaround "deferred signal handling" bug in FreeBSD 9.2. */
     if (0 == sig)
       return;
 #    endif
@@ -262,27 +274,32 @@ GC_suspend_sigaction(int sig, siginfo_t *info, void *context)
   }
 
 #    ifdef SUSPEND_HANDLER_NO_CONTEXT
-  /* A quick check if the signal is called to restart the world.      */
+  /* A quick check if the signal is called to restart the world. */
   if ((ao_load_async(&GC_stop_count) & THREAD_RESTARTED) != 0)
     return;
   GC_with_callee_saves_pushed(GC_suspend_handler_inner, NULL);
 #    else
   UNUSED_ARG(info);
-  /* We believe that in this case the full context is already         */
-  /* in the signal handler frame.                                     */
+  /*
+   * We believe that in this case the full context is already in the
+   * signal handler frame.
+   */
   GC_suspend_handler_inner(NULL, context);
 #    endif
   errno = old_errno;
 }
 
-/* The lookup here is safe, since this is done on behalf        */
-/* of a thread which holds the allocator lock in order          */
-/* to stop the world.  Thus concurrent modification of the      */
-/* data structure is impossible.  Unfortunately, we have to     */
-/* instruct TSan that the lookup is safe.                       */
+/*
+ * The lookup here is safe, since this is done on behalf of a thread which
+ * holds the allocator lock in order to stop the world.  Thus concurrent
+ * modification of the data structure is impossible.  Unfortunately, we
+ * have to instruct TSan that the lookup is safe.
+ */
 #    ifdef THREAD_SANITIZER
-/* Almost same as `GC_self_thread_inner()` except for the           */
-/* `no_sanitize` attribute added and the result is never `NULL`.    */
+/*
+ * Almost same as `GC_self_thread_inner()` except for the `no_sanitize`
+ * attribute added and the result is never `NULL`.
+ */
 GC_ATTR_NO_SANITIZE_THREAD
 static GC_thread
 GC_lookup_self_thread_async(void)
@@ -303,16 +320,18 @@ GC_lookup_self_thread_async(void)
 GC_INLINE void
 GC_store_stack_ptr(GC_stack_context_t crtn)
 {
-  /* There is no data race between the suspend handler (storing         */
-  /* `stack_ptr`) and `GC_push_all_stacks` (fetching `stack_ptr`)       */
-  /* because `GC_push_all_stacks` is executed after `GC_stop_world`     */
-  /* exits and the latter runs `sem_wait()` repeatedly waiting for all  */
-  /* the suspended threads to call `sem_post()`.  Nonetheless,          */
-  /* `stack_ptr` is stored (here) and fetched (by `GC_push_all_stacks`) */
-  /* using the atomic primitives to avoid the related TSan warning.     */
+  /*
+   * There is no data race between the suspend handler (storing
+   * `stack_ptr`) and `GC_push_all_stacks` (fetching `stack_ptr`)
+   * because `GC_push_all_stacks` is executed after `GC_stop_world`
+   * exits and the latter runs `sem_wait()` repeatedly waiting for all
+   * the suspended threads to call `sem_post()`.  Nonetheless,
+   * `stack_ptr` is stored (here) and fetched (by `GC_push_all_stacks`)
+   * using the atomic primitives to avoid the related TSan warning.
+   */
 #    ifdef SPARC
   ao_cptr_store_async(&crtn->stack_ptr, GC_save_regs_in_stack());
-  /* TODO: registers saving already done by `GC_with_callee_saves_pushed` */
+  /* TODO: Registers saving already done by `GC_with_callee_saves_pushed`. */
 #    else
 #      ifdef IA64
   crtn->backing_store_ptr = GC_save_regs_in_stack();
@@ -335,24 +354,28 @@ GC_suspend_handler_inner(ptr_t dummy, void *context)
   AO_t suspend_cnt;
 #    endif
   AO_t my_stop_count = ao_load_acquire_async(&GC_stop_count);
-  /* After the barrier, this thread should see the actual content of    */
-  /* `GC_threads`.                                                      */
+  /*
+   * After the barrier, this thread should see the actual content of
+   * `GC_threads`.
+   */
 
   UNUSED_ARG(dummy);
   UNUSED_ARG(context);
   if ((my_stop_count & THREAD_RESTARTED) != 0) {
-    /* Restarting the world.    */
+    /* Restarting the world. */
     return;
   }
 
-  /* `pthread_setcancelstate()` is not defined to be async-signal-safe. */
-  /* But the `glibc` version appears to be in the absence of            */
-  /* asynchronous cancellation.  And since this signal handler to block */
-  /* on `sigsuspend`, which is both async-signal-safe and               */
-  /* a cancellation point, there seems to be no obvious way out of it.  */
-  /* In fact, it looks to me like an async-signal-safe cancellation     */
-  /* point is inherently a problem, unless there is some way to disable */
-  /* cancellation in the handler.                                       */
+  /*
+   * `pthread_setcancelstate()` is not defined to be async-signal-safe.
+   * But the `glibc` version appears to be defined, in the absence of
+   * asynchronous cancellation.  And since this signal handler to block
+   * on `sigsuspend`, which is both async-signal-safe and
+   * a cancellation point, there seems to be no obvious way out of it.
+   * In fact, it looks like an async-signal-safe cancellation point
+   * is inherently a problem, unless there is some way to disable
+   * cancellation in the handler.
+   */
   DISABLE_CANCEL(cancel_state);
 
 #    ifdef DEBUG_THREADS
@@ -360,7 +383,7 @@ GC_suspend_handler_inner(ptr_t dummy, void *context)
 #    endif
   me = GC_lookup_self_thread_async();
   if ((me->last_stop_count & ~(word)THREAD_RESTARTED) == my_stop_count) {
-    /* Duplicate signal.  OK if we are retrying.      */
+    /* Duplicate signal.  OK if we are retrying. */
     if (!GC_retry_signals) {
       WARN("Duplicate suspend signal in thread %p\n", pthread_self());
     }
@@ -379,19 +402,23 @@ GC_suspend_handler_inner(ptr_t dummy, void *context)
   suspend_cnt = ao_load_async(&me->ext_suspend_cnt);
 #    endif
 
-  /* Tell the thread that wants to stop the world that this     */
-  /* thread has been stopped.  Note that `sem_post()` is        */
-  /* the only async-signal-safe primitive in LinuxThreads.      */
+  /*
+   * Tell the thread that wants to stop the world that this thread has
+   * been stopped.  Note that `sem_post()` is the only async-signal-safe
+   * primitive in LinuxThreads.
+   */
   sem_post(&GC_suspend_ack_sem);
   ao_store_release_async(&me->last_stop_count, my_stop_count);
 
-  /* Wait until that thread tells us to restart by sending this thread  */
-  /* a `GC_sig_thr_restart` signal (should be masked at this point thus */
-  /* there is no race).  We do not continue until we receive that       */
-  /* signal, but we do not take that as authoritative.  (We may be      */
-  /* accidentally restarted by one of the user signals we do not        */
-  /* block.)  After we receive the signal, we use a primitive and       */
-  /* expensive mechanism to wait until it is really safe to proceed.    */
+  /*
+   * Wait until that thread tells us to restart by sending this thread
+   * a `GC_sig_thr_restart` signal (should be masked at this point thus
+   * there is no race).  We do not continue until we receive that signal,
+   * but we do not take that as authoritative.  (We may be accidentally
+   * restarted by one of the user signals we do not block.)
+   * After we receive the signal, we use a primitive and an expensive
+   * mechanism to wait until it is really safe to proceed.
+   */
   do {
     sigsuspend(&suspend_handler_mask);
     /* Iterate while not restarting the world or thread is suspended. */
@@ -415,10 +442,12 @@ GC_suspend_handler_inner(ptr_t dummy, void *context)
   if (GC_retry_signals || GC_sig_suspend == GC_sig_thr_restart)
 #    endif
   {
-    /* If the `SIG_THR_RESTART` signal loss is possible (though it      */
-    /* should be less likely than losing the `SIG_SUSPEND` signal as    */
-    /* we do not do much between the first `sem_post` and `sigsuspend`  */
-    /* calls), more handshaking is provided to work around it.          */
+    /*
+     * If the `SIG_THR_RESTART` signal loss is possible (though it should
+     * be less likely than losing the `SIG_SUSPEND` signal as we do not
+     * do much between the first `sem_post` and `sigsuspend` calls), more
+     * handshaking is provided to work around it.
+     */
     sem_post(&GC_suspend_ack_sem);
     /* Set the flag that the thread has been restarted. */
     if (GC_retry_signals)
@@ -435,9 +464,11 @@ suspend_restart_barrier(int n_live_threads)
 
   for (i = 0; i < n_live_threads; i++) {
     while (sem_wait(&GC_suspend_ack_sem) == -1) {
-      /* On Linux, `sem_wait()` is documented to always return zero.    */
-      /* But the documentation appears to be incorrect.  `EINTR` seems  */
-      /* to happen with some versions of gdb.                           */
+      /*
+       * On Linux, `sem_wait()` is documented to always return zero.
+       * But the documentation appears to be incorrect.
+       * `EINTR` seems to happen with some versions of gdb.
+       */
       if (errno != EINTR)
         ABORT("sem_wait failed");
     }
@@ -471,10 +502,10 @@ resend_lost_signals(int n_live_threads, int (*suspend_restart_all)(void))
         int newly_sent = suspend_restart_all();
 
         if (newly_sent != prev_sent) {
-          /* Restart the counter.     */
+          /* Restart the counter. */
           retry = 0;
         } else if (++retry >= RESEND_SIGNALS_LIMIT) {
-          /* No progress.     */
+          /* No progress. */
           ABORT_ARG1("Signals delivery fails constantly", " at GC #%lu",
                      (unsigned long)GC_gc_no);
         }
@@ -515,14 +546,15 @@ resend_lost_signals_retry(int n_live_threads, int (*suspend_restart_all)(void))
     int i;
 
     TS_NSEC_ADD(ts, TIMEOUT_BEFORE_RESEND * (unsigned32)1000);
-    /* First, try to wait for the semaphore with some timeout.      */
-    /* On failure, fallback to `WAIT_UNIT` pause and resend of the  */
-    /* signal.                                                      */
+    /*
+     * First, try to wait for the semaphore with some timeout.
+     * On failure, fall back to `WAIT_UNIT` pause and resend of the signal.
+     */
     for (i = 0; i < n_live_threads; i++) {
       if (sem_timedwait(&GC_suspend_ack_sem, &ts) == -1)
         break; /*< wait timed out or any other error */
     }
-    /* Update the count of threads to wait the ack from.      */
+    /* Update the count of threads to wait the acknowledge from. */
     n_live_threads -= i;
   }
 #    endif
@@ -542,10 +574,12 @@ GC_restart_handler(int sig)
     ABORT("Bad signal in restart handler");
   }
 
-  /* Note: even if we do not do anything useful here, it would still    */
-  /* be necessary to have a signal handler, rather than ignoring the    */
-  /* signals, otherwise the signals will not be delivered at all,       */
-  /* and will thus not interrupt the `sigsuspend()` above.              */
+  /*
+   * Note: even if we do not do anything useful here, it would still
+   * be necessary to have a signal handler, rather than ignoring the
+   * signals, otherwise the signals will not be delivered at all, and
+   * will thus not interrupt the `sigsuspend()` above.
+   */
 #    ifdef DEBUG_THREADS
   GC_log_printf("In GC_restart_handler for %p\n",
                 PTHREAD_TO_VPTR(pthread_self()));
@@ -581,7 +615,7 @@ raise_signal(GC_thread p, int sig)
   static int signal_cnt;
 
   if (GC_retry_signals && (++signal_cnt) % LOST_SIGNALS_RATIO == 0) {
-    /* Simulate the signal is sent but lost.        */
+    /* Simulate the signal is sent but lost. */
     return 0;
   }
 #    endif
@@ -603,7 +637,7 @@ raise_signal(GC_thread p, int sig)
 #    ifdef RETRY_TKILL_ON_EAGAIN
     if (res != EAGAIN || retry >= RETRY_TKILL_EAGAIN_LIMIT)
       break;
-    /* A temporal overflow of the real-time signal queue.   */
+    /* A temporal overflow of the real-time signal queue. */
     GC_usleep(WAIT_UNIT);
 #    endif
   }
@@ -671,7 +705,7 @@ GC_suspend_thread(GC_SUSPEND_THREAD_ID thread)
   }
   if ((t->flags & (FINISHED | DO_BLOCKING)) != 0) {
     t->ext_suspend_cnt = suspend_cnt | 1; /*< suspend */
-    /* Terminated but not joined yet, or in do-blocking state.  */
+    /* Terminated but not joined yet, or in do-blocking state. */
     UNLOCK();
     return;
   }
@@ -686,15 +720,17 @@ GC_suspend_thread(GC_SUSPEND_THREAD_ID thread)
   /* `GC_suspend_thread()` is not a cancellation point. */
   DISABLE_CANCEL(cancel_state);
 #      ifdef PARALLEL_MARK
-  /* Ensure we do not suspend a thread while it is rebuilding       */
-  /* a free list, otherwise such a deadlock is possible:            */
-  /* - thread 1 is blocked in `GC_wait_for_reclaim` holding the     */
-  /* allocator lock;                                                */
-  /* - thread 2 is suspended in `GC_reclaim_generic` invoked from   */
-  /* `GC_generic_malloc_many` (with `GC_fl_builder_count` greater   */
-  /* than zero); and                                                */
-  /* - thread 3 is blocked acquiring the allocator lock in          */
-  /* `GC_resume_thread`.                                            */
+  /*
+   * Ensure we do not suspend a thread while it is rebuilding a free list,
+   * otherwise such a deadlock is possible:
+   *   - thread 1 is blocked in `GC_wait_for_reclaim` holding the allocator
+   *     lock;
+   *   - thread 2 is suspended in `GC_reclaim_generic` invoked from
+   *     `GC_generic_malloc_many` (with `GC_fl_builder_count` greater than
+   *     zero);
+   *   - thread 3 is blocked acquiring the allocator lock in
+   *     `GC_resume_thread`.
+   */
   if (GC_parallel)
     GC_wait_for_reclaim();
 #      endif
@@ -703,15 +739,17 @@ GC_suspend_thread(GC_SUSPEND_THREAD_ID thread)
     /* See the relevant comment in `GC_stop_world()`. */
     GC_acquire_dirty_lock();
   }
-  /* Else do not acquire the dirty lock as the write fault handler  */
-  /* might be trying to acquire it too, and the suspend handler     */
-  /* execution is deferred until the write fault handler completes. */
+  /*
+   * Else do not acquire the dirty lock as the write fault handler
+   * might be trying to acquire it too, and the suspend handler
+   * execution is deferred until the write fault handler completes.
+   */
 
   next_stop_count = GC_stop_count + THREAD_RESTARTED;
   GC_ASSERT((next_stop_count & THREAD_RESTARTED) == 0);
   AO_store(&GC_stop_count, next_stop_count);
 
-  /* Set the flag making the change visible to the signal handler.  */
+  /* Set the flag making the change visible to the signal handler. */
   AO_store_release(&t->ext_suspend_cnt, suspend_cnt | 1);
 
   /* TODO: Support `GC_retry_signals` (not needed for TSan). */
@@ -723,8 +761,10 @@ GC_suspend_thread(GC_SUSPEND_THREAD_ID thread)
     ABORT("pthread_kill failed");
   }
 
-  /* Wait for the thread to complete threads table lookup and       */
-  /* `stack_ptr` assignment.                                        */
+  /*
+   * Wait for the thread to complete threads table lookup and
+   * `stack_ptr` assignment.
+   */
   GC_ASSERT(GC_thr_initialized);
   suspend_restart_barrier(1);
   if (GC_manual_vdb)
@@ -804,7 +844,7 @@ GC_push_all_stacks(void)
   ptr_t lo; /*< stack top (`sp`) */
   ptr_t hi; /*< bottom */
 #  if defined(E2K) || defined(IA64)
-  /* We also need to scan the register backing store.   */
+  /* We also need to scan the register backing store. */
   ptr_t bs_lo, bs_hi;
 #  endif
   struct GC_traced_stack_sect_s *traced_stack_sect;
@@ -860,9 +900,11 @@ GC_push_all_stacks(void)
 #  endif
         if (traced_stack_sect != NULL
             && traced_stack_sect->saved_stack_ptr == lo) {
-          /* If the thread has never been stopped since the recent  */
-          /* `GC_call_with_gc_active` invocation then skip the top  */
-          /* "stack section" as `stack_ptr` already points to.      */
+          /*
+           * If the thread has never been stopped since the recent
+           * `GC_call_with_gc_active` invocation, then skip the top
+           * "stack section" as `stack_ptr` already points to.
+           */
           traced_stack_sect = traced_stack_sect->prev;
         }
       }
@@ -888,7 +930,7 @@ GC_push_all_stacks(void)
 #  else
         hi = crtn->altstack + crtn->altstack_size;
 #  endif
-        /* FIXME: Need to scan the normal stack too, but how ? */
+        /* FIXME: Need to scan the normal stack too, but how? */
       }
 #  ifdef STACKPTR_CORRECTOR_AVAILABLE
       if (GC_sp_corrector != 0)
@@ -912,7 +954,7 @@ GC_push_all_stacks(void)
           && (p->ext_suspend_cnt & 1) == 0
 #    endif
           && !is_self && (p->flags & DO_BLOCKING) == 0) {
-        /* Procedure stack buffer has already been freed.   */
+        /* Procedure stack buffer has already been freed. */
         continue;
       }
 #  endif
@@ -922,8 +964,10 @@ GC_push_all_stacks(void)
                     THREAD_ID_TO_VPTR(p->id), (void *)bs_lo, (void *)bs_hi);
 #    endif
       GC_ASSERT(bs_lo != NULL && bs_hi != NULL);
-      /* FIXME: This (if `is_self`) may add an unbounded number of  */
-      /* entries, and hence overflow the mark stack, which is bad.  */
+      /*
+       * FIXME: This (if `is_self`) may add an unbounded number of entries,
+       * and hence overflow the mark stack, which is bad.
+       */
 #    ifdef IA64
       GC_push_all_register_sections(bs_lo, bs_hi, is_self, traced_stack_sect);
 #    else
@@ -944,14 +988,18 @@ GC_push_all_stacks(void)
 }
 
 #  ifdef DEBUG_THREADS
-/* There seems to be a very rare thread stopping problem.  To help us */
-/* debug that, we save the ids of the stopping thread.                */
+/*
+ * There seems to be a very rare thread stopping problem.
+ * To help us debug that, we save the ids of the stopping thread.
+ */
 pthread_t GC_stopping_thread;
 int GC_stopping_pid = 0;
 #  endif
 
-/* Suspend all threads that might still be running.  Return the number  */
-/* of suspend signals that were sent.                                   */
+/*
+ * Suspend all threads that might still be running.  Return the number
+ * of suspend signals that were sent.
+ */
 STATIC int
 GC_suspend_all(void)
 {
@@ -983,11 +1031,12 @@ GC_suspend_all(void)
                       THREAD_ID_TO_VPTR(p->id));
 #    endif
 
-        /* The synchronization between `GC_dirty` (based on         */
-        /* test-and-set) and the signal-based thread suspension     */
-        /* is performed in `GC_stop_world()` because                */
-        /* `GC_release_dirty_lock()` cannot be called before        */
-        /* acknowledging the thread is really suspended.            */
+        /*
+         * The synchronization between `GC_dirty` (based on test-and-set)
+         * and the signal-based thread suspension is performed in
+         * `GC_stop_world()` because `GC_release_dirty_lock()` cannot be
+         * called before acknowledging that the thread is really suspended.
+         */
         result = raise_signal(p, GC_sig_suspend);
         switch (result) {
         case ESRCH:
@@ -996,7 +1045,7 @@ GC_suspend_all(void)
           break;
         case 0:
           if (GC_on_thread_event) {
-            /* Note: thread id might be truncated.    */
+            /* Note: thread id might be truncated. */
             GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
                                THREAD_ID_TO_VPTR(THREAD_SYSTEM_ID(p)));
           }
@@ -1041,7 +1090,7 @@ GC_suspend_all(void)
         }
       }
     }
-    /* Note: -1 for the current thread.       */
+    /* Note: -1 for the current thread. */
     if (num_threads_parked >= GC_nacl_num_gc_threads - 1)
       break;
 #    ifdef DEBUG_THREADS
@@ -1069,9 +1118,11 @@ GC_stop_world(void)
   int n_live_threads;
 #  endif
   GC_ASSERT(I_HOLD_LOCK());
-  /* Make sure all free list construction has stopped before we start.  */
-  /* No new construction can start, since it is required to acquire and */
-  /* release the allocator lock before start.                           */
+  /*
+   * Make sure all free list construction has stopped before we start.
+   * No new construction can start, since it is required to acquire and
+   * release the allocator lock before start.
+   */
 
   GC_ASSERT(GC_thr_initialized);
 #  ifdef DEBUG_THREADS
@@ -1084,20 +1135,22 @@ GC_stop_world(void)
   if (GC_parallel) {
     GC_acquire_mark_lock();
     GC_ASSERT(GC_fl_builder_count == 0);
-    /* We should have previously waited for it to become zero.        */
+    /* We should have previously waited for it to become zero. */
   }
 #  endif /* PARALLEL_MARK */
 
 #  ifdef NACL
   (void)GC_suspend_all();
 #  else
-  /* Note: only concurrent reads are possible.        */
+  /* Note: only concurrent reads are possible. */
   AO_store(&GC_stop_count, GC_stop_count + THREAD_RESTARTED);
   if (GC_manual_vdb) {
     GC_acquire_dirty_lock();
-    /* The write fault handler cannot be called if `GC_manual_vdb`  */
-    /* (thus double-locking should not occur in                     */
-    /* `async_set_pht_entry_from_index` based on test-and-set).     */
+    /*
+     * The write fault handler cannot be called if `GC_manual_vdb` (thus
+     * double-locking should not occur in `async_set_pht_entry_from_index`
+     * based on test-and-set).
+     */
   }
   n_live_threads = GC_suspend_all();
   if (GC_retry_signals) {
@@ -1194,21 +1247,24 @@ __nacl_suspend_thread_if_needed(void)
   if (GC_nacl_thread_parker == pthread_self())
     return;
 
-  /* This can happen when a thread is created outside of the GC     */
-  /* system (`wthread` mostly).                                     */
+  /*
+   * This can happen when a thread is created outside of the collector
+   * system (`wthread` mostly).
+   */
   if (GC_nacl_thread_idx < 0)
     return;
 
-  /* If it was already "parked", we are returning from a `syscall`, */
-  /* so do not bother storing registers again, the collector has    */
-  /* a set of.                                                      */
+  /*
+   * If it was already "parked", we are returning from a `syscall`,
+   * so do not bother storing registers again, the collector has a set of.
+   */
   if (!GC_nacl_thread_parked[GC_nacl_thread_idx]) {
     NACL_STORE_REGS();
     GC_nacl_gc_thread_self->crtn->stack_ptr = GC_approx_sp();
   }
   GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
   while (GC_nacl_park_threads_now) {
-    /* Just spin.   */
+    /* Just spin. */
   }
   GC_nacl_thread_parked[GC_nacl_thread_idx] = 0;
 
@@ -1220,8 +1276,10 @@ __nacl_suspend_thread_if_needed(void)
 GC_API_OSCALL void
 nacl_post_syscall_hook(void)
 {
-  /* Calling `__nacl_suspend_thread_if_needed` right away should    */
-  /* guarantee we do not mutate the collector set.                  */
+  /*
+   * Calling `__nacl_suspend_thread_if_needed` right away should guarantee
+   * we do not mutate the collector set.
+   */
   __nacl_suspend_thread_if_needed();
   if (GC_nacl_thread_idx != -1) {
     GC_nacl_thread_parked[GC_nacl_thread_idx] = 0;
@@ -1252,8 +1310,10 @@ GC_nacl_initialize_gc_thread(GC_thread me)
   if (!EXPECT(GC_nacl_thread_parking_inited, TRUE)) {
     BZERO(GC_nacl_thread_parked, sizeof(GC_nacl_thread_parked));
     BZERO(GC_nacl_thread_used, sizeof(GC_nacl_thread_used));
-    /* TODO: replace with the public "register hook" function when  */
-    /* available from `glibc`.                                      */
+    /*
+     * TODO: Replace with the public "register hook" function when
+     * available from `glibc`.
+     */
     nacl_interface_query("nacl-irt-blockhook-0.1", &gc_hook, sizeof(gc_hook));
     gc_hook.register_block_hooks(nacl_pre_syscall_hook,
                                  nacl_post_syscall_hook);
@@ -1290,8 +1350,10 @@ GC_nacl_shutdown_gc_thread(void)
 
 static GC_bool in_resend_restart_signals;
 
-/* Restart all threads that were suspended by the collector.  */
-/* Return the number of restart signals that were sent.       */
+/*
+ * Restart all threads that were suspended by the collector.
+ * Return the number of restart signals that were sent.
+ */
 STATIC int
 GC_restart_all(void)
 {
@@ -1314,21 +1376,25 @@ GC_restart_all(void)
 #    endif
         if (GC_retry_signals
             && AO_load(&p->last_stop_count) == GC_stop_count) {
-          /* The thread has been restarted.   */
+          /* The thread has been restarted. */
           if (!in_resend_restart_signals) {
-            /* Some user signal (which we do not block, e.g. `SIGQUIT`) */
-            /* has already restarted the thread, but nonetheless we     */
-            /* need to count the thread in `n_live_threads`, so that    */
-            /* to decrement the semaphore's value proper amount of      */
-            /* times.  (We are also sending the restart signal to the   */
-            /* thread, it is not needed actually but does not hurt.)    */
+            /*
+             * Some user signal (which we do not block, e.g. `SIGQUIT`)
+             * has already restarted the thread, but nonetheless we need to
+             * count the latter in `n_live_threads`, so that to decrement
+             * the semaphore's value proper amount of times.  (We are also
+             * sending the restart signal to the thread, it is not needed
+             * actually but does not hurt.)
+             */
           } else {
             continue;
-            /* FIXME: Still, an extremely low chance exists that the    */
-            /* user signal restarts the thread after the restart        */
-            /* signal has been lost (causing `sem_timedwait()` to fail) */
-            /* while retrying, causing finally a mismatch between       */
-            /* `GC_suspend_ack_sem` and `n_live_threads`.               */
+            /*
+             * FIXME: Still, an extremely low chance exists that the user
+             * signal restarts the thread after the restart signal has been
+             * lost (causing `sem_timedwait()` to fail) while retrying,
+             * causing finally a mismatch between `GC_suspend_ack_sem` and
+             * `n_live_threads`.
+             */
           }
         }
         n_live_threads++;
@@ -1339,7 +1405,7 @@ GC_restart_all(void)
         result = raise_signal(p, GC_sig_thr_restart);
         switch (result) {
         case ESRCH:
-          /* Not really there anymore.  Possible?   */
+          /* Not really there anymore.  Possible? */
           n_live_threads--;
           break;
         case 0:
@@ -1369,9 +1435,11 @@ GC_start_world(void)
 #    ifdef DEBUG_THREADS
   GC_log_printf("World starting\n");
 #    endif
-  /* Note: the updated value should now be visible to the signal        */
-  /* handler (note that `pthread_kill` is not on the list of functions  */
-  /* which synchronize memory).                                         */
+  /*
+   * Note: the updated value should now be visible to the signal handler
+   * (note that `pthread_kill` is not on the list of functions that
+   * synchronize memory).
+   */
   AO_store_release(&GC_stop_count, GC_stop_count + THREAD_RESTARTED);
 
   GC_ASSERT(!in_resend_restart_signals);
@@ -1428,8 +1496,10 @@ GC_stop_init(void)
   }
 #    endif
   GC_remove_allowed_signals(&act.sa_mask);
-  /* `GC_sig_thr_restart` is set in the resulting mask.  It is unmasked */
-  /* by the handler when necessary.                                     */
+  /*
+   * `GC_sig_thr_restart` is set in the resulting mask.
+   * It is unmasked by the handler when necessary.
+   */
 
 #    ifdef SA_RESTART
   act.sa_flags = SA_RESTART;
@@ -1466,14 +1536,16 @@ GC_stop_init(void)
     ABORT("sigdelset failed");
 
 #    ifndef NO_RETRY_SIGNALS
-  /* Any platform could lose signals, so let's be conservative and  */
-  /* always enable signals retry logic.                             */
+  /*
+   * Any platform could lose signals, so let's be conservative and
+   * always enable signals retry logic.
+   */
   GC_retry_signals = TRUE;
 #    endif
   /* Override the default value of `GC_retry_signals`. */
   str = GETENV("GC_RETRY_SIGNALS");
   if (str != NULL) {
-    /* Do not retry if the environment variable is set to "0".      */
+    /* Do not retry if the environment variable is set to "0". */
     GC_retry_signals = *str != '0' || *(str + 1) != '\0';
   }
   if (GC_retry_signals) {

@@ -27,11 +27,12 @@
 #define LOCATE 12 /*< ^L */
 #define TOP 20    /*< ^T */
 
-/* Execute an editor command.  The argument may be an integer greater   */
-/* 255 denoting a windows command, one of the control characters, or    */
-/* another ASCII character to be used as either a character to be       */
-/* inserted, a repeat count, or a search string, depending on the       */
-/* current state.                                                       */
+/*
+ * Execute an editor command.  The argument may be an integer greater
+ * 255 denoting a windows command, one of the control characters, or
+ * another ASCII character to be used as either a character to be inserted,
+ * a repeat count, or a search string, depending on the current state.
+ */
 void do_command(int);
 
 /* OS-independent initialization. */

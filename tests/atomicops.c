@@ -11,9 +11,11 @@
  * modified is included with the above copyright notice.
  */
 
-/* Minimal testing of atomic operations used by the collector.          */
-/* Primary use is to determine whether the compiler atomic intrinsics   */
-/* can be relied on.                                                    */
+/*
+ * Minimal testing of atomic operations used by the collector.
+ * Primary use is to determine whether the compiler atomic intrinsics
+ * can be relied on.
+ */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"

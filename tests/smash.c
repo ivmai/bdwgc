@@ -1,4 +1,4 @@
-/* Test that overwrite error detection works reasonably.        */
+/* Test that overwrite error detection works reasonably. */
 
 #ifndef GC_DEBUG
 #  define GC_DEBUG
@@ -38,10 +38,12 @@ main(void)
       q = NULL;
       GC_gcollect();
     } else if (i % 5678 == 0) {
-      /* Write a byte past the end of the allocated object      */
-      /* but not beyond the last word of the object's memory.   */
-      /* A volatile intermediate pointer variable is used to    */
-      /* avoid a compiler complain of out-of-bounds access.     */
+      /*
+       * Write a byte past the end of the allocated object but not beyond
+       * the last word of the object's memory.  A `volatile` intermediate
+       * pointer variable is used to avoid a compiler complain of
+       * out-of-bounds access.
+       */
       q = &p[(SIZE + i / 2000) /* 42 */];
       *q = 42;
     }

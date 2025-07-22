@@ -11,16 +11,18 @@
  * modified is included with the above copyright notice.
  */
 
-/* A `sprintf` implementation that understands cords.  This is probably */
-/* not terribly portable.  It assumes an ANSI platform `stdarg.h` file. */
-/* It further assumes that I can make copies of `va_list` variables,    */
-/* and read arguments repeatedly by applying `va_arg` to the copies.    */
-/* This could be avoided at some performance cost.                      */
-/* We also assume that unsigned and signed integers of various kinds    */
-/* have the same sizes, and can be cast back and forth.                 */
-/* We assume that `void *` and `char *` have the same size.             */
-/* All this cruft is needed because we want to rely on the underlying   */
-/* `sprintf` implementation whenever possible.                          */
+/*
+ * A `sprintf` implementation that understands cords.  This is probably
+ * not terribly portable.  It assumes an ANSI platform `stdarg.h` file.
+ * It further assumes that I can make copies of `va_list` variables,
+ * and read arguments repeatedly by applying `va_arg` to the copies.
+ * This could be avoided at some performance cost.
+ * We also assume that unsigned and signed integers of various kinds
+ * have the same sizes, and can be cast back and forth.
+ * We assume that `void *` and `char *` have the same size.
+ * All this cruft is needed because we want to rely on the underlying
+ * `sprintf` implementation whenever possible.
+ */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -45,7 +47,7 @@
 /* Maximum length of a single conversion specification. */
 #define CONV_SPEC_LEN 50
 
-/* Maximum length of any conversion with default width and prec.    */
+/* Maximum length of any conversion with the default width and precision. */
 #define CONV_RESULT_LEN 50
 
 #if defined(CPPCHECK)
@@ -71,19 +73,21 @@ ec_len(CORD_ec x)
   return CORD_len(x[0].ec_cord) + (size_t)(x[0].ec_bufptr - x[0].ec_buf);
 }
 
-/* Possible non-numeric precision values.   */
+/* Possible non-numeric precision values. */
 #define NONE -1
 #define VARIABLE -2
 
-/* Copy the conversion specification from `CORD_pos` into the       */
-/* buffer `buf`.  Return a negative value on error.                 */
-/* `source` initially points one past the leading "%" symbol;       */
-/* it is left-pointing at the conversion type.  Assign width and    */
-/* precision fields to `*width` and `*prec`, respectively.  If the  */
-/* width or precision is specified as "*", then the corresponding   */
-/* variable is assigned.  Set `*left` to 1 if left adjustment flag  */
-/* is present.  Set `*long_arg` to 1 if long flag ("l" or "L") is   */
-/* present, or to -1 if "h" is present, or to 2 if "z" is present.  */
+/*
+ * Copy the conversion specification from `CORD_pos` into the
+ * buffer `buf`.  Return a negative value on error.
+ * `source` initially points one past the leading "%" symbol;
+ * it is left-pointing at the conversion type.  Assign width and
+ * precision fields to `*width` and `*prec`, respectively.  If the
+ * width or precision is specified as "*", then the corresponding
+ * variable is assigned.  Set `*left` to 1 if left adjustment flag
+ * is present.  Set `*long_arg` to 1 if `long` flag ("l" or "L") is
+ * present, or to -1 if "h" is present, or to 2 if "z" is present.
+ */
 static int
 extract_conv_spec(CORD_pos source, char *buf, int *width, int *prec, int *left,
                   int *long_arg)
@@ -391,7 +395,7 @@ CORD_vsprintf(CORD *out, CORD format, va_list args)
 #endif
           len = (unsigned)res;
           if ((GC_uintptr_t)len == (GC_uintptr_t)buf) {
-            /* old-style `vsprintf` */
+            /* Old-style `vsprintf`. */
             len = strlen(buf);
           } else if (res < 0) {
             return -1;

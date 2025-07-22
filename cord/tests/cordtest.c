@@ -19,9 +19,11 @@
 #include "gc.h"
 #include "gc/cord.h"
 
-/* This is a very incomplete test of the cord package.  It knows about  */
-/* a few internals of the package (e.g. when C strings are returned)    */
-/* that real clients should not rely on.                                */
+/*
+ * This is a very incomplete test of the cord package.  It knows about
+ * a few internals of the package (e.g. when C strings are returned) that
+ * real clients should not rely on.
+ */
 
 #define ABORT(string)                        \
   {                                          \
@@ -350,8 +352,10 @@ test_extras(void)
   /* Of course, this does not guarantee the files are closed. */
 #endif
   if (remove(FNAME1) != 0) {
-    /* On some systems, e.g. OS/2, this may fail if `f1` is still open. */
-    /* But we cannot call `fclose` as it might lead to double close.    */
+    /*
+     * On some systems, e.g. OS/2, this may fail if `f1` is still open.
+     * But we cannot call `fclose` as it might lead to double close.
+     */
     fprintf(stderr, "WARNING: remove failed: " FNAME1 "\n");
   }
 }
@@ -436,8 +440,10 @@ test_printf(void)
     ABORT("CORD_sprintf goofed 5");
 
 #ifdef GC_SNPRINTF
-  /* Check whether "%zu" specifier is supported; pass the format  */
-  /* string via a variable to avoid a compiler warning if not.    */
+  /*
+   * Check whether "%zu" specifier is supported; pass the format string via
+   * a variable to avoid a compiler warning if not.
+   */
   res = GC_SNPRINTF(result2, sizeof(result2), zu_format, (size_t)0);
 #else
   res = sprintf(result2, zu_format, (size_t)0);
@@ -455,7 +461,7 @@ test_printf(void)
     (void)CORD_printf("printf lacks support of 'z' modifier\n");
   }
 
-  /* TODO: Better test CORD_[v][f]printf.     */
+  /* TODO: Better test CORD_[v][f]printf. */
   (void)CORD_printf(CORD_EMPTY);
   (void)wrap_vfprintf(stdout, CORD_EMPTY);
   (void)wrap_vprintf(CORD_EMPTY);

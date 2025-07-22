@@ -45,7 +45,7 @@
 extern int LINES;
 extern int COLS;
 
-/* File being edited.   */
+/* File being edited. */
 extern char *arg_file_name;
 
 /* The following calls are from `de_win.c` file to `de.c` one. */
@@ -53,20 +53,24 @@ extern char *arg_file_name;
 /* Get the contents (`CORD`) of `i`-th screen line.  Relies on `COLS`. */
 const void *retrieve_screen_line(int i);
 
-/* Change the current position to the given column (`x`) and row (`y`). */
-/* Upper left of window is (0,0).                                       */
+/*
+ * Change the current position to the given column (`x`) and row (`y`).
+ * Upper left of window is (0,0).
+ */
 void set_position(int x, int y);
 
 /* The following calls are from `de.c` file to `de_win.c` one. */
 
-/* Physically move the cursor on the display, so that it appears at */
-/* given `column` and row (`line`).                                 */
+/*
+ * Physically move the cursor on the display, so that it appears at
+ * given `column` and row (`line`).
+ */
 void move_cursor(int column, int line);
 
 /* Invalidate given row (`line`) on the screen. */
 void invalidate_line(int line);
 
-/* Display error message.       */
+/* Display error message. */
 void de_error(const char *s);
 
 #endif /* DE_WIN_H */

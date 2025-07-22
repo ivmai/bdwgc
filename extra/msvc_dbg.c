@@ -1,30 +1,31 @@
 /*
-  Copyright (c) 2004-2005 Andrei Polushin
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be included in
-  all copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-  THE SOFTWARE.
-*/
+ * Copyright (c) 2004-2005 Andrei Polushin
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
 
 #if !defined(_M_ARM) && !defined(_M_ARM64) && !defined(_M_X64) \
     && defined(_MSC_VER)
 
-/* TODO: arm[64], x64 currently miss some machine-dependent code below.     */
-/* See also `GC_HAVE_BUILTIN_BACKTRACE` in `gc_config_macros.h` file.       */
+/* TODO: arm[64], x86_64 currently miss some machine-dependent code below. */
+
+/* See also `GC_HAVE_BUILTIN_BACKTRACE` in `gc_config_macros.h` file. */
 
 #  include <stdio.h>
 #  include <stdlib.h>
@@ -57,8 +58,10 @@ char **backtrace_symbols(void *const addresses[], int count);
 #  pragma comment(lib, "dbghelp.lib")
 #  pragma optimize("gy", off)
 
-/* Disable a warning that `/GS` cannot protect parameters and local     */
-/* variables from local buffer overrun because optimizations are off.   */
+/*
+ * Disable a warning that `/GS` cannot protect parameters and local
+ * variables from local buffer overrun because optimizations are off.
+ */
 #  pragma warning(disable : 4748)
 
 typedef GC_word word;
@@ -110,8 +113,10 @@ GetModuleBase(HANDLE hProcess, ULONG_ADDR dwAddress)
     DWORD size = GetModuleFileNameA((HINSTANCE)memoryInfo.AllocationBase,
                                     filePath, sizeof(filePath));
 
-    /* Save and restore current directory around `SymLoadModule` (see   */
-    /* the KB article Q189780).                                         */
+    /*
+     * Save and restore current directory around `SymLoadModule` (see
+     * the KB article Q189780).
+     */
     GetCurrentDirectoryA(sizeof(curDir), curDir);
     GetModuleFileNameA(NULL, exePath, sizeof(exePath));
 #  if _MSC_VER > 1200
@@ -304,8 +309,10 @@ GetFileLineFromAddress(void *address, char *fileName, size_t size,
     *offsetBytes = dwOffset;
   }
   sourceName = line.FileName;
-  /* TODO: resolve relative filenames, found in "source directories"    */
-  /* registered with MSVC IDE.                                          */
+  /*
+   * TODO: Resolve relative filenames, found in "source directories"
+   * registered with MSVC IDE.
+   */
   if (size) {
     strncpy(fileName, sourceName, size)[size - 1] = 0;
   }
@@ -401,7 +408,7 @@ backtrace_symbols(void *const addresses[], int count)
 
 #else
 
-/* ANSI C does not allow translation units to be empty.       */
+/* ANSI C does not allow translation units to be empty. */
 extern int GC_quiet;
 
 #endif

@@ -22,25 +22,25 @@
 extern "C" {
 #endif
 
-/* Extensible cords are strings that may be destructively appended to.  */
-/* They allow fast construction of cords from characters that are       */
-/* being read from a stream.                                            */
-
 /*
+ * Extensible cords are strings that may be destructively appended to.
+ * They allow fast construction of cords from characters that are being
+ * read from a stream.
+ *
  * A client might look like:
  * ```
- * CORD_ec x;
- * CORD result;
- * char c;
- * FILE *f;
+ *   CORD_ec x;
+ *   CORD result;
+ *   char c;
+ *   FILE *f;
  *
- * CORD_ec_init(x);
- * while (...) {
- *     c = getc(f);
- *     ...
- *     CORD_ec_append(x, c);
- * }
- * result = CORD_balance(CORD_ec_to_cord(x));
+ *   CORD_ec_init(x);
+ *   while (...) {
+ *       c = getc(f);
+ *       ...
+ *       CORD_ec_append(x, c);
+ *   }
+ *   result = CORD_balance(CORD_ec_to_cord(x));
  * ```
  *
  * If a C string is desired as the final result, the call to `CORD_balance`
@@ -51,8 +51,10 @@ extern "C" {
 #  define CORD_BUFSZ 128
 #endif
 
-/* This structure represents the concatenation of `ec_cord` with    */
-/* `ec_buf[0 .. ec_bufptr - ec_buf - 1]`.                           */
+/*
+ * This structure represents the concatenation of `ec_cord` with
+ * `ec_buf[0 .. ec_bufptr - ec_buf - 1]`.
+ */
 typedef struct CORD_ec_struct {
   CORD ec_cord;
   char *ec_bufptr;
@@ -69,15 +71,17 @@ CORD_API void CORD_ec_flush_buf(CORD_ec);
 #define CORD_ec_init(x) \
   ((x)[0].ec_cord = 0, (void)((x)[0].ec_bufptr = (x)[0].ec_buf))
 
-/* Append a character to an extensible cord.    */
+/* Append a character to an extensible cord. */
 #define CORD_ec_append(x, c)                             \
   ((void)((x)[0].ec_bufptr == (x)[0].ec_buf + CORD_BUFSZ \
               ? (CORD_ec_flush_buf(x), 0)                \
               : 0),                                      \
    (void)(*(x)[0].ec_bufptr++ = (c)))
 
-/* Append a cord to an extensible cord.  Structure remains shared with  */
-/* original.                                                            */
+/*
+ * Append a cord to an extensible cord.  Structure remains shared with
+ * the original.
+ */
 CORD_API void CORD_ec_append_cord(CORD_ec, CORD);
 
 #ifdef __cplusplus

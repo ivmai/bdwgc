@@ -28,8 +28,8 @@ main(void)
   /* Just in case the code is compiled without `FIND_LEAK` macro defined. */
   GC_set_find_leak(1);
 #endif
-  /* Needed if thread-local allocation is enabled.    */
-  /* FIXME: This is not ideal.    */
+  /* Needed if thread-local allocation is enabled. */
+  /* FIXME: This is not ideal. */
   GC_INIT();
 
   p[0] = (char *)aligned_alloc(8, 50 /* `size` */);
