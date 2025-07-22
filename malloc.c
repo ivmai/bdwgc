@@ -48,7 +48,12 @@ GC_alloc_reclaim_list(struct obj_kind *ok)
 STATIC ptr_t
 GC_alloc_large(size_t lb_adjusted, int kind, unsigned flags, size_t align_m1)
 {
-#define MAX_ALLOCLARGE_RETRIES 3
+  /*
+   * TODO: It is unclear which retries limit is sufficient (value of 3 leads
+   * to fail in some 32-bit applications, 10 is a kind of arbitrary value).
+   */
+#define MAX_ALLOCLARGE_RETRIES 10
+
   int retry_cnt;
   size_t n_blocks; /*< includes alignment */
   struct hblk *h;
