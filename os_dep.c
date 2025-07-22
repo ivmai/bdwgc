@@ -955,7 +955,7 @@ GC_set_and_save_fault_handler(GC_fault_handler_t h)
   /* `act.sa_restorer` is deprecated and should not be initialized. */
 #    if defined(IRIX5) && defined(THREADS)
   /* Older versions have a bug related to retrieving and      */
-  /* and setting a handler at the same time.                  */
+  /* setting a handler at the same time.                      */
   (void)sigaction(SIGSEGV, 0, &old_segv_act);
   (void)sigaction(SIGSEGV, &act, 0);
 #    else
