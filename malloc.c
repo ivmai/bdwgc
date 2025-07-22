@@ -46,7 +46,7 @@ GC_alloc_reclaim_list(struct obj_kind *ok)
 STATIC ptr_t
 GC_alloc_large(size_t lb_adjusted, int kind, unsigned flags, size_t align_m1)
 {
-#define MAX_ALLOCLARGE_RETRIES 3
+#define MAX_ALLOCLARGE_RETRIES 10
   int retry_cnt;
   size_t n_blocks; /*< includes alignment */
   struct hblk *h;
