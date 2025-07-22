@@ -12,7 +12,7 @@
  */
 
 /* These are functions on cords that do not need to understand their    */
-/* implementation.  They serve also serve as example client code for    */
+/* implementation.  They also serve as an example client code for       */
 /* the cord basic primitives.                                           */
 
 #ifdef HAVE_CONFIG_H
