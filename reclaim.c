@@ -541,7 +541,7 @@ GC_disclaim_and_reclaim_or_free_small_block(struct hblk *hbp)
 }
 #endif /* ENABLE_DISCLAIM */
 
-/* Restore an unmarked large object or an entirely empty blocks of      */
+/* Restore an unmarked large object or an entirely empty block of       */
 /* small objects to the heap block free list.  Otherwise enqueue the    */
 /* block for later processing by `GC_reclaim_small_nonempty_block()`.   */
 /* If `report_if_found` is `TRUE`, then process any block immediately,  */
