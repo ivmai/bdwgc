@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-/*
+/**
  * Invoke all remaining finalizers that have not yet been run.  (Since the
  * notifier is not called, this should be called from a separate thread.)
  * This function is needed for strict compliance with the Java standard,
@@ -47,7 +47,7 @@ extern "C" {
 GC_API void GC_CALL GC_finalize_all(void);
 
 #ifdef GC_THREADS
-/*
+/**
  * External thread suspension support.  No thread suspension count
  * (so a thread which has been suspended numerous times will be resumed
  * with the very first call to `GC_resume_thread()`).  Acquires the
@@ -60,7 +60,7 @@ GC_API void GC_CALL GC_finalize_all(void);
 GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID);
 GC_API void GC_CALL GC_resume_thread(GC_SUSPEND_THREAD_ID);
 
-/*
+/**
  * Is the given thread suspended externally?  The result is either
  * 1 (true) or 0.  Acquires the allocator lock in the reader mode.
  * Note: returns 0 (false) if the thread is not registered in the collector.

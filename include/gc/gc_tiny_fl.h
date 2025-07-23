@@ -56,10 +56,10 @@
 #  define GC_GRANULE_BYTES (GC_GRANULE_PTRS * GC_SIZEOF_PTR)
 #endif /* !GC_GRANULE_BYTES */
 
-/* Convert size in pointers to that in granules. */
+/** Convert size in pointers to that in granules. */
 #define GC_PTRS_TO_GRANULES(n) ((n) / GC_GRANULE_PTRS)
 
-/*
+/**
  * Convert size in pointers to that in granules, but rounding up the
  * result.
  */
@@ -88,7 +88,7 @@
  * `GC_get_all_interior_pointers()`.
  */
 
-/*
+/**
  * Convert a free-list index to the actual size of objects on that list,
  * including extra space we added.  Not an inverse of the above.
  */

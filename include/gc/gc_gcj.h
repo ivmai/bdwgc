@@ -50,7 +50,7 @@ extern "C" {
 #  define GC_GCJ_MARK_DESCR_OFFSET GC_SIZEOF_PTR
 #endif
 
-/*
+/**
  * This function must be called before the `gcj` allocators are invoked.
  * `mp_index` and `mp` are the index and mark procedure (see `gc_mark.h`
  * file), respectively, for the allocated objects.  `mp` will be used to
@@ -74,7 +74,7 @@ extern "C" {
 GC_API GC_ATTR_DEPRECATED void GC_CALL GC_init_gcj_malloc(int /* `mp_index` */,
                                                           void * /* `mp` */);
 
-/*
+/**
  * Allocate an object, clear it, and store the pointer to the type
  * structure ("vtable" in `gcj`).  This adds a byte at the end of the
  * object if `GC_malloc()` would.  In case of out of memory,
@@ -83,7 +83,7 @@ GC_API GC_ATTR_DEPRECATED void GC_CALL GC_init_gcj_malloc(int /* `mp_index` */,
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_gcj_malloc(size_t /* `lb` */, const void * /* `vtable_ptr` */);
 
-/*
+/**
  * Similar to `GC_gcj_malloc`, but add the debug info.  This is allocated
  * with `GC_gcj_debug_kind`.
  */
@@ -91,7 +91,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_debug_gcj_malloc(size_t /* `lb` */, const void * /* `vtable_ptr` */,
                         GC_EXTRA_PARAMS);
 
-/*
+/**
  * Similar to `GC_gcj_malloc`, but assumes that a pointer to near the
  * beginning (i.e. within the first heap block) of the allocated object
  * is always maintained.
@@ -100,7 +100,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_gcj_malloc_ignore_off_page(size_t /* `lb` */,
                                   const void * /* `vtable_ptr` */);
 
-/*
+/**
  * The kind numbers of normal and debug `gcj` objects.  Useful only for
  * debug support, we hope.
  */

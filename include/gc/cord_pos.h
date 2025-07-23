@@ -26,7 +26,7 @@ extern "C" {
  * and not in `cord.h` file.
  */
 
-/*
+/**
  * The maximum depth of a balanced cord plus one.  We do not let cords get
  * deeper than this maximum.
  */
@@ -37,7 +37,7 @@ struct CORD_pe {
   size_t pe_start_pos;
 };
 
-/*
+/**
  * A structure describing an entry on the path from the root to current
  * position.
  */
@@ -75,34 +75,34 @@ typedef struct CORD_Pos {
   char function_buf[CORD_FUNCTION_BUF_SZ];
 } CORD_pos[1];
 
-/* Extract the cord from a position. */
+/** Extract the cord from a position. */
 CORD_API CORD CORD_pos_to_cord(CORD_pos);
 
-/* Extract the current index from a position. */
+/** Extract the current index from a position. */
 CORD_API size_t CORD_pos_to_index(CORD_pos);
 
-/* Fetch the character located at the given position. */
+/** Fetch the character located at the given position. */
 CORD_API char CORD_pos_fetch(CORD_pos);
 
-/*
+/**
  * Initialize the position to refer to the given cord and `index`.
  * Note that this is the most expensive function on positions.
  */
 CORD_API void CORD_set_pos(CORD_pos, CORD, size_t /* `index` */);
 
-/*
+/**
  * Advance the position to the next character.  `p` must be initialized
  * and valid.  Invalidates `p` if past end.
  */
 CORD_API void CORD_next(CORD_pos /* `p` */);
 
-/*
+/**
  * Move the position to the preceding character.  `p` must be initialized
  * and valid.  Invalidates `p` if past beginning.
  */
 CORD_API void CORD_prev(CORD_pos /* `p` */);
 
-/* Is the position valid, i.e. inside the cord? */
+/** Is the position valid, i.e. inside the cord? */
 CORD_API int CORD_pos_valid(CORD_pos);
 
 CORD_API char CORD__pos_fetch(CORD_pos);
@@ -130,17 +130,17 @@ CORD_API void CORD__prev(CORD_pos);
 
 /* Some grubby stuff for performance-critical friends. */
 
-/* Number of characters in cache. A non-positive value means none. */
+/** Number of characters in cache.  A non-positive value means none. */
 #  define CORD_pos_chars_left(p) ((long)(p)[0].cur_end - (long)(p)[0].cur_pos)
 
-/*
+/**
  * Advance position by `n` characters; `n` should be positive and less
  * than `CORD_pos_chars_left(p)`.
  */
 #  define CORD_pos_advance(p, n) \
     ((p)[0].cur_pos += (n) - (size_t)1, CORD_next(p))
 
-/* Address of the current character in cache. */
+/** Address of the current character in cache. */
 #  define CORD_pos_cur_char_addr(p) \
     ((p)[0].cur_leaf + ((p)[0].cur_pos - (p)[0].cur_start))
 

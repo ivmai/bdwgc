@@ -47,7 +47,7 @@ struct GC_hblk_s {
 };
 #endif
 
-/*
+/**
  * A client-supplied mark procedure.  Returns new mark stack pointer.
  * Primary effect should be to push new entries on the mark stack.
  * Mark stack pointer values are passed and returned explicitly.
@@ -98,10 +98,12 @@ typedef struct GC_ms_entry *(GC_CALLBACK *GC_mark_proc)(
 #define GC_DS_TAG_BITS 2
 #define GC_DS_TAGS ((1U << GC_DS_TAG_BITS) - 1)
 
-/* The entire descriptor is a length in bytes that must be a multiple of 4. */
+/**
+ * The entire descriptor is a length in bytes that must be a multiple of 4.
+ */
 #define GC_DS_LENGTH 0
 
-/*
+/**
  * The high-order bits are describing pointer fields.  The most
  * significant bit is set if the first "pointer-sized" word is a pointer.
  * (This unconventional ordering sometimes makes the marker slightly faster.)
@@ -110,13 +112,13 @@ typedef struct GC_ms_entry *(GC_CALLBACK *GC_mark_proc)(
  */
 #define GC_DS_BITMAP 1
 
-/*
+/**
  * The objects referenced by this object can be pushed on the mark stack by
  * invoking `PROC(descr)`.  `ENV(descr)` is passed as the last argument.
  */
 #define GC_DS_PROC 2
 
-/*
+/**
  * The real descriptor is at the byte displacement from the beginning
  * of the object given by `descr & ~GC_DS_TAGS`.  If the descriptor is
  * negative, the real descriptor is at
@@ -137,7 +139,7 @@ typedef struct GC_ms_entry *(GC_CALLBACK *GC_mark_proc)(
     << GC_DS_TAG_BITS)                                                     \
    | (GC_word)GC_DS_PROC)
 
-/*
+/**
  * Bounds on the heap.  Guaranteed to be valid.  Likely to include future
  * heap expansion.  Hence the bounded range usually includes not-yet-mapped
  * memory, or might overlap with other data roots.  The address of any heap
@@ -147,7 +149,7 @@ typedef struct GC_ms_entry *(GC_CALLBACK *GC_mark_proc)(
 GC_API void *GC_least_plausible_heap_addr;
 GC_API void *GC_greatest_plausible_heap_addr;
 
-/*
+/**
  * Specify the pointer address mask.  Works only if the collector is
  * built with `DYNAMIC_POINTER_MASK` macro defined.  These primitives
  * are normally needed only to support systems that use high-order
@@ -158,7 +160,7 @@ GC_API void *GC_greatest_plausible_heap_addr;
 GC_API void GC_CALL GC_set_pointer_mask(GC_word);
 GC_API GC_word GC_CALL GC_get_pointer_mask(void);
 
-/*
+/**
  * Similar to `GC_set_pointer_mask`/`GC_get_pointer_mask` but for the
  * pointer address shift.  The value should be less than the size of
  * `GC_word`, in bits.  Applied after the mask.
@@ -166,7 +168,7 @@ GC_API GC_word GC_CALL GC_get_pointer_mask(void);
 GC_API void GC_CALL GC_set_pointer_shift(unsigned);
 GC_API unsigned GC_CALL GC_get_pointer_shift(void);
 
-/*
+/**
  * Handle nested references in a custom mark procedure.
  * Check if `obj` is a valid object.  If so, ensure that it is marked.
  * If it was not previously marked, push its contents onto the mark
@@ -208,7 +210,7 @@ GC_custom_push_range(void * /* `bottom` */, void * /* `top` */,
                      struct GC_ms_entry * /* `mark_stack_top` */,
                      struct GC_ms_entry * /* `mark_stack_limit` */);
 
-/*
+/**
  * The size of the header added to objects allocated through the `GC_debug_`
  * routines.  Defined as a function so that client mark procedures do not
  * need to be recompiled for the collector library version changes.
@@ -229,7 +231,7 @@ GC_API GC_ATTR_DEPRECATED
 #endif
         size_t GC_debug_header_size;
 
-/*
+/**
  * Return the heap block size.  Each heap block is devoted to a single size
  * and kind of object.
  */
@@ -238,7 +240,7 @@ GC_API GC_ATTR_CONST size_t GC_CALL GC_get_hblk_size(void);
 typedef void(GC_CALLBACK *GC_walk_hblk_fn)(struct GC_hblk_s *,
                                            void * /* `client_data` */);
 
-/*
+/**
  * Apply `fn` to each allocated heap block.  It is the responsibility
  * of the caller to avoid data race during the function execution
  * (e.g. by acquiring the allocator lock at least in the reader mode).
@@ -252,7 +254,7 @@ typedef void(GC_CALLBACK *GC_walk_free_blk_fn)(struct GC_hblk_s *,
                                                int /* `index` */,
                                                void * /* `client_data` */);
 
-/*
+/**
  * Apply `fn` to each completely empty heap block.  It is the responsibility
  * of the caller to avoid data race during the function execution (e.g. by
  * acquiring the allocator lock at least in the reader mode).
@@ -261,7 +263,7 @@ GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn,
                                           void * /* `client_data` */)
     GC_ATTR_NONNULL(1);
 
-/*
+/**
  * If there are likely to be false references to a block starting at
  * `h` of the indicated length (`len`), then return the next plausible
  * starting location for `h` that might avoid these false references.
@@ -276,7 +278,7 @@ GC_API void GC_CALL GC_iterate_free_hblks(GC_walk_free_blk_fn,
 GC_API struct GC_hblk_s *GC_CALL
 GC_is_black_listed(struct GC_hblk_s * /* `h` */, size_t /* `len` */);
 
-/*
+/**
  * Return the number of set mark bits for the heap block where object `p`
  * is located.  Defined only if the library has been compiled without
  * `NO_DEBUGGING` macro defined.
@@ -289,11 +291,11 @@ GC_API unsigned GC_CALL GC_count_set_marks_in_hblk(const void * /* `p` */);
  * the caller holds the allocator lock.
  */
 
-/* Return a new free-list array. */
+/** Return a new free-list array. */
 GC_API void **GC_CALL GC_new_free_list(void);
 GC_API void **GC_CALL GC_new_free_list_inner(void);
 
-/*
+/**
  * Return a new kind, as specified.  The last two parameters must be zero
  * or one.
  */
@@ -307,14 +309,14 @@ GC_API unsigned GC_CALL GC_new_kind_inner(
     int /* `add_size_to_descriptor` */, int /* `clear_new_objects` */)
     GC_ATTR_NONNULL(1);
 
-/*
+/**
  * Return a new mark procedure identifier, suitable for use as the first
  * argument in `GC_MAKE_PROC()`.
  */
 GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc);
 GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 
-/*
+/**
  * Similar to `GC_init_gcj_malloc()` described in `gc_gcj.h` file but with
  * the proper types of the arguments and an additional runtime checking.
  * `GC_GCJ_MARK_DESCR_OFFSET` should be passed to `descr_offset` argument.
@@ -325,7 +327,7 @@ GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned /* `mp_index` */,
                                           GC_mark_proc /* `mp` */,
                                           size_t /* `descr_offset` */);
 
-/*
+/**
  * Allocate an object of a given `kind`.  By default, there are only
  * a few kinds: composite (pointerful), atomic, uncollectible, etc.
  * We claim it is possible for clever client code that understands the
@@ -340,7 +342,7 @@ GC_API void GC_CALL GC_init_gcj_malloc_mp(unsigned /* `mp_index` */,
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_generic_malloc(size_t /* `lb` */, int /* `kind` */);
 
-/*
+/**
  * Same as `GC_generic_malloc()`, but pointers to past the first heap block
  * of the resulting object are ignored.  We avoid holding the allocator lock
  * while we clear the memory.
@@ -348,14 +350,14 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_generic_malloc_ignore_off_page(size_t /* `lb` */, int /* `kind` */);
 
-/*
+/**
  * A generalized variant of `GC_malloc_uncollectable()` and
  * `GC_malloc_atomic_uncollectable()`.
  */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_generic_malloc_uncollectable(size_t /* `lb` */, int /* `kind` */);
 
-/*
+/**
  * Same as `GC_generic_malloc()`, but primary for allocating an object
  * of the same kind as an existing one (`kind` obtained by
  * `GC_get_kind_and_size()`).  Not suitable for `gcj` and typed-`malloc`
@@ -375,14 +377,14 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     GC_generic_or_special_malloc(sz, k)
 #endif /* !GC_DEBUG */
 
-/*
+/**
  * Similar to `GC_size` but returns object kind.  The size is returned too
  * if `psize` is not `NULL`.  The object pointer should be non-`NULL`.
  */
 GC_API int GC_CALL GC_get_kind_and_size(const void *, size_t * /* `psize` */)
     GC_ATTR_NONNULL(1);
 
-/*
+/**
  * A procedure which produces a human-readable description of the
  * "type" of object `p` into the buffer `out_buf` of length
  * `GC_TYPE_DESCR_LEN`.  This is used by the debug support when
@@ -393,21 +395,21 @@ typedef void(GC_CALLBACK *GC_describe_type_fn)(void * /* `p` */,
                                                char * /* `out_buf` */);
 #define GC_TYPE_DESCR_LEN 40
 
-/*
+/**
  * Register a `describe_type` function to be used when printing objects
  * of a particular `kind`.
  */
 GC_API void GC_CALL GC_register_describe_type_fn(int /* `kind` */,
                                                  GC_describe_type_fn);
 
-/*
+/**
  * Clear some of the inaccessible part of the stack.  Returns its argument,
  * so it can be used in a tail call position, hence clearing another frame.
  * The argument may be `NULL`.
  */
 GC_API void *GC_CALL GC_clear_stack(void *);
 
-/*
+/**
  * Set/get the client notifier on collections.  The client-supplied procedure
  * is called at the start of every full collection (called with the allocator
  * lock held).  May be 0.  This is a really tricky interface to use correctly.
@@ -421,7 +423,7 @@ typedef void(GC_CALLBACK *GC_start_callback_proc)(void);
 GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc);
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 
-/*
+/**
  * Slow/general mark bit manipulation.  The caller should hold the
  * allocator lock.  The argument should be the real address of an object
  * (i.e. the address of the debug header if there is one).
@@ -429,7 +431,7 @@ GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 GC_API void GC_CALL GC_clear_mark_bit(const void *) GC_ATTR_NONNULL(1);
 GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
 
-/*
+/**
  * Get the mark bit.  Returns 1 (true) or 0.  The caller should hold the
  * allocator lock at least in the reader mode.  The argument should be
  * the real address of an object (i.e. the address of the debug header
@@ -437,7 +439,7 @@ GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
  */
 GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
 
-/*
+/**
  * Push everything in the given range onto the mark stack.  `bottom` is
  * the first location to be scanned; `top` is one past the last location
  * to be scanned.  Should only be used if there is no possibility of mark
@@ -445,7 +447,7 @@ GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
  */
 GC_API void GC_CALL GC_push_all(void * /* `bottom` */, void * /* `top` */);
 
-/*
+/**
  * Similar to `GC_push_all` but treats all interior pointers as valid and
  * scans the entire region immediately (not just schedules it for scanning),
  * in case the contents change.
@@ -453,7 +455,7 @@ GC_API void GC_CALL GC_push_all(void * /* `bottom` */, void * /* `top` */);
 GC_API void GC_CALL GC_push_all_eager(void * /* `bottom` */,
                                       void * /* `top` */);
 
-/*
+/**
  * Similar to `GC_push_all` but processes either all or only dirty pages
  * depending on `all` argument.
  */
@@ -463,7 +465,7 @@ GC_API void GC_CALL GC_push_conditional(void * /* `bottom` */,
 
 GC_API void GC_CALL GC_push_finalizer_structures(void);
 
-/*
+/**
  * Set/get the client push-other-roots procedure.  A client-supplied
  * procedure should also call the original one.  Note that both the setter
  * and the getter require some external synchronization to avoid data race.
@@ -472,7 +474,7 @@ typedef void(GC_CALLBACK *GC_push_other_roots_proc)(void);
 GC_API void GC_CALL GC_set_push_other_roots(GC_push_other_roots_proc);
 GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void);
 
-/*
+/**
  * Walk the GC heap visiting all reachable objects.  Assume the caller
  * holds the allocator lock at least in the reader mode.  Object base
  * pointer, object size and client custom data are passed to the callback
@@ -483,7 +485,7 @@ typedef void(GC_CALLBACK *GC_reachable_object_proc)(
 GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
     GC_reachable_object_proc, void * /* `client_data` */) GC_ATTR_NONNULL(1);
 
-/*
+/**
  * Is the given address in one of the temporary static root sections?
  * Acquires the allocator lock in the reader mode.  For the debugging
  * purpose only.
@@ -493,7 +495,7 @@ GC_API int GC_CALL GC_is_tmp_root(void *);
 GC_API void GC_CALL GC_print_trace(GC_word /* `gc_no` */);
 GC_API void GC_CALL GC_print_trace_inner(GC_word /* `gc_no` */);
 
-/*
+/**
  * Set the client for when mark stack is empty.  A client can use this
  * callback to process (un)marked objects and push additional work onto
  * the stack.  Useful for implementing ephemerons.  Both the setter and

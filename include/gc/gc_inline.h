@@ -73,14 +73,14 @@ extern "C" {
 #define GC_I_PTRFREE 0
 #define GC_I_NORMAL 1
 
-/*
+/**
  * Determine if the collector has been configured not to pad the
  * allocated objects even in the all-interior-pointers mode.
  * Meaningful only if `GC_get_all_interior_pointers()` returns 1.
  */
 GC_API int GC_CALL GC_get_dont_add_byte_at_end(void);
 
-/*
+/**
  * Return a list of one or more objects of the indicated size, linked
  * through the first pointer in each object.  This has the advantage
  * that it acquires the allocator lock only once, and may greatly
@@ -104,7 +104,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* `lb_adjusted` */,
                                            int /* `kind` */,
                                            void ** /* `result` */);
 
-/*
+/**
  * A generalized variant of `GC_malloc` and `GC_malloc_atomic`.
  * Uses appropriately the thread-local (if available) or the global
  * free-list of the specified `kind`.
@@ -138,7 +138,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     AO_store((volatile AO_t *)(my_fl), (size_t)(next))
 #endif
 
-/*
+/**
  * The ultimately general inline allocation macro.  Allocate an object
  * of size `lg` (in granules), putting the resulting pointer in `result`.
  * `tiny_fl` is a "tiny" free-list array, which will be used first,
@@ -208,7 +208,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     }                                                                    \
   } while (0)
 
-/*
+/**
  * Allocate `n` "pointer-sized" words.  The allocation size is rounded
  * up to a granule size.  The pointer is stored to `result`.
  * Should not be used unless `GC_get_all_interior_pointers()` returns zero
@@ -233,7 +233,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
 #define GC_MALLOC_ATOMIC_WORDS(result, n, tiny_fl) \
   GC_MALLOC_WORDS_KIND(result, n, tiny_fl, GC_I_PTRFREE, (void)0)
 
-/* Allocate a two-pointer initialized object. */
+/** Allocate a two-pointer initialized object. */
 #define GC_CONS(result, first, second, tiny_fl)                     \
   do {                                                              \
     void *l = (void *)(first);                                      \
@@ -246,7 +246,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void *GC_CALL
     }                                                               \
   } while (0)
 
-/*
+/**
  * Print address of each object in the free list for the given `kind`
  * and size `lg` (in granules).  The caller should hold the allocator
  * lock at least in the reader mode.  Defined only if the library has

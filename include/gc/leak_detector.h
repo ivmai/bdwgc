@@ -108,7 +108,7 @@
 #define _msize(p) GC_size(p)
 
 #ifndef CHECK_LEAKS
-/*
+/**
  * Note 1: `CHECK_LEAKS` does not have `GC_` prefix (preserved for
  * backward compatibility).
  * Note 2: `GC_gcollect()` is also called automatically in the

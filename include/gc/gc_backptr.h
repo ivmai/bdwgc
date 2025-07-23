@@ -44,21 +44,21 @@ extern "C" {
 #endif
 
 typedef enum {
-  /* No reference info available. */
+  /** No reference info available. */
   GC_UNREFERENCED,
-  /* `dest` is not allocated with a debug allocation routine. */
+  /** `dest` is not allocated with a debug allocation routine. */
   GC_NO_SPACE,
-  /* Referenced directly by root `*base_p`. */
+  /** Referenced directly by root `*base_p`. */
   GC_REFD_FROM_ROOT,
-  /* Referenced from a register, i.e. a root without an address. */
+  /** Referenced from a register, i.e. a root without an address. */
   GC_REFD_FROM_REG,
-  /* Referenced from another heap object. */
+  /** Referenced from another heap object. */
   GC_REFD_FROM_HEAP,
-  /* Finalizable and hence accessible. */
+  /** Finalizable and hence accessible. */
   GC_FINALIZER_REFD
 } GC_ref_kind;
 
-/*
+/**
  * Store information about the source object referencing `dest` in
  * `*base_p` and `*offset_p`.  If multiple objects or roots point to
  * `dest`, then the one reported will be the last one used by the
@@ -75,27 +75,27 @@ GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void * /* `dest` */,
                                                 size_t * /* `offset_p` */)
     GC_ATTR_NONNULL(1);
 
-/*
+/**
  * Generate a random heap address.  The resulting address is
  * in the heap, but not necessarily inside a valid object.
  * The caller should hold the allocator lock.
  */
 GC_API void *GC_CALL GC_generate_random_heap_address(void);
 
-/*
+/**
  * Generate a random address inside a valid marked heap object.
  * The caller should hold the allocator lock.
  */
 GC_API void *GC_CALL GC_generate_random_valid_address(void);
 
-/*
+/**
  * Force a garbage collection and generate a backtrace from a random
  * heap address.  This uses the collector logging mechanism (`GC_printf`)
  * to produce output.  It can often be called from a debugger.
  */
 GC_API void GC_CALL GC_generate_random_backtrace(void);
 
-/*
+/**
  * Print a backtrace from a specific address.  The client should call
  * `GC_gcollect()` right before the invocation.  Used e.g. by
  * `GC_generate_random_backtrace()`.

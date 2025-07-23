@@ -51,7 +51,7 @@ extern "C" {
 #  define CORD_BUFSZ 128
 #endif
 
-/*
+/**
  * This structure represents the concatenation of `ec_cord` with
  * `ec_buf[0 .. ec_bufptr - ec_buf - 1]`.
  */
@@ -61,24 +61,24 @@ typedef struct CORD_ec_struct {
   char ec_buf[CORD_BUFSZ + 1];
 } CORD_ec[1];
 
-/* Flush the buffer part of the extended cord into extensible cord. */
+/** Flush the buffer part of the extended cord into extensible cord. */
 CORD_API void CORD_ec_flush_buf(CORD_ec);
 
-/* Convert an extensible cord to a cord. */
+/** Convert an extensible cord to a cord. */
 #define CORD_ec_to_cord(x) (CORD_ec_flush_buf(x), (x)[0].ec_cord)
 
-/* Initialize an extensible cord. */
+/** Initialize an extensible cord. */
 #define CORD_ec_init(x) \
   ((x)[0].ec_cord = 0, (void)((x)[0].ec_bufptr = (x)[0].ec_buf))
 
-/* Append a character to an extensible cord. */
+/** Append a character to an extensible cord. */
 #define CORD_ec_append(x, c)                             \
   ((void)((x)[0].ec_bufptr == (x)[0].ec_buf + CORD_BUFSZ \
               ? (CORD_ec_flush_buf(x), 0)                \
               : 0),                                      \
    (void)(*(x)[0].ec_bufptr++ = (c)))
 
-/*
+/**
  * Append a cord to an extensible cord.  Structure remains shared with
  * the original.
  */

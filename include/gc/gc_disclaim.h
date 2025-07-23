@@ -25,17 +25,17 @@ extern "C" {
  * (i.e. with `ENABLE_DISCLAIM` macro defined).
  */
 
-/*
+/**
  * Prepare the object kind used by `GC_finalized_malloc`.  Call it from
  * your initialization code or, at least, at some point before using
  * finalized allocations.  The function is thread-safe.
  */
 GC_API void GC_CALL GC_init_finalized_malloc(void);
 
-/* Type of a disclaim callback.  Called with the allocator lock held. */
+/** Type of a disclaim callback.  Called with the allocator lock held. */
 typedef int(GC_CALLBACK *GC_disclaim_proc)(void * /* `obj` */);
 
-/*
+/**
  * Register `proc` to be called on each object (of given `kind`) ready
  * to be reclaimed.  If `proc()` returns a nonzero value, the
  * collector will not reclaim the object on this collection cycle
@@ -51,13 +51,13 @@ GC_API void GC_CALL GC_register_disclaim_proc(int /* `kind` */,
                                               GC_disclaim_proc /* `proc` */,
                                               int /* `mark_from_all` */);
 
-/* The finalizer closure used by `GC_finalized_malloc`. */
+/** The finalizer closure used by `GC_finalized_malloc`. */
 struct GC_finalizer_closure {
   GC_finalization_proc proc;
   void *cd;
 };
 
-/*
+/**
  * Allocate an object which is to be finalized by the given closure.
  * This uses a dedicated object kind with a disclaim procedure, and
  * is more efficient than `GC_register_finalizer` and friends.
