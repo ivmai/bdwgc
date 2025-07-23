@@ -90,7 +90,7 @@ somewhat experimental, and requires that the collector has been built with
 `MAKE_BACK_GRAPH` macro defined.
 
 `GC_RETRY_SIGNALS` (Pthreads only) - Tries to compensate for lost thread
-suspend and restart signals.  On by default for OSF1 (Tru64) or if the library
+suspend and restart signals.  On by default for Tru64 UNIX or if the library
 is sanitized, off otherwise.  Since we have previously seen similar issues on
 some other operating systems, it was turned into a runtime flag to enable
 last-minute workarounds.  "0" value means "do not retry signals".

@@ -132,7 +132,7 @@ best to compile with `ALL_INTERIOR_POINTERS` and to use
 `GC_malloc_ignore_off_page` if you get collector warnings from
 allocations of very large objects.  See [here](docs/debugging.md) for details.
 
-_WARNING_: pointers inside memory allocated by the standard (system) `malloc`
+*Warning*: pointers inside memory allocated by the standard (system) `malloc`
 are not seen by the garbage collector.  Thus objects pointed to only from such
 a region may be prematurely deallocated.  It is thus suggested that the
 standard `malloc` be used only for memory regions, such as I/O buffers, that
@@ -142,11 +142,11 @@ are correctly recognized.  (Note that `GC_malloc_uncollectable` has
 semantics similar to standard malloc, but allocates objects that are
 traced by the collector.)
 
-_WARNING_: the collector does not always know how to find pointers in data
+*Warning*: the collector does not always know how to find pointers in data
 areas that are associated with dynamic libraries.  This is easy to remedy
 if you know how to find those data areas on your operating system (see
-`GC_add_roots`).  Code for doing this under SunOS, IRIX 5.X and 6.X, HP/UX,
-Alpha OSF/1, Linux, and Win32 is included and used by default.
+`GC_add_roots`).  Code for doing this under SunOS, Irix 5.x and 6.x, HP/UX,
+Alpha OSF/1 (Tru64 UNIX), Linux, and Win32 is included and used by default.
 (See [README.win32](docs/platforms/README.win32) and
 [README.win64](docs/platforms/README.win64) for Windows details.)  On other
 systems, pointers from dynamic library data areas may not be considered by the
@@ -170,7 +170,7 @@ The allocator/collector can also be configured for thread-safe operation.
 (Full signal safety can also be achieved, but only at the cost of two system
 calls per malloc, which is usually unacceptable.)
 
-_WARNING_: the collector does not guarantee to scan thread-local storage
+*Warning*: the collector does not guarantee to scan thread-local storage
 (e.g. of the kind accessed with `pthread_getspecific`).  The collector
 does scan thread stacks, though, so generally the best solution is to
 ensure that any pointers stored in thread-local storage are also
@@ -320,7 +320,7 @@ a separate host-specific docs/platforms/README.* file.
 
 Dynamic libraries are completely supported only under SunOS/Solaris,
 (and even that support is not functional on the last Sun 3 release),
-Linux, FreeBSD, NetBSD, IRIX, HP/UX, Win32 (not win32s) and OSF/1
+Linux, FreeBSD, NetBSD, Irix, HP/UX, Win32 (not win32s) and Tru64 UNIX
 on DEC AXP machines plus perhaps a few others listed near the top
 of dyn_load.c.  On other machines we recommend that you do one of
 the following:
@@ -499,7 +499,7 @@ expand program counter values to symbolic addresses.  It was largely supplied
 by Scott Schwartz.)
 
 Note that the debugging facilities described in the next section can
-sometimes be slightly LESS effective in leak finding mode, since in the latter
+sometimes be slightly *less* effective in the leak finding mode, because
 `GC_debug_free` actually results in reuse of the object.  (Otherwise the
 object is simply marked invalid.)  Also, note that most GC tests are not
 designed to run meaningfully in `FIND_LEAK` mode.
@@ -575,7 +575,7 @@ or pages have been recently modified.  The collector uses two sources
 of information:
 
   1. Information provided by the VM system.  This may be provided in one of
-     several forms.  Under Solaris 2.X (and potentially under other similar
+     several forms.  Under Solaris 2.x (and potentially under other similar
      systems) information on dirty pages can be read from the `/proc` file
      system.  Under other systems (e.g. SunOS 4.x) it is possible to
      write-protect the heap, and catch the resulting faults.  On these systems

@@ -471,7 +471,7 @@ Pthreads implementations.
 In particular, it is very difficult for the collector to stop all other
 threads in the system and examine the register contents. This is currently
 accomplished with very different mechanisms for some Pthreads implementations.
-For Linux/HPUX/OSF1, Solaris and Irix it sends signals to individual Pthreads
+For Linux/HPUX/Tru64, Solaris and Irix it sends signals to individual Pthreads
 and has them wait in the signal handler.
 
 The Linux and Irix implementations use only documented Pthreads calls, but

@@ -283,7 +283,7 @@ sunos5gc.so: $(OBJS) atomicops dyn_load_sunos53.o
 	$(CC) -G -o $@ $(OBJS) dyn_load_sunos53.o libatomic_ops.a -ldl
 	ln $@ libgc.so
 
-# Alpha/OSF shared library version of the collector.
+# Tru64 UNIX shared library version of the collector.
 libalphagc.so: $(OBJS) atomicops dyn_load.o
 	$(LD) -shared -o $@ $(OBJS) dyn_load.o libatomic_ops.a -lc
 	ln $@ libgc.so

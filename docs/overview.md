@@ -67,8 +67,8 @@ with `GC_realloc` calls, and removing `free` calls. Exceptions are discussed
 The collector is not completely portable, but the distribution includes ports
 to most standard PC and UNIX/Linux platforms. The collector should work
 on Linux, Android, BSD variants, OS/2, Windows (Win32 and Win64), MacOS X,
-iOS, HP/UX, Solaris, Tru64, Irix, Symbian and other operating systems. Some
-platforms are more polished (better supported) than others.
+iOS, HP/UX, Solaris, Tru64 (OSF/1), Irix, Symbian and other operating systems.
+Some platforms are more polished (better supported) than others.
 
 Irix `pthreads`, Linux threads, Windows threads, Solaris threads (`pthreads`
 only), HP/UX 11 `pthreads`, Tru64 `pthreads`, and MacOS X threads are
@@ -81,8 +81,8 @@ new platforms.
 
 The collector uses a [mark-sweep](http://www.hboehm.info/gc/complexity.html)
 algorithm. It provides incremental and generational collection under operating
-systems which provide the right kind of virtual memory support. (Currently
-this includes SunOS[45], IRIX, OSF/1, Linux, and Windows, with varying
+systems that provide the right kind of virtual memory support. (Currently this
+includes SunOS 4.x and 5.x, IRIX, Tru64 UNIX, Linux, and Windows, with varying
 restrictions.) It allows [finalization](finalization.md) code to be invoked
 when an object is collected. It can take advantage of type information
 to locate pointers if such information is provided, but it is usually used
