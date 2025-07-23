@@ -21,6 +21,10 @@
  * Note that this is implemented completely separately from the rest
  * of the collector, and is not linked in unless referenced.
  * This does not currently support `GC_DEBUG` in any interesting way.
+ *
+ * Note for cris and m68k architectures (and for bcc and wcc compilers):
+ * this API expects all pointers in the type (`T`) are aligned by the size
+ * of a pointer (which might differ from `ALIGNMENT`).
  */
 
 #ifndef GC_TYPED_H
@@ -37,14 +41,14 @@ extern "C" {
 /** The size of `GC_word` (not a pointer) type in bits. */
 #define GC_WORDSZ (8 * sizeof(GC_word))
 
-/** The size of a type `t` in words. */
-#define GC_WORD_LEN(t) (sizeof(t) / sizeof(GC_word))
+/** The size of a type `t` in pointers.  The value is rounded down. */
+#define GC_SIZEOF_IN_PTRS(t) (sizeof(t) / sizeof(void *))
 
-/** The offset of a field in words. */
-#define GC_WORD_OFFSET(t, f) (offsetof(t, f) / sizeof(GC_word))
+/** The offset of a field in pointers. */
+#define GC_OFFSETOF_IN_PTRS(t, f) (offsetof(t, f) / sizeof(void *))
 
 /**
- * The bitmap type.  The least significant bit of the first word is one
+ * The bitmap type.  The least significant bit of the first `GC_word` is one
  * if the first "pointer-sized" word in the object may be a pointer.
  */
 typedef GC_word *GC_bitmap;
@@ -54,7 +58,7 @@ typedef GC_word *GC_bitmap;
  * create for a given type `t`.  The bitmap is intended to be passed to
  * `GC_make_descriptor()`.
  */
-#define GC_BITMAP_SIZE(t) ((GC_WORD_LEN(t) + GC_WORDSZ - 1) / GC_WORDSZ)
+#define GC_BITMAP_SIZE(t) ((GC_SIZEOF_IN_PTRS(t) + GC_WORDSZ - 1) / GC_WORDSZ)
 
 /**
  * The setter and getter of the bitmap.  The `bm` argument should be of
@@ -87,10 +91,10 @@ typedef GC_word GC_descr;
  *   GC_descr t_descr;
  *   {
  *     GC_word bm[GC_BITMAP_SIZE(T)] = { 0 };
- *     GC_set_bit(bm, GC_WORD_OFFSET(T, f1));
- *     GC_set_bit(bm, GC_WORD_OFFSET(T, f2));
+ *     GC_set_bit(bm, GC_OFFSETOF_IN_PTRS(T, f1));
+ *     GC_set_bit(bm, GC_OFFSETOF_IN_PTRS(T, f2));
  *     ...
- *     t_descr = GC_make_descriptor(bm, GC_WORD_LEN(T));
+ *     t_descr = GC_make_descriptor(bm, GC_SIZEOF_IN_PTRS(T));
  *   }
  * ```
  */
@@ -178,6 +182,12 @@ GC_API GC_ATTR_MALLOC void *GC_CALL GC_calloc_do_explicitly_typed(
 #  define GC_CALLOC_EXPLICITLY_TYPED(n, bytes, d) \
     GC_calloc_explicitly_typed(n, bytes, d)
 #endif
+
+/* Deprecated.  Use `GC_SIZEOF_IN_PTRS()` instead. */
+#define GC_WORD_LEN(t) GC_SIZEOF_IN_PTRS(t)
+
+/* Deprecated.  Use `GC_OFFSETOF_IN_PTRS()` instead. */
+#define GC_WORD_OFFSET(t, f) GC_OFFSETOF_IN_PTRS(t, f)
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -108,7 +108,8 @@ typedef struct GC_ms_entry *(GC_CALLBACK *GC_mark_proc)(
  * significant bit is set if the first "pointer-sized" word is a pointer.
  * (This unconventional ordering sometimes makes the marker slightly faster.)
  * Zeros indicate definite non-pointers; ones indicate possible pointers.
- * Only usable if pointers are aligned.
+ * *Note*: only usable if pointers are aligned on the size of a pointer (thus,
+ * extra care should be taken by client on cris and m68k architectures).
  */
 #define GC_DS_BITMAP 1
 

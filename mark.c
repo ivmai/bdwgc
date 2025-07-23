@@ -777,7 +777,8 @@ GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
 #endif
         descr &= ~(word)GC_DS_TAGS;
         credit -= (GC_signed_word)PTRS_TO_BYTES(CPP_PTRSZ / 2); /*< guess */
-        for (; descr != 0; descr <<= 1, current_p += sizeof(ptr_t)) {
+        for (; descr != 0;
+             descr <<= 1, current_p += sizeof(ptr_t)) { /*< not `ALIGNMENT` */
           if ((descr & SIGNB) == 0)
             continue;
           LOAD_PTR_OR_CONTINUE(q, current_p);
