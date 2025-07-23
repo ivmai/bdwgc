@@ -73,7 +73,7 @@
 * Assert in typed_mark_proc that allocator lock held by some collecting thread
 * Assert that bm_table is already initialized when GC_double_descr used
 * Assert that disappearing links are accessible during registration and GC
-* Assert that size of element of a typed object is non-zero (refactoring)
+* Assert that size of element of a typed object is nonzero (refactoring)
 * Assume argument of GC_set_fl_marks is non-null (refactoring)
 * Avoid code duplication between pthread_support.c and win32_threads.c
 * Avoid code duplication in GC_core_gcj_malloc (refactoring)
@@ -105,7 +105,7 @@
 * Change GC_build_fl prototype to accept size in granules (refactoring)
 * Change GC_gcj_malloc and friends to accept const pointer to descriptor
 * Change GC_warn_proc API to accept const C string
-* Change NOT_MARKED value to non-zero (refactoring)
+* Change NOT_MARKED value to nonzero (refactoring)
 * Change default GC_time_limit value from 50 to 15 ms
 * Change default value of max_prior_attempts to 3
 * Change enable_threads default to off if threads are unsupported (CMake)

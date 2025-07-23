@@ -113,7 +113,7 @@ Tree::verify_node(int a, int d)
   }
   if (0 == depth) {
     if (m_nodes != 0) {
-      fprintf(stderr, "Found non-empty node!\n");
+      fprintf(stderr, "Found nonempty node!\n");
       exit(1);
     }
   } else if (0 == m_nodes) {

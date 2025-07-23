@@ -151,7 +151,7 @@ elseif (WATCOM)
   add_compile_options(/wx)
   if (enable_gc_assertions)
     # Suppress "unreachable code" warning in `GC_ASSERT()` if some constant
-    # non-zero expression is given as the argument.
+    # nonzero expression is given as the argument.
     add_compile_options(/wcd=201)
   endif()
   if (enable_threads)
@@ -226,7 +226,7 @@ if (enable_threads)
   endif()
   set(THREADDLLIBS_LIST ${CMAKE_THREAD_LIBS_INIT})
   if (${CMAKE_DL_LIBS} MATCHES ^[^-].*)
-    # Some `cmake` versions have a broken non-empty `CMAKE_DL_LIBS`
+    # Some `cmake` versions have a broken nonempty `CMAKE_DL_LIBS`
     # omitting "-l".  Assume `CMAKE_DL_LIBS` contains just one library.
     set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} -l${CMAKE_DL_LIBS})
   else()
