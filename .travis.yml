@@ -851,7 +851,6 @@ after_success:
     lcov --remove coverage.info '/usr/*' 'cord/tests/*' 'libatomic_ops/*' 'tests/*' --output-file coverage.info;
     lcov --list coverage.info;
     coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info;
-    bash <(curl -s https://codecov.io/bash);
   fi
 
 before_deploy:
