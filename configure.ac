@@ -14,7 +14,7 @@
 dnl Process this file with `autoconf` to produce `configure` file.
 
 dnl Initialization.
-AC_INIT(gc,8.3.0,https://github.com/ivmai/bdwgc/issues)
+AC_INIT(gc,8.3.0,https://github.com/bdwgc/bdwgc/issues)
 dnl Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
 AC_CONFIG_SRCDIR(gcj_mlc.c)
