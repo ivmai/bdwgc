@@ -18,7 +18,7 @@ jobs:
     addons:
       coverity_scan:
         project:
-          name: ivmai/bdwgc
+          name: bdwgc/bdwgc
           version: 8.3.0
         notification_email: ivmai@mail.ru
         branch_pattern: master
@@ -866,5 +866,5 @@ deploy:
   file_glob: true
   on:
     condition: $MAKEFILE_TARGETS = distcheck
-    repo: ivmai/bdwgc
+    repo: bdwgc/bdwgc
     tags: true
