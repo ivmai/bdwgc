@@ -37,7 +37,6 @@ main(void)
 
 #  include <errno.h> /*< for `EAGAIN` */
 #  include <pthread.h>
-#  include <string.h>
 
 pthread_key_t key;
 
@@ -113,7 +112,7 @@ main(void)
     int err = GC_pthread_create(&t, NULL, entry, NULL);
 
     if (err != 0) {
-      fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(err));
+      fprintf(stderr, "Thread #%d creation failed, errno= %d\n", i, err);
       if (i > 0 && EAGAIN == err)
         break;
       exit(2);
@@ -122,13 +121,13 @@ main(void)
     if ((i & 1) != 0) {
       err = GC_pthread_join(t, &res);
       if (err != 0) {
-        fprintf(stderr, "Thread #%d join failed: %s\n", i, strerror(err));
+        fprintf(stderr, "Thread #%d join failed, errno= %d\n", i, err);
         exit(2);
       }
     } else {
       err = GC_pthread_detach(t);
       if (err != 0) {
-        fprintf(stderr, "Thread #%d detach failed: %s\n", i, strerror(err));
+        fprintf(stderr, "Thread #%d detach failed, errno= %d\n", i, err);
         exit(2);
       }
     }

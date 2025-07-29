@@ -31,7 +31,6 @@
 
 #ifdef GC_PTHREADS
 #  include <pthread.h>
-#  include <string.h>
 #else
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN 1
@@ -107,12 +106,12 @@ main(void)
 #ifdef GC_PTHREADS
   err = pthread_create(&t, NULL, thread, NULL);
   if (err != 0) {
-    fprintf(stderr, "Thread #0 creation failed: %s\n", strerror(err));
+    fprintf(stderr, "Thread #0 creation failed, errno= %d\n", err);
     return 1;
   }
   err = pthread_join(t, NULL);
   if (err != 0) {
-    fprintf(stderr, "Thread #0 join failed: %s\n", strerror(err));
+    fprintf(stderr, "Thread #0 join failed, errno= %d\n", err);
     return 1;
   }
 #else

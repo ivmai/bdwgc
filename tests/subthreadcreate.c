@@ -24,7 +24,6 @@
 #  ifdef GC_PTHREADS
 #    include <errno.h> /*< for `EAGAIN` */
 #    include <pthread.h>
-#    include <string.h>
 #  else
 #    ifndef WIN32_LEAN_AND_MEAN
 #      define WIN32_LEAN_AND_MEAN 1
@@ -77,15 +76,16 @@ entry(LPVOID arg)
 
     err = pthread_create(&th, NULL, entry, (void *)(GC_uintptr_t)my_depth);
     if (err != 0) {
-      fprintf(stderr, "Thread #%d creation failed from other thread: %s\n",
-              thread_num, strerror(err));
+      fprintf(stderr,
+              "Thread #%d creation failed from other thread, errno= %d\n",
+              thread_num, err);
       if (err != EAGAIN)
         exit(2);
     } else {
       err = pthread_detach(th);
       if (err != 0) {
-        fprintf(stderr, "Thread #%d detach failed: %s\n", thread_num,
-                strerror(err));
+        fprintf(stderr, "Thread #%d detach failed, errno= %d\n", thread_num,
+                err);
         exit(2);
       }
     }
@@ -126,8 +126,8 @@ main(void)
 #    ifdef GC_PTHREADS
     err = pthread_create(&th[i], NULL, entry, 0);
     if (err != 0) {
-      fprintf(stderr, "Thread #%d creation failed: %s\n", th_nums[i],
-              strerror(err));
+      fprintf(stderr, "Thread #%d creation failed, errno= %d\n", th_nums[i],
+              err);
       if (i > 0 && EAGAIN == err)
         break;
       exit(1);
@@ -152,8 +152,7 @@ main(void)
 
     err = pthread_join(th[i], &res);
     if (err != 0) {
-      fprintf(stderr, "Thread #%d join failed: %s\n", th_nums[i],
-              strerror(err));
+      fprintf(stderr, "Thread #%d join failed, errno= %d\n", th_nums[i], err);
       exit(1);
     }
 #    else
