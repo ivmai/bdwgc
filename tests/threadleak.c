@@ -13,7 +13,6 @@
 #ifdef GC_PTHREADS
 #  include <errno.h> /*< for `EAGAIN` */
 #  include <pthread.h>
-#  include <string.h>
 #else
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN 1
@@ -90,7 +89,7 @@ main(void)
     int err = pthread_create(t + i, 0, test, 0);
 
     if (err != 0) {
-      fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(err));
+      fprintf(stderr, "Thread #%d creation failed, errno= %d\n", i, err);
       if (i > 1 && EAGAIN == err)
         break;
       exit(2);

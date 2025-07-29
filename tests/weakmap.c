@@ -159,7 +159,7 @@ weakmap_trylock(struct weakmap *wm, unsigned h)
   int err = pthread_mutex_trylock(&wm->mutex[h % WEAKMAP_MUTEX_COUNT]);
 
   if (err != 0 && err != EBUSY) {
-    fprintf(stderr, "pthread_mutex_trylock: %s\n", strerror(err));
+    fprintf(stderr, "pthread_mutex_trylock, errno= %d\n", err);
     exit(69);
   }
   return err;
@@ -502,7 +502,7 @@ main(void)
     int err = pthread_create(&th[i], NULL, test, NULL);
 
     if (err != 0) {
-      fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(err));
+      fprintf(stderr, "Thread #%d creation failed, errno= %d\n", i, err);
       if (i > 1 && EAGAIN == err)
         break;
       exit(1);
@@ -516,7 +516,7 @@ main(void)
     int err = pthread_join(th[i], NULL);
 
     if (err != 0) {
-      fprintf(stderr, "Thread #%d join failed: %s\n", i, strerror(err));
+      fprintf(stderr, "Thread #%d join failed, errno= %d\n", i, err);
       exit(69);
     }
   }

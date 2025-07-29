@@ -279,8 +279,9 @@ main(void)
   printf("Threaded disclaim test.\n");
   for (i = 0; i < NTHREADS; ++i) {
     int err = pthread_create(&th[i], NULL, test, NULL);
+
     if (err != 0) {
-      fprintf(stderr, "Thread #%d creation failed: %s\n", i, strerror(err));
+      fprintf(stderr, "Thread #%d creation failed, errno= %d\n", i, err);
       if (i > 1 && EAGAIN == err)
         break;
       exit(1);
@@ -292,8 +293,9 @@ main(void)
 #if NTHREADS > 0
   for (i = 0; i < n; ++i) {
     int err = pthread_join(th[i], NULL);
+
     if (err != 0) {
-      fprintf(stderr, "Thread #%d join failed: %s\n", i, strerror(err));
+      fprintf(stderr, "Thread #%d join failed, errno= %d\n", i, err);
       exit(69);
     }
   }
