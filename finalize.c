@@ -1189,7 +1189,10 @@ GC_finalize(void)
      */
     if (need_unreachable_finalization) {
       curr_fo = GC_fnlz_roots.finalize_now;
-      GC_ASSERT(NULL == curr_fo || GC_fnlz_roots.fo_head != NULL);
+#  if defined(GC_ASSERTIONS) || defined(LINT2)
+      if (curr_fo != NULL && NULL == GC_fnlz_roots.fo_head)
+        ABORT("GC_fnlz_roots.fo_head is null");
+#  endif
       for (prev_fo = NULL; curr_fo != NULL;
            prev_fo = curr_fo, curr_fo = next_fo) {
         next_fo = fo_next(curr_fo);
