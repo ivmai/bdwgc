@@ -13,17 +13,6 @@ jobs:
     env:
     - CONF_OPTIONS="--enable-cplusplus"
     - GCTEST_WITH_MPROTECT_VDB=true
-  - env:
-    - COVERITY_SCAN_BRANCH=1
-    addons:
-      coverity_scan:
-        project:
-          name: bdwgc/bdwgc
-          version: 8.3.0
-        notification_email: ivmai@mail.ru
-        branch_pattern: master
-        build_command_prepend: "./configure --enable-cplusplus --disable-shared --enable-single-obj-compilation"
-        build_command: make -j check CFLAGS_EXTRA=-DLINT2
   - addons:
       apt:
         packages:
@@ -737,6 +726,18 @@ jobs:
     - LIBTOOL_VER=2.5.4
     - M4_VER=1.4.19
     - NO_CLONE_LIBATOMIC_OPS=true
+  - if: type != pull_request
+    addons:
+      coverity_scan:
+        project:
+          name: bdwgc/bdwgc
+          version: 8.3.0
+        notification_email: ivmai@mail.ru
+        branch_pattern: master
+        build_command_prepend: "./configure --enable-cplusplus --disable-shared --enable-single-obj-compilation"
+        build_command: make -j check CFLAGS_EXTRA=-DLINT2
+    env:
+    - COVERITY_SCAN_BRANCH=1
 
 before_install:
 - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
